@@ -68,28 +68,29 @@ public class JoinProcessor {
 //		LFTjoin joinOp = new LFTjoin(query, context);
 
         // distinct if enable
-//        log("Creating unique join keys ...");
-//        query.aliasToTable.keySet().parallelStream().forEach(alias -> {
-//            try {
-//                List<String> joinRequiredCols = new ArrayList<String>();
-//                for (ColumnRef joinRequiredCol : query.colsForJoins) {
-//                    if (joinRequiredCol.aliasName.equals(alias)) {
-//                        joinRequiredCols.add(joinRequiredCol.columnName);
-//                    }
-//                }
-//                String distinctName = NamingConfig.DISTINCT_PRE + alias;
-//                Distinct.execute(context.aliasToFiltered.get(alias), joinRequiredCols, distinctName);
-//                context.aliasToDistinct.put(alias, distinctName);
-//            } catch (Exception e) {
-//                System.err.println("Error distincting " + alias);
-//                e.printStackTrace();
-//            }
-//        });
+        log("Creating unique join keys ...");
+        query.aliasToTable.keySet().parallelStream().forEach(alias -> {
+            try {
+                List<String> joinRequiredCols = new ArrayList<String>();
+                for (ColumnRef joinRequiredCol : query.colsForJoins) {
+                    if (joinRequiredCol.aliasName.equals(alias)) {
+                        joinRequiredCols.add(joinRequiredCol.columnName);
+                    }
+                }
+                String distinctName = NamingConfig.DISTINCT_PRE + alias;
+                Distinct.execute(context.aliasToFiltered.get(alias), joinRequiredCols, distinctName);
+                context.aliasToDistinct.put(alias, distinctName);
+            } catch (Exception e) {
+                System.err.println("Error distincting " + alias);
+                e.printStackTrace();
+            }
+        });
 
         long joinStartMillis = System.currentTimeMillis();
         DynamicLFTJ joinOp = new DynamicLFTJ(query, context);
         // Initialize UCT join order search tree
         UctNodeLFTJ root = new UctNodeLFTJ(0, query, true, joinOp);
+//        UctNode root = new UctNode(0, query, true, joinOp);
         // Initialize counters and variables
 //		int[] joinOrder = new int[query.nrJoined];
         int[] joinOrder = new int[query.nrAttribute];
@@ -157,6 +158,7 @@ public class JoinProcessor {
             // Consider memory loss
             if (JoinConfig.FORGET && roundCtr == nextForget) {
                 root = new UctNodeLFTJ(roundCtr, query, true, joinOp);
+//                root = new UctNode(roundCtr, query, true, joinOp);
                 nextForget *= 10;
             }
             // Generate logging entries if activated
@@ -212,9 +214,9 @@ public class JoinProcessor {
         System.out.println("join time:" + (joinEndMillis - joinStartMillis));
 
         // Materialize result table
-        Collection<ResultTuple> tuples = joinOp.result.getTuples();
+        Collection<ResultTuple> tuples = joinOp.finalConvergeStaticLFTJ.result.getTuples();
         int nrTuples = tuples.size();
-        log("Materializing join result with " + nrTuples + " tuples ...");
+        System.out.println("Materializing join result with " + nrTuples + " tuples ...");
         String targetRelName = NamingConfig.JOINED_NAME;
         Materialize.execute(tuples, query.aliasToIndex,
                 query.colsForPostProcessing,

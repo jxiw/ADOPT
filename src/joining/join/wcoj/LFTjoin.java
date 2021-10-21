@@ -174,7 +174,8 @@ public class LFTjoin extends DynamicMWJoin {
 				int aliasIdx = query.aliasToIndex.get(alias);
 				int tupleIdx = resultTuple[aliasIdx];
 				// Retrieve corresponding data
-				String table = preSummary.aliasToFiltered.get(alias);
+				String table = preSummary.aliasToDistinct.get(alias);
+//				String table = preSummary.aliasToFiltered.get(alias);
 				String column = colRef.columnName;
 				ColumnRef baseRef = new ColumnRef(table, column);
 				ColumnData data = BufferManager.getData(baseRef);

@@ -96,6 +96,14 @@ public class StaticLFTJ extends MultiWayJoin {
 
 //    final public List<List<Integer>> attributesCardinality;
 
+//    public static long t1 = 0;
+//
+//    public static long t2 = 0;
+//
+//    public static long t3 = 0;
+//
+//    public static long t4 = 0;
+
     /**
      * Initialize join for given query.
      *
@@ -113,9 +121,10 @@ public class StaticLFTJ extends MultiWayJoin {
 //		Collections.shuffle(varOrder);
         varOrder = Arrays.stream(order).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList());
         nrVars = query.equiJoinClasses.size();
-        System.out.println("Variable Order: " + varOrder);
+//        System.out.println("Variable Order: " + varOrder);
 //        attributesCardinality = new ArrayList();
         // Initialize iterators
+//        long stime2 = System.currentTimeMillis();
         aliasToIter = new HashMap<>();
         idToIter = new LFTJiter[nrJoined];
         for (int aliasCtr = 0; aliasCtr < nrJoined; ++aliasCtr) {
@@ -125,6 +134,7 @@ public class StaticLFTJ extends MultiWayJoin {
             aliasToIter.put(alias, iter);
             idToIter[aliasCtr] = iter;
         }
+//        long stime3 = System.currentTimeMillis();
         // Group iterators by variable
         itersByVar = new ArrayList<>();
         for (Set<ColumnRef> var : varOrder) {
@@ -139,13 +149,21 @@ public class StaticLFTJ extends MultiWayJoin {
             itersByVar.add(curVarIters);
 //            attributesCardinality.add(attributeCardinality);
         }
+//        long stime4 = System.currentTimeMillis();
         // Initialize stack for LFTJ algorithm
         curVariableID = 0;
         for (int varCtr = 0; varCtr < nrVars; ++varCtr) {
             JoinFrame joinFrame = new JoinFrame();
             joinFrames.add(joinFrame);
         }
+//        long stime5 = System.currentTimeMillis();
 
+//        t1 += (stime3 - stime2);
+//        t2 += (stime4 - stime3);
+//        t3 += (stime5 - stime4);
+//        System.out.println("t1:" + t1);
+//        System.out.println("t2:" + t2);
+//        System.out.println("t3:" + t3);
     }
 
     /**
@@ -193,6 +211,7 @@ public class StaticLFTJ extends MultiWayJoin {
             LFTJiter iter = idToIter[aliasCtr];
             resultTuple[aliasCtr] = iter.rid();
         }
+//        System.out.println(Arrays.toString(resultTuple));
         // Add new result tuple
         result.add(resultTuple);
         // Verify result tuple if activated
@@ -224,8 +243,8 @@ public class StaticLFTJ extends MultiWayJoin {
                 int aliasIdx = query.aliasToIndex.get(alias);
                 int tupleIdx = resultTuple[aliasIdx];
                 // Retrieve corresponding data
-                String table = preSummary.aliasToFiltered.get(alias);
-//                String table = preSummary.aliasToDistinct.get(alias);
+                String table = preSummary.aliasToDistinct.get(alias);
+//                String table = preSummary.aliasToFiltered.get(alias);
                 String column = colRef.columnName;
                 ColumnRef baseRef = new ColumnRef(table, column);
                 ColumnData data = BufferManager.getData(baseRef);
@@ -267,66 +286,72 @@ public class StaticLFTJ extends MultiWayJoin {
         backtracked = true;
     }
 
-//    double reward(List<List<Integer>> attributesIndexStart) {
-//        // end of join, get the progress of each iteration
-//        Map<LFTJiter, Integer> tableTrieLevel = new HashMap<>();
-//        List<List<Integer>> attributesIndexDelta = new ArrayList<>();
-//        List<List<Integer>> attributesIndexOffset = new ArrayList<>();
-//        List<List<Integer>> attributesCardinality = new ArrayList<>();
-//        for (int attributeId = 0; attributeId < nrVars; attributeId++) {
-//            List<LFTJiter> curIters = itersByVar.get(attributeId);
-//            List<Integer> attributeIndexDelta = new ArrayList<>();
-//            List<Integer> attributeIndexOffset = new ArrayList<>();
-//            List<Integer> attributeCardinality = new ArrayList<>();
-//            for (int iterId = 0; iterId < curIters.size(); iterId++) {
-//                LFTJiter curIter = curIters.get(iterId);
-//                int trieLevel = tableTrieLevel.getOrDefault(curIter, 0);
-//                attributeIndexDelta.add(curIter.curTuples[trieLevel] - attributesIndexStart.get(attributeId).get(iterId));
-//                attributeIndexOffset.add(curIter.card - curIter.curTuples[trieLevel]);
-//                attributeCardinality.add(curIter.card);
-//                tableTrieLevel.put(curIter, trieLevel + 1);
-//            }
-//            attributesIndexDelta.add(attributeIndexDelta);
-//            attributesIndexOffset.add(attributeIndexOffset);
-//            attributesCardinality.add(attributeCardinality);
-//        }
-//        System.out.println("attributesIndexDelta:" + attributesIndexDelta);
-//        System.out.println("attributesIndexOffset:" + attributesIndexOffset);
-//        System.out.println("attributesCardinality:" + attributesCardinality);
-//        // calculate reward based on the offset and delta tuples
-//        double scaledReward = 1;
-//        for (int i = 0; i < attributesCardinality.get(0).size(); i++) {
-//            double deltaReward = ((double) (attributesIndexDelta.get(0).get(i))) / attributesIndexOffset.get(0).get(i);
-//            scaledReward *= deltaReward;
-//        }
-//        return scaledReward;
-//    }
-
-    double reward(List<List<Integer>> attributesValueStart) {
+    double rewardTuple(List<List<Integer>> attributesIndexStart) {
         // end of join, get the progress of each iteration
         Map<LFTJiter, Integer> tableTrieLevel = new HashMap<>();
-        List<List<Integer>> attributesValueDelta = new ArrayList<>();
-        List<List<Integer>> attributesValueOffset = new ArrayList<>();
+        List<List<Integer>> attributesIndexEnd = new ArrayList<>();
+//        List<List<Integer>> attributesIndexOffset = new ArrayList<>();
+        List<List<Integer>> attributesCardinality = new ArrayList<>();
         for (int attributeId = 0; attributeId < nrVars; attributeId++) {
             List<LFTJiter> curIters = itersByVar.get(attributeId);
-            List<Integer> attributeValueDelta = new ArrayList<>();
-            List<Integer> attributeValueOffset = new ArrayList<>();
+            List<Integer> attributeIndexEnd = new ArrayList<>();
+//            List<Integer> attributeIndexOffset = new ArrayList<>();
+            List<Integer> attributeCardinality = new ArrayList<>();
             for (int iterId = 0; iterId < curIters.size(); iterId++) {
                 LFTJiter curIter = curIters.get(iterId);
                 int trieLevel = tableTrieLevel.getOrDefault(curIter, 0);
-                attributeValueDelta.add(curIter.keyAtLevel(trieLevel) - attributesValueStart.get(attributeId).get(iterId));
-                attributeValueOffset.add(curIter.maxValueAtLevel(trieLevel) - curIter.keyAtLevel(trieLevel));
-                System.out.println("attributeId, iterId:" + attributeId + "," + iterId);
-                System.out.println("current start:" + attributesValueStart.get(attributeId).get(iterId));
-                System.out.println("current current:" + curIter.keyAtLevel(trieLevel));
-                System.out.println("max value:" + curIter.maxValueAtLevel(trieLevel));
+                attributeIndexEnd.add(curIter.curTuples[trieLevel]);
+//                attributeIndexOffset.add(curIter.card - curIter.curTuples[trieLevel]);
+                attributeCardinality.add(curIter.card);
                 tableTrieLevel.put(curIter, trieLevel + 1);
             }
-            attributesValueDelta.add(attributeValueDelta);
-            attributesValueOffset.add(attributeValueOffset);
+            attributesIndexEnd.add(attributeIndexEnd);
+//            attributesIndexOffset.add(attributeIndexOffset);
+            attributesCardinality.add(attributeCardinality);
         }
-        System.out.println("attributesValueDelta:" + attributesValueDelta);
-        System.out.println("attributesValueOffset:" + attributesValueOffset);
+//        System.out.println("attributesIndexStart:" + attributesIndexStart);
+//        System.out.println("attributesIndexEnd:" + attributesIndexEnd);
+//        System.out.println("attributesCardinality:" + attributesCardinality);
+        // calculate reward based on the offset and delta tuples
+        double scaledReward = 1;
+        for (int i = 0; i < attributesCardinality.get(0).size(); i++) {
+            double deltaReward = ((double) (attributesIndexEnd.get(0).get(i)) - attributesIndexStart.get(0).get(i)) / ((double) (attributesCardinality.get(0).get(i)) - attributesIndexEnd.get(0).get(i));
+            scaledReward = Double.min(deltaReward, scaledReward);
+        }
+        return scaledReward;
+    }
+
+    double rewardValue(List<List<Integer>> attributesValueStart) {
+        // end of join, get the progress of each iteration
+        Map<LFTJiter, Integer> tableTrieLevel = new HashMap<>();
+        List<List<Integer>> attributesValueEnd = new ArrayList<>();
+        List<List<Integer>> attributesValueLower = new ArrayList<>();
+        List<List<Integer>> attributesValueUpper = new ArrayList<>();
+        for (int attributeId = 0; attributeId < nrVars; attributeId++) {
+            List<LFTJiter> curIters = itersByVar.get(attributeId);
+            List<Integer> attributeValueEnd = new ArrayList<>();
+            List<Integer> attributeValueUpper = new ArrayList<>();
+            List<Integer> attributeValueLower = new ArrayList<>();
+            for (int iterId = 0; iterId < curIters.size(); iterId++) {
+                LFTJiter curIter = curIters.get(iterId);
+                int trieLevel = tableTrieLevel.getOrDefault(curIter, 0);
+                attributeValueEnd.add(curIter.keyAtLevel(trieLevel));
+                attributeValueLower.add(curIter.minValueAtLevel(trieLevel));
+                attributeValueUpper.add(curIter.maxValueAtLevel(trieLevel));
+//                System.out.println("attributeId, iterId:" + attributeId + "," + iterId);
+//                System.out.println("current start:" + attributesValueStart.get(attributeId).get(iterId));
+//                System.out.println("current current:" + curIter.keyAtLevel(trieLevel));
+//                System.out.println("max value:" + curIter.maxValueAtLevel(trieLevel));
+                tableTrieLevel.put(curIter, trieLevel + 1);
+            }
+            attributesValueEnd.add(attributeValueEnd);
+            attributesValueLower.add(attributeValueLower);
+            attributesValueUpper.add(attributeValueUpper);
+        }
+//        System.out.println("attributesValueStart:" + attributesValueStart);
+//        System.out.println("attributesValueEnd:" + attributesValueEnd);
+//        System.out.println("attributesValueLower:" + attributesValueLower);
+//        System.out.println("attributesValueUpper:" + attributesValueUpper);
         // calculate reward based on the offset and delta tuples
 //        double scaledReward = 1;
 //        for (int i = 0; i < attributesValueDelta.get(0).size(); i++) {
@@ -343,18 +368,33 @@ public class StaticLFTJ extends MultiWayJoin {
 //            scaledReward = Double.min(deltaReward, scaledReward);
 //        }
 
-        double scaledReward = Double.MAX_VALUE;
-        List<Integer> curProgress = new ArrayList<>();
-        List<Integer> maxProgress = new ArrayList<>();
-        for (int i = 0; i < attributesValueDelta.size(); i++) {
-            curProgress.add(Collections.min(attributesValueDelta.get(i)));
-            maxProgress.add(Collections.min(attributesValueOffset.get(i)));
-//            System.out.println("attributesValueOffset.get(0).get(i)" + attributesValueOffset.get(0).get(i));
-//            double deltaReward = ((double) (attributesValueDelta.get(0).get(i))) / ( attributesValueOffset.get(0).get(i) + 1);
-//            scaledReward = Double.min(deltaReward, scaledReward);
-        }
+//        double scaledReward = 1;
+//        List<Integer> curProgress = new ArrayList<>();
+//        List<Integer> maxProgress = new ArrayList<>();
+//        for (int i = 0; i < 1; i++) {
+//            double minStart = Collections.min(attributesValueStart.get(i));
+//            double minEnd = Collections.min(attributesValueEnd.get(i));
+//            double upperBound = Collections.min(attributesValueUpper.get(i));
+//            scaledReward = (minEnd - minStart) / (upperBound - minEnd + 1);
+//        }
+//        return scaledReward;
 
+        double scaledReward = 0;
+//        List<Integer> curProgress = new ArrayList<>();
+//        List<Integer> maxProgress = new ArrayList<>();
+        double scale = 1;
+        for (int i = 0; i < attributesValueStart.size(); i++) {
+            double minStart = Collections.min(attributesValueStart.get(i));
+            double minEnd = Collections.min(attributesValueEnd.get(i));
+            double upperBound = Collections.min(attributesValueUpper.get(i));
+            double lowerBound = Collections.min(attributesValueLower.get(i));
+            if (i > 0) {
+                scale *= (upperBound - lowerBound);
+            }
+            scaledReward += (minEnd - minStart) / ((upperBound - minEnd + 1) * scale);
+        }
         return scaledReward;
+
     }
 
     /**
@@ -445,7 +485,8 @@ public class StaticLFTJ extends MultiWayJoin {
                 JoinStats.nrIterations++;
                 // Check for timeout
                 if (budget <= 0) {
-                    return reward(attributesValuesStart);
+//                    return rewardTuple(attributesIndexStart);
+                    return rewardValue(attributesValuesStart);
                 }
                 // Get current key
                 LFTJiter minIter = joinFrame.curIters.get(joinFrame.p);
@@ -482,7 +523,8 @@ public class StaticLFTJ extends MultiWayJoin {
             }
         }
 
-        return reward(attributesValuesStart);
+//        return rewardTuple(attributesIndexStart);
+        return rewardValue(attributesValuesStart);
     }
 
     @Override

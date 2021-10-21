@@ -15,7 +15,7 @@ public class LoggingConfig {
 	/**
 	 * Whether to log intermediate steps during query analysis.
 	 */
-	public final static boolean QUERY_ANALYSIS_VERBOSE = true;
+	public final static boolean QUERY_ANALYSIS_VERBOSE = false;
 	/**
 	 * Whether to log expressions after each transformation stage.
 	 */
@@ -55,7 +55,7 @@ public class LoggingConfig {
 	 * How many log entries to generate during join processing
 	 * per query - set to zero to avoid join logging.
 	 */
-	public final static int MAX_JOIN_LOGS = 5;
+	public final static int MAX_JOIN_LOGS = 0;
 	/**
 	 * Whether to generate debugging output during post-processing.
 	 */

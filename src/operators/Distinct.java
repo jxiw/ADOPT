@@ -12,6 +12,28 @@ import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+class ListKey {
+
+    ArrayList<Integer> listAsKey;
+
+    public ListKey(ArrayList<Integer> listAsKey) {
+        this.listAsKey = listAsKey;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ListKey listKey = (ListKey) o;
+        return listAsKey.equals(listKey.listAsKey);
+    }
+
+    @Override
+    public int hashCode() {
+        return listAsKey.hashCode();
+    }
+}
+
 public class Distinct {
 
     public static Map<String, Map<Integer, List<Integer>>> tableNamesToUniqueIndexes = new HashMap<>();
@@ -45,19 +67,34 @@ public class Distinct {
             columnsData.add(BufferManager.colToData.get(sourceColRef));
         }
         int card = columnsData.get(0).cardinality;
+//        Map<Integer, List<Integer>> idxToUniqueIdx = new HashMap<Integer, List<Integer>>();
+//        Map<Integer, Integer> hashCodeToIdx = new HashMap<Integer, Integer>();
+        // distinct table idx to real idx
         Map<Integer, List<Integer>> idxToUniqueIdx = new HashMap<Integer, List<Integer>>();
-        Map<Integer, Integer> hashCodeToIdx = new HashMap<Integer, Integer>();
+        Map<List<Integer>, Integer> valueToIdx = new HashMap<List<Integer>, Integer>();
         int uniqueNum = 0;
         List<Integer> rowList = new ArrayList<>();
         for (int i = 0; i < card; i++) {
             int finalI = i;
+//            List<Integer> hashCodeForRowIter = columnsData.stream().map(columnData -> columnData.hashForRow(finalI)).collect(Collectors.toList());
+//            int hashCodeForRowI = hashCodeForRowIter.hashCode();
+//            if (hashCodeToIdx.containsKey(hashCodeForRowI)) {
+//                int uniqueIndex = hashCodeToIdx.get(hashCodeForRowI);
+//                idxToUniqueIdx.get(uniqueIndex).add(i);
+//            } else {
+//                hashCodeToIdx.put(hashCodeForRowI, uniqueNum);
+//                List<Integer> realIndices = new ArrayList<>();
+//                realIndices.add(i);
+//                idxToUniqueIdx.put(uniqueNum, realIndices);
+//                rowList.add(i);
+//                uniqueNum++;
+//            }
             List<Integer> hashCodeForRowIter = columnsData.stream().map(columnData -> columnData.hashForRow(finalI)).collect(Collectors.toList());
-            int hashCodeForRowI = hashCodeForRowIter.hashCode();
-            if (hashCodeToIdx.containsKey(hashCodeForRowI)) {
-                int uniqueIndex = hashCodeToIdx.get(hashCodeForRowI);
+            if (valueToIdx.containsKey(hashCodeForRowIter)) {
+                int uniqueIndex = valueToIdx.get(hashCodeForRowIter);
                 idxToUniqueIdx.get(uniqueIndex).add(i);
             } else {
-                hashCodeToIdx.put(hashCodeForRowI, uniqueNum);
+                valueToIdx.put(hashCodeForRowIter, uniqueNum);
                 List<Integer> realIndices = new ArrayList<>();
                 realIndices.add(i);
                 idxToUniqueIdx.put(uniqueNum, realIndices);

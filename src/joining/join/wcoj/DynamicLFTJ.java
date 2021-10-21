@@ -76,6 +76,14 @@ public class DynamicLFTJ extends DynamicMWJoin {
 //		return false;
 //	}
 
+    long wcjInitMillis = 0;
+
+    long lookUpMillis = 0;
+
+    long containMillis = 0;
+
+    public StaticLFTJ finalConvergeStaticLFTJ;
+
     public DynamicLFTJ(QueryInfo query,
                        Context executionContext) throws Exception {
         super(query, executionContext);
@@ -87,12 +95,35 @@ public class DynamicLFTJ extends DynamicMWJoin {
     @Override
     public double execute(int[] order) throws Exception {
         AttributeOrder attributeOrder = new AttributeOrder(order);
-        StaticLFTJ pickedOp = orderToLFTJ.getOrDefault(attributeOrder, new StaticLFTJ(query, this.preSummary, this.result, attributeOrder.order));
-        orderToLFTJ.putIfAbsent(attributeOrder, pickedOp);
-        System.out.println("order:" + Arrays.toString(order));
+        long startCreateTime = System.currentTimeMillis();
+//        StaticLFTJ pickedOp = orderToLFTJ.getOrDefault(attributeOrder, new StaticLFTJ(query, this.preSummary, this.result, attributeOrder.order));
+        StaticLFTJ pickedOp;
+        long endFinishTime1 = 0;
+        long endFinishTime2 = 0;
+        long endFinishTime3 = 0;
+        if (orderToLFTJ.containsKey(attributeOrder)){
+            endFinishTime1 = System.currentTimeMillis();
+            pickedOp = orderToLFTJ.get(attributeOrder);
+            endFinishTime2 = System.currentTimeMillis();
+            lookUpMillis += (endFinishTime2 - endFinishTime1);
+        }
+        else {
+            endFinishTime1 = System.currentTimeMillis();
+            pickedOp = new StaticLFTJ(query, this.preSummary, this.result, attributeOrder.order);
+            orderToLFTJ.put(attributeOrder, pickedOp);
+            endFinishTime3 = System.currentTimeMillis();
+            wcjInitMillis += (endFinishTime3 - endFinishTime1);
+        }
+        containMillis += (endFinishTime1 - startCreateTime);
+//        long endFinishTime2 = System.currentTimeMillis();
+//        System.out.println("contain:" + containMillis);
+//        System.out.println("lookup Millis:" + lookUpMillis);
+//        System.out.println("wcj Init Millis:" + wcjInitMillis);
+//        orderToLFTJ.putIfAbsent(attributeOrder, pickedOp);
+        System.out.println("lftj order:" + Arrays.toString(order));
         double reward = pickedOp.resumeJoin(500);
 //        System.out.println("results:" + pickedOp.lastNrResults);
-        System.out.println("reward:" + reward);
+        System.out.println("lftj reward:" + reward);
         return reward;
     }
 
@@ -101,6 +132,7 @@ public class DynamicLFTJ extends DynamicMWJoin {
         // Check whether full result generated
         for (StaticLFTJ staticOp : orderToLFTJ.values()) {
             if (staticOp.isFinished()) {
+                finalConvergeStaticLFTJ = staticOp;
                 return true;
             }
         }

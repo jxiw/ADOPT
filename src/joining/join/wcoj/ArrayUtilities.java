@@ -39,10 +39,18 @@ public class ArrayUtilities {
     }
 
     public static void main(String[] args) {
-        List<int[]> combinations = permutations(10);
-        System.out.println(combinations.size());
+//        List<int[]> combinations = permutations(3);
+//        System.out.println(combinations.size());
 //        for (int[] combination : combinations) {
 //            System.out.println(Arrays.toString(combination));
 //        }
+        List<Integer> test = new ArrayList<>();
+        test.add(34);
+        test.add(56);
+        System.out.println(test.hashCode());
+        test = new ArrayList<>();
+        test.add(56);
+        test.add(34);
+        System.out.println(test.hashCode());
     }
 }

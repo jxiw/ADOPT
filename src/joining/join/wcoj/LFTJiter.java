@@ -76,6 +76,16 @@ public class LFTJiter {
      */
     final static Map<List<ColumnRef>, Integer[]> baseOrderCache =
             new HashMap<>();
+//
+//    static long sortTime = 0;
+//
+//    static long lftTime1 = 0;
+//
+//    static long lftTime2 = 0;
+//
+//    static long lftTime3 = 0;
+//
+//    static long lftTime4 = 0;
 
     /**
      * Initializes iterator for given query and
@@ -90,12 +100,13 @@ public class LFTJiter {
                     List<Set<ColumnRef>> globalVarOrder) throws Exception {
         // Get information on target table
         String alias = query.aliases[aliasID];
-//		String table = context.aliasToDistinct.get(alias);
-        String table = context.aliasToFiltered.get(alias);
+		String table = context.aliasToDistinct.get(alias);
+//        String table = context.aliasToFiltered.get(alias);
         card = CatalogManager.getCardinality(table);
         // Extract columns used for sorting
         List<ColumnRef> localColumns = new ArrayList<>();
         trieCols = new ArrayList<>();
+//        long stime1 = System.currentTimeMillis();
         for (Set<ColumnRef> eqClass : globalVarOrder) {
             for (ColumnRef colRef : eqClass) {
                 if (colRef.aliasName.equals(alias)) {
@@ -112,13 +123,25 @@ public class LFTJiter {
         curTuples = new int[nrLevels];
         curUBs = new int[nrLevels];
         // Retrieve cached tuple order or sort
+//        long stime2 = System.currentTimeMillis();
         tupleOrder = getTupleOrder(query,
                 context, aliasID, localColumns);
+//        long stime3 = System.currentTimeMillis();
         // Reset internal state
         reset();
+//        long stime4 = System.currentTimeMillis();
         // Perform run time checks if activated
         IterChecker.checkIter(query, context,
                 aliasID, globalVarOrder, this);
+//        long stime5 = System.currentTimeMillis();
+//        lftTime1 += (stime2 - stime1);
+//        lftTime2 += (stime3 - stime2);
+//        lftTime3 += (stime4 - stime3);
+//        lftTime4 += (stime5 - stime4);
+//        System.out.println("lftTime1:" + lftTime1);
+//        System.out.println("lftTime2:" + lftTime2);
+//        System.out.println("lftTime3:" + lftTime3);
+//        System.out.println("lftTime4:" + lftTime4);
     }
 
     /**
@@ -133,7 +156,8 @@ public class LFTJiter {
         // No unary predicates for current alias?
         String alias = query.aliases[aliasID];
         boolean notFiltered = executionContext.
-                aliasToFiltered.get(alias).equals(alias);
+                aliasToDistinct.get(alias).equals(alias);
+//                aliasToFiltered.get(alias).equals(alias);
         // Did we cache tuple order for associated base tables?
         if (notFiltered && baseOrderCache.containsKey(localColumns)) {
             return baseOrderCache.get(localColumns);
@@ -147,6 +171,8 @@ public class LFTJiter {
                 for (int i = 0; i < card; ++i) {
                     tupleOrder[i] = i;
                 }
+
+//                long startCreateTime = System.currentTimeMillis();
                 // Sort tuples by global variable order
                 Arrays.parallelSort(tupleOrder, new Comparator<Integer>() {
                     public int compare(Integer row1, Integer row2) {
@@ -167,6 +193,10 @@ public class LFTJiter {
                         return 0;
                     }
                 });
+//                long endCreateTime = System.currentTimeMillis();
+//                sortTime += (endCreateTime - startCreateTime);
+//                System.out.println("sort time:" + sortTime);
+
                 // build hash map, tuple order position to real position
 //			ArrayList<Integer> uniqueTupleOrder = new ArrayList<>();
 //			for (int i = 1; i < card; i++) {
@@ -238,6 +268,11 @@ public class LFTJiter {
     public int maxValueAtLevel(int curTrieLevel) {
         IntData curCol = trieCols.get(curTrieLevel);
         return curCol.data[tupleOrder[card - 1]];
+    }
+
+    public int minValueAtLevel(int curTrieLevel) {
+        IntData curCol = trieCols.get(curTrieLevel);
+        return curCol.data[tupleOrder[0]];
     }
 
     /**

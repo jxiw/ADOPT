@@ -50,6 +50,8 @@ public abstract class MultiWayJoin {
      * finally a complete result.
      */
     public final JoinResult result;
+
+    static long superTime = 0;
     /**
      * This constructor only serves for testing purposes.
      * It initializes most field to null pointers.
@@ -88,6 +90,7 @@ public abstract class MultiWayJoin {
      */
     public MultiWayJoin(QueryInfo query, Context preSummary,
     		JoinResult joinResult) throws Exception {
+//        long stime1 = System.currentTimeMillis();
         this.query = query;
         this.nrJoined = query.nrJoined;
         this.preSummary = preSummary;
@@ -96,11 +99,13 @@ public abstract class MultiWayJoin {
         for (Entry<String,Integer> entry : 
         	query.aliasToIndex.entrySet()) {
         	String alias = entry.getKey();
-        	String table = preSummary.aliasToFiltered.get(alias);
+            String table = preSummary.aliasToDistinct.get(alias);
+//        	String table = preSummary.aliasToFiltered.get(alias);
         	int index = entry.getValue();
         	int cardinality = CatalogManager.getCardinality(table);
         	cardinalities[index] = cardinality;
         }
+//        long stime2 = System.currentTimeMillis();
         this.result = joinResult;
         // Compile predicates
         predToEval = new HashMap<>();
@@ -118,6 +123,9 @@ public abstract class MultiWayJoin {
         	KnaryBoolEval boolEval = (KnaryBoolEval)compiler.getBoolEval();
         	predToEval.put(pred, boolEval);        		
         }
+//        long stime3 = System.currentTimeMillis();
+//        System.out.println("superTime 1"+ (stime2 - stime1));
+//        System.out.println("superTime 2"+ (stime3 - stime2));
     }
     /**
      * Returns true iff a complete join result was generated.

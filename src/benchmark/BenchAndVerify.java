@@ -94,9 +94,6 @@ public class BenchAndVerify {
 		// Measure pre-processing time for each query
 		BenchUtil.writeBenchHeader(benchOut);
 		for (Entry<String, PlainSelect> entry : nameToQuery.entrySet()) {
-			if (!entry.getKey().equals("08c.sql")) {
-				continue;
-			}
 			System.out.println(entry.getKey());
 			System.out.println(entry.getValue().toString());
 			long startMillis = System.currentTimeMillis();
@@ -113,6 +110,7 @@ public class BenchAndVerify {
 					NamingConfig.FINAL_RESULT_NAME, true);
 			long postMillis = System.currentTimeMillis() - postStartMillis;
 			long totalMillis = System.currentTimeMillis() - startMillis;
+			System.out.println("totalMillis:" + totalMillis);
 			// Check consistency with Postgres results: unary preds
 //			for (ExpressionInfo expr : query.unaryPredicates) {
 //				// Unary predicates must refer to one table
@@ -211,10 +209,10 @@ public class BenchAndVerify {
 //			}
 //			pgOut.flush();
 //			// Output final result for Skinner
-//			String resultRel = NamingConfig.FINAL_RESULT_NAME;
+			String resultRel = NamingConfig.FINAL_RESULT_NAME;
 //			System.setOut(skinnerOut);
-//			RelationPrinter.print(resultRel);
-//			skinnerOut.flush();
+			RelationPrinter.print(resultRel);
+			skinnerOut.flush();
 //			System.setOut(console);
 //			// Generate output
 //			benchOut.print(entry.getKey() + "\t");
