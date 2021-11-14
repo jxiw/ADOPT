@@ -1,13 +1,10 @@
 package joining.join.wcoj;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 import joining.join.DynamicMWJoin;
 import joining.plan.AttributeOrder;
-import joining.plan.JoinOrder;
 import preprocessing.Context;
 import query.QueryInfo;
 
@@ -35,6 +32,11 @@ public class DynamicLFTJ extends DynamicMWJoin {
      * Milliseconds at which joins start.
      */
     long joinStartMillis = -1;
+
+    /**
+     * Avoids redundant evaluation work by tracking evaluation progress.
+     */
+    public final ProgressTrackerLFTJ tracker;
 
 //	public DynamicLFTJ(QueryInfo query,
 //			Context executionContext) throws Exception {
@@ -84,59 +86,68 @@ public class DynamicLFTJ extends DynamicMWJoin {
 
     public StaticLFTJ finalConvergeStaticLFTJ;
 
+    public boolean isFinish;
+
     public DynamicLFTJ(QueryInfo query,
                        Context executionContext) throws Exception {
         super(query, executionContext);
         // Clear cache of tuple orders
         LFTJiter.queryOrderCache.clear();
         joinStartMillis = System.currentTimeMillis();
+        this.tracker = new ProgressTrackerLFTJ(query.nrAttribute);
     }
 
     @Override
     public double execute(int[] order) throws Exception {
         AttributeOrder attributeOrder = new AttributeOrder(order);
-        long startCreateTime = System.currentTimeMillis();
+        StateLFTJ state = tracker.continueFrom(attributeOrder);
+//        long startCreateTime = System.currentTimeMillis();
 //        StaticLFTJ pickedOp = orderToLFTJ.getOrDefault(attributeOrder, new StaticLFTJ(query, this.preSummary, this.result, attributeOrder.order));
         StaticLFTJ pickedOp;
-        long endFinishTime1 = 0;
-        long endFinishTime2 = 0;
-        long endFinishTime3 = 0;
+//        long endFinishTime1 = 0;
+//        long endFinishTime2 = 0;
+//        long endFinishTime3 = 0;
         if (orderToLFTJ.containsKey(attributeOrder)){
-            endFinishTime1 = System.currentTimeMillis();
+//            endFinishTime1 = System.currentTimeMillis();
             pickedOp = orderToLFTJ.get(attributeOrder);
-            endFinishTime2 = System.currentTimeMillis();
-            lookUpMillis += (endFinishTime2 - endFinishTime1);
+//            endFinishTime2 = System.currentTimeMillis();
+//            lookUpMillis += (endFinishTime2 - endFinishTime1);
         }
         else {
-            endFinishTime1 = System.currentTimeMillis();
+//            endFinishTime1 = System.currentTimeMillis();
             pickedOp = new StaticLFTJ(query, this.preSummary, this.result, attributeOrder.order);
             orderToLFTJ.put(attributeOrder, pickedOp);
-            endFinishTime3 = System.currentTimeMillis();
-            wcjInitMillis += (endFinishTime3 - endFinishTime1);
+//            endFinishTime3 = System.currentTimeMillis();
+//            wcjInitMillis += (endFinishTime3 - endFinishTime1);
         }
-        containMillis += (endFinishTime1 - startCreateTime);
+//        containMillis += (endFinishTime1 - startCreateTime);
 //        long endFinishTime2 = System.currentTimeMillis();
 //        System.out.println("contain:" + containMillis);
 //        System.out.println("lookup Millis:" + lookUpMillis);
 //        System.out.println("wcj Init Millis:" + wcjInitMillis);
 //        orderToLFTJ.putIfAbsent(attributeOrder, pickedOp);
         System.out.println("lftj order:" + Arrays.toString(order));
-        double reward = pickedOp.resumeJoin(500);
+        System.out.println("start state:" + state);
+        double reward = pickedOp.resumeJoin(500, state);
+        tracker.updateProgress(attributeOrder, state);
 //        System.out.println("results:" + pickedOp.lastNrResults);
+        System.out.println("end state:" + state);
         System.out.println("lftj reward:" + reward);
+        isFinish = pickedOp.isFinished();
         return reward;
     }
 
     @Override
     public boolean isFinished() {
+        return isFinish;
         // Check whether full result generated
-        for (StaticLFTJ staticOp : orderToLFTJ.values()) {
-            if (staticOp.isFinished()) {
-                finalConvergeStaticLFTJ = staticOp;
-                return true;
-            }
-        }
-        return false;
+//        for (StaticLFTJ staticOp : orderToLFTJ.values()) {
+//            if (staticOp.isFinished()) {
+//                finalConvergeStaticLFTJ = staticOp;
+//                return true;
+//            }
+//        }
+//        return false;
     }
 
 }

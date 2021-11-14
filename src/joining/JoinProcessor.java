@@ -7,6 +7,7 @@ import catalog.CatalogManager;
 import config.LoggingConfig;
 import config.NamingConfig;
 import config.JoinConfig;
+import joining.join.MultiWayJoin;
 import joining.join.OldJoin;
 import joining.join.wcoj.DynamicLFTJ;
 import joining.join.wcoj.LFTjoin;
@@ -214,7 +215,7 @@ public class JoinProcessor {
         System.out.println("join time:" + (joinEndMillis - joinStartMillis));
 
         // Materialize result table
-        Collection<ResultTuple> tuples = joinOp.finalConvergeStaticLFTJ.result.getTuples();
+        Collection<ResultTuple> tuples = DynamicLFTJ.result.getTuples();
         int nrTuples = tuples.size();
         System.out.println("Materializing join result with " + nrTuples + " tuples ...");
         String targetRelName = NamingConfig.JOINED_NAME;

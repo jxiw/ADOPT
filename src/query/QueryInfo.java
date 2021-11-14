@@ -715,6 +715,20 @@ public class QueryInfo {
         return false;
     }
 
+    public boolean isValidAttributeOrder(int[] attributeOrder) {
+        Set<Integer> currentAttributes = new HashSet<>();
+        currentAttributes.add(attributeOrder[0]);
+        for (int i = 1; i < attributeOrder.length ;i++) {
+            int attribute = attributeOrder[i];
+            if (connectedAttribute(currentAttributes, attribute)) {
+                currentAttributes.add(attribute);
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Concatenates string representations of given expression
      * list, using the given separator.

@@ -49,7 +49,7 @@ public abstract class MultiWayJoin {
      * Collects result tuples and contains
      * finally a complete result.
      */
-    public final JoinResult result;
+    public static JoinResult result;
 
     static long superTime = 0;
     /**

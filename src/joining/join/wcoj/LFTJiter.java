@@ -100,7 +100,7 @@ public class LFTJiter {
                     List<Set<ColumnRef>> globalVarOrder) throws Exception {
         // Get information on target table
         String alias = query.aliases[aliasID];
-		String table = context.aliasToDistinct.get(alias);
+        String table = context.aliasToDistinct.get(alias);
 //        String table = context.aliasToFiltered.get(alias);
         card = CatalogManager.getCardinality(table);
         // Extract columns used for sorting
@@ -308,44 +308,67 @@ public class LFTJiter {
         // Current tuple position is lower bound
         int lb = curTuples[curTrieLevel];
         // Until search bounds collapse
-        while (lb < ub) {
-            int middle = (lb + ub) / 2;
+//        while (lb < ub) {
+//            int middle = (lb + ub) / 2;
+//            if (keyAt(middle) >= seekKey) {
+//                ub = middle;
+//            } else {
+//                lb = middle + 1;
+//            }
+//        }
+//
+//        // Debugging check
+//        if (lb != ub) {
+//            System.out.println("Error - lb " +
+//                    lb + " and ub " + ub);
+//        }
+//        // Check that prior keys did not change
+//        if (CheckConfig.CHECK_LFTJ_ITERS && keyAt(lb) >= seekKey) {
+//            for (int level = 0; level < curTrieLevel; ++level) {
+//                int curTuple = curTuples[curTrieLevel];
+//                IntData intData = trieCols.get(level);
+//                int cmp = intData.compareRows(
+//                        tupleOrder[curTuple], tupleOrder[lb]);
+//                if (cmp != 0) {
+//                    throw new Exception(
+//                            "Inconsistent keys at level " + level +
+//                                    " for seek at level " + curTrieLevel +
+//                                    "; upper bounds: " +
+//                                    Arrays.toString(curUBs) +
+//                                    "; current tuples: " +
+//                                    Arrays.toString(curTuples) +
+//                                    "; lb: " + lb +
+//                                    "; key1: " +
+//                                    intData.data[tupleOrder[curTuple]] +
+//                                    "; key2: " +
+//                                    intData.data[tupleOrder[lb]]);
+//                }
+//            }
+//        }
+//        // Return next tuple position or -1
+//        return keyAt(lb) >= seekKey ? lb : -1;
+
+        // Try exponential search
+        int pos = 1;
+        int stepSize = 2;
+        if (keyAt(ub) < seekKey) {
+            return -1;
+        }
+        while ((lb + pos) <= ub && keyAt(lb + pos) < seekKey) {
+            pos = pos * stepSize;
+        }
+        // the key belongs to [lb + pos/2 + 1, lb + pos]
+        int start = lb + pos / stepSize + 1;
+        int end = (lb + pos < ub) ? lb + pos : ub;
+        while (start < end) {
+            int middle = (start + end) / 2;
             if (keyAt(middle) >= seekKey) {
-                ub = middle;
+                end = middle;
             } else {
-                lb = middle + 1;
+                start = middle + 1;
             }
         }
-        // Debugging check
-        if (lb != ub) {
-            System.out.println("Error - lb " +
-                    lb + " and ub " + ub);
-        }
-        // Check that prior keys did not change
-        if (CheckConfig.CHECK_LFTJ_ITERS && keyAt(lb) >= seekKey) {
-            for (int level = 0; level < curTrieLevel; ++level) {
-                int curTuple = curTuples[curTrieLevel];
-                IntData intData = trieCols.get(level);
-                int cmp = intData.compareRows(
-                        tupleOrder[curTuple], tupleOrder[lb]);
-                if (cmp != 0) {
-                    throw new Exception(
-                            "Inconsistent keys at level " + level +
-                                    " for seek at level " + curTrieLevel +
-                                    "; upper bounds: " +
-                                    Arrays.toString(curUBs) +
-                                    "; current tuples: " +
-                                    Arrays.toString(curTuples) +
-                                    "; lb: " + lb +
-                                    "; key1: " +
-                                    intData.data[tupleOrder[curTuple]] +
-                                    "; key2: " +
-                                    intData.data[tupleOrder[lb]]);
-                }
-            }
-        }
-        // Return next tuple position or -1
-        return keyAt(lb) >= seekKey ? lb : -1;
+        return start;
     }
 	/*
 	public int seekInRange(int seekKey, int ub) {
@@ -413,6 +436,10 @@ public class LFTJiter {
      */
     public boolean atEnd() {
         return curTuples[curTrieLevel] == card;
+    }
+
+    public void backward() {
+        curTuples[curTrieLevel] = card - 1;
     }
 
     /**
