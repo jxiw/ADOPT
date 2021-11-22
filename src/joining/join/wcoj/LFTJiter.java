@@ -267,13 +267,14 @@ public class LFTJiter {
 
     public int maxValueAtLevel(int curTrieLevel) {
         IntData curCol = trieCols.get(curTrieLevel);
-        return curCol.data[tupleOrder[card - 1]];
+        int tupleIndex = curUBs[curTrieLevel];
+        return curCol.data[tupleIndex];
     }
 
-    public int minValueAtLevel(int curTrieLevel) {
-        IntData curCol = trieCols.get(curTrieLevel);
-        return curCol.data[tupleOrder[0]];
-    }
+//    public int minValueAtLevel(int curTrieLevel) {
+//        IntData curCol = trieCols.get(curTrieLevel);
+//        return curCol.data[tupleOrder[0]];
+//    }
 
     /**
      * Returns (actual) index of currently

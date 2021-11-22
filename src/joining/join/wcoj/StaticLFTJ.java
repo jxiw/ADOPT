@@ -348,18 +348,18 @@ public class StaticLFTJ extends MultiWayJoin {
         // end of join, get the progress of each iteration
         Map<LFTJiter, Integer> tableTrieLevel = new HashMap<>();
         List<List<Integer>> attributesValueEnd = new ArrayList<>();
-        List<List<Integer>> attributesValueLower = new ArrayList<>();
+//        List<List<Integer>> attributesValueLower = new ArrayList<>();
         List<List<Integer>> attributesValueUpper = new ArrayList<>();
         for (int attributeId = 0; attributeId < nrVars; attributeId++) {
             List<LFTJiter> curIters = itersByVar.get(attributeId);
             List<Integer> attributeValueEnd = new ArrayList<>();
             List<Integer> attributeValueUpper = new ArrayList<>();
-            List<Integer> attributeValueLower = new ArrayList<>();
+//            List<Integer> attributeValueLower = new ArrayList<>();
             for (int iterId = 0; iterId < curIters.size(); iterId++) {
                 LFTJiter curIter = curIters.get(iterId);
                 int trieLevel = tableTrieLevel.getOrDefault(curIter, 0);
                 attributeValueEnd.add(curIter.keyAtLevel(trieLevel));
-                attributeValueLower.add(curIter.minValueAtLevel(trieLevel));
+//                attributeValueLower.add(curIter.minValueAtLevel(trieLevel));
                 attributeValueUpper.add(curIter.maxValueAtLevel(trieLevel));
 //                System.out.println("attributeId, iterId:" + attributeId + "," + iterId);
 //                System.out.println("current start:" + attributesValueStart.get(attributeId).get(iterId));
@@ -368,13 +368,13 @@ public class StaticLFTJ extends MultiWayJoin {
                 tableTrieLevel.put(curIter, trieLevel + 1);
             }
             attributesValueEnd.add(attributeValueEnd);
-            attributesValueLower.add(attributeValueLower);
+//            attributesValueLower.add(attributeValueLower);
             attributesValueUpper.add(attributeValueUpper);
         }
-//        System.out.println("attributesValueStart:" + attributesValueStart);
-//        System.out.println("attributesValueEnd:" + attributesValueEnd);
+        System.out.println("attributesValueStart:" + attributesValueStart);
+        System.out.println("attributesValueEnd:" + attributesValueEnd);
 //        System.out.println("attributesValueLower:" + attributesValueLower);
-//        System.out.println("attributesValueUpper:" + attributesValueUpper);
+        System.out.println("attributesValueUpper:" + attributesValueUpper);
         // calculate reward based on the offset and delta tuples
 //        double scaledReward = 1;
 //        for (int i = 0; i < attributesValueDelta.get(0).size(); i++) {
@@ -410,10 +410,12 @@ public class StaticLFTJ extends MultiWayJoin {
             double minStart = Collections.min(attributesValueStart.get(i));
             double minEnd = Collections.min(attributesValueEnd.get(i));
             double upperBound = Collections.min(attributesValueUpper.get(i));
-            double lowerBound = Collections.min(attributesValueLower.get(i));
+//            double lowerBound = Collections.min(attributesValueLower.get(i));
             if (i > 0) {
-                scale *= (upperBound - lowerBound);
+                scale *= upperBound;
             }
+            System.out.println("progress:" + (minEnd - minStart));
+            System.out.println("scale:" + scale);
             scaledReward += (minEnd - minStart) / ((upperBound - minEnd + 1) * scale);
         }
         return scaledReward;
@@ -428,7 +430,7 @@ public class StaticLFTJ extends MultiWayJoin {
      */
     double resumeJoin(long budget, StateLFTJ state) throws Exception {
 
-        System.out.println("isAhead:" + state.isAhead);
+//        System.out.println("isAhead:" + state.isAhead);
         // Do we freshly resume after being suspended?
         boolean afterSuspension = (roundCtr > 0);
         boolean init = false;
@@ -469,6 +471,9 @@ public class StaticLFTJ extends MultiWayJoin {
                 for (LFTJiter curIter : curIters) {
                     curIter.open();
                     curIter.seek(prevKey);
+                    if (curIter.atEnd()) {
+                        curIter.backward();
+                    }
                 }
                 Collections.sort(curIters, new Comparator<LFTJiter>() {
                     @Override
@@ -530,7 +535,7 @@ public class StaticLFTJ extends MultiWayJoin {
         while (true) {
             // Did we finish processing?
             if (curVariableID < 0) {
-                System.out.println("end");
+//                System.out.println("end");
                 finished = true;
                 break;
             }
@@ -538,7 +543,7 @@ public class StaticLFTJ extends MultiWayJoin {
                     null : joinFrames.get(curVariableID);
             // Go directly to point of interrupt?
             if (afterSuspension) {
-                System.out.println("afterSuspension: afterSuspension");
+//                System.out.println("afterSuspension: afterSuspension");
                 afterSuspension = false;
             } else {
                 if (backtracked) {
@@ -567,7 +572,7 @@ public class StaticLFTJ extends MultiWayJoin {
                     joinFrame.nrCurIters = joinFrame.curIters.size();
 
                     if(init){
-                        System.out.println("init:");
+//                        System.out.println("init:");
                         init = false;
                     } else {
                         // Order iterators and check for early termination
@@ -580,7 +585,7 @@ public class StaticLFTJ extends MultiWayJoin {
                             continue;
                         }
                     }
-                    System.out.println("curVariableID:" + curVariableID);
+//                    System.out.println("curVariableID:" + curVariableID);
                     // Execute search procedure
                     joinFrame.p = 0;
                     joinFrame.maxIterPos = (joinFrame.nrCurIters + joinFrame.p - 1) % joinFrame.nrCurIters;
@@ -605,37 +610,41 @@ public class StaticLFTJ extends MultiWayJoin {
                 if (budget <= 0) {
                     // Save final state
                     state.lastIndex = curVariableID;
+                    Arrays.fill(state.tupleValues, 0);
                     for (int attrCtr = 0; attrCtr <= curVariableID; ++attrCtr) {
                         int currentKey = joinFrames.get(attrCtr).maxKey;
                         if (currentKey > 0) {
                             state.tupleValues[attributeOrder[attrCtr]] = currentKey;
                         }
+
+//                        JoinFrame currentFrame = joinFrames.get(attrCtr);
 //                        if (currentFrame.p >= 0) {
 //                            int currentKey = currentFrame.curIters.get(currentFrame.p).key();
 //                            if (currentKey > 0) {
 //                                state.tupleValues[attributeOrder[attrCtr]] = currentKey;
 //                            }
 //                        }
+
 //                        int currentKey = joinFrames.get(attrCtr).maxKey;
 //                        if (currentKey > 0) {
 //                            state.tupleValues[attributeOrder[attrCtr]] = currentKey;
 //                        }
                     }
-                    return rewardTuple(attributesIndexStart);
-//                    return rewardValue(attributesValuesStart);
+//                    return rewardTuple(attributesIndexStart);
+                    return rewardValue(attributesValuesStart);
                 }
                 // Get current key
                 LFTJiter minIter = joinFrame.curIters.get(joinFrame.p);
                 int minKey = minIter.key();
                 // Generate debugging output
 //                if (roundCtr < 10) {
-                    System.out.println("--- Current variable ID: " + curVariableID);
-                    System.out.println("p: " + joinFrame.p);
-                    System.out.println("minKey: " + minKey);
-                    System.out.println("maxKey: " + joinFrame.maxKey);
-                    for (LFTJiter iter : joinFrame.curIters) {
-                        System.out.println(iter.rid() + ":" + iter.key());
-                    }
+//                    System.out.println("--- Current variable ID: " + curVariableID);
+//                    System.out.println("p: " + joinFrame.p);
+//                    System.out.println("minKey: " + minKey);
+//                    System.out.println("maxKey: " + joinFrame.maxKey);
+//                    for (LFTJiter iter : joinFrame.curIters) {
+//                        System.out.println(iter.rid() + ":" + iter.key());
+//                    }
 //                }
                 // Did we find a match between iterators?
                 if (minKey == joinFrame.maxKey) {
@@ -661,14 +670,15 @@ public class StaticLFTJ extends MultiWayJoin {
         }
 
         state.lastIndex = curVariableID;
+        Arrays.fill(state.tupleValues, 0);
         for (int attrCtr = 0; attrCtr <= curVariableID; ++attrCtr) {
             int currentKey = joinFrames.get(attrCtr).maxKey;
             if (currentKey > 0) {
                 state.tupleValues[attributeOrder[attrCtr]] = currentKey;
             }
         }
-        return rewardTuple(attributesIndexStart);
-//        return rewardValue(attributesValuesStart);
+//        return rewardTuple(attributesIndexStart);
+        return rewardValue(attributesValuesStart);
     }
 
     @Override
