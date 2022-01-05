@@ -2,6 +2,7 @@ package joining.join.wcoj;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 
 import joining.join.DynamicMWJoin;
 import joining.plan.AttributeOrder;
@@ -88,6 +89,8 @@ public class DynamicLFTJ extends DynamicMWJoin {
 
     public boolean isFinish;
 
+    AttributeOrder previousOrder;
+
     public DynamicLFTJ(QueryInfo query,
                        Context executionContext) throws Exception {
         super(query, executionContext);
@@ -126,13 +129,17 @@ public class DynamicLFTJ extends DynamicMWJoin {
 //        System.out.println("lookup Millis:" + lookUpMillis);
 //        System.out.println("wcj Init Millis:" + wcjInitMillis);
 //        orderToLFTJ.putIfAbsent(attributeOrder, pickedOp);
+
+        System.out.println("lftj order:" + Arrays.stream(order).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList()));
         System.out.println("lftj order:" + Arrays.toString(order));
         System.out.println("start state:" + state);
-        double reward = pickedOp.resumeJoin(500, state);
+        state.isReuse = previousOrder != null && previousOrder.equals(attributeOrder);
+        double reward = pickedOp.resumeJoin(100, state);
         tracker.updateProgress(attributeOrder, state);
 //        System.out.println("results:" + pickedOp.lastNrResults);
         System.out.println("end state:" + state);
         System.out.println("lftj reward:" + reward);
+        previousOrder = attributeOrder;
         isFinish = pickedOp.isFinished();
         return reward;
     }

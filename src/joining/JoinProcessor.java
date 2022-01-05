@@ -69,6 +69,7 @@ public class JoinProcessor {
 //		LFTjoin joinOp = new LFTjoin(query, context);
 
         // distinct if enable
+        // decomposition
         log("Creating unique join keys ...");
         query.aliasToTable.keySet().parallelStream().forEach(alias -> {
             try {
@@ -87,14 +88,15 @@ public class JoinProcessor {
             }
         });
 
+        // join phrase
         long joinStartMillis = System.currentTimeMillis();
         DynamicLFTJ joinOp = new DynamicLFTJ(query, context);
         // Initialize UCT join order search tree
         UctNodeLFTJ root = new UctNodeLFTJ(0, query, true, joinOp);
 //        UctNode root = new UctNode(0, query, true, joinOp);
         // Initialize counters and variables
-//		int[] joinOrder = new int[query.nrJoined];
-        int[] joinOrder = new int[query.nrAttribute];
+//		int[] attributeOrder = new int[query.nrJoined];
+        int[] attributeOrder = new int[query.nrAttribute];
         long roundCtr = 0;
         // Initialize exploration weight
         switch (JoinConfig.EXPLORATION_POLICY) {
@@ -111,7 +113,7 @@ public class JoinProcessor {
                 for (int i = 0; i < nrSamples; ++i) {
                     ++roundCtr;
                     rewardSample[i] = root.sample(
-                            roundCtr, joinOrder,
+                            roundCtr, attributeOrder,
                             SelectionPolicy.RANDOM);
                 }
                 Arrays.sort(rewardSample);
@@ -133,7 +135,7 @@ public class JoinProcessor {
         double maxReward = Double.NEGATIVE_INFINITY;
         while (!joinOp.isFinished()) {
             ++roundCtr;
-            double reward = root.sample(roundCtr, joinOrder, policy);
+            double reward = root.sample(roundCtr, attributeOrder, policy);
             // Count reward except for final sample
             if (!joinOp.isFinished()) {
                 accReward += reward;
@@ -163,7 +165,7 @@ public class JoinProcessor {
                 nextForget *= 10;
             }
             // Generate logging entries if activated
-            log("Selected join order " + Arrays.toString(joinOrder));
+            log("Selected join order " + Arrays.toString(attributeOrder));
             log("Obtained reward:\t" + reward);
             //log("Table offsets:\t" + Arrays.toString(joinOp.tracker.tableOffset));
             log("Table cardinalities:\t" + Arrays.toString(joinOp.cardinalities));
@@ -188,7 +190,7 @@ public class JoinProcessor {
         JoinStats.maxReward = maxReward;
         JoinStats.totalWork = 0;
         for (int tableCtr = 0; tableCtr < query.nrJoined; ++tableCtr) {
-            if (tableCtr == joinOrder[0]) {
+            if (tableCtr == attributeOrder[0]) {
                 JoinStats.totalWork += 1;
             } else {
 				/*

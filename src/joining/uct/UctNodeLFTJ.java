@@ -17,7 +17,7 @@ public class UctNodeLFTJ {
     /**
      * Used for randomized selection policy.
      */
-    final Random random = new Random();
+    final Random random = new Random(42);
     /**
      * The query for which we are optimizing.
      */

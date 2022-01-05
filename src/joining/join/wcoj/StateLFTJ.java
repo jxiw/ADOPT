@@ -16,6 +16,8 @@ public class StateLFTJ {
 
     public boolean isAhead;
 
+    public boolean isReuse;
+
     /**
      * Initializes tuple indices to appropriate size.
      *
@@ -26,6 +28,7 @@ public class StateLFTJ {
         Arrays.fill(tupleValues, 0);
         lastIndex = -1;
         isAhead = true;
+        isReuse = false;
     }
 
     /**
