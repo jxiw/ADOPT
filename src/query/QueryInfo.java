@@ -33,7 +33,6 @@ import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
-import net.sf.jsqlparser.util.cnfexpression.CNFConverter;
 import query.from.FromUtil;
 import query.select.SelectUtil;
 

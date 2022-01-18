@@ -102,4 +102,5 @@ public abstract class ColumnData implements Serializable {
 	public int getCardinality() {
 		return cardinality;
 	}
+
 }
