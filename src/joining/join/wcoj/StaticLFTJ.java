@@ -10,14 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import buffer.BufferManager;
 import config.CheckConfig;
 import data.ColumnData;
 import data.IntData;
 import joining.join.MultiWayJoin;
-import joining.plan.AttributeOrder;
-import joining.plan.AttributeValue;
 import joining.result.JoinResult;
 import preprocessing.Context;
 import query.ColumnRef;
@@ -101,6 +101,8 @@ public class StaticLFTJ extends MultiWayJoin {
 
     HypercubeManager manager;
 
+    List<Pair<Integer, Integer>> attributeValueBound;
+
     /**
      * Initialize join for given query.
      *
@@ -109,7 +111,7 @@ public class StaticLFTJ extends MultiWayJoin {
      * @throws Exception
      */
     public StaticLFTJ(QueryInfo query, Context executionContext, int[] order,
-                      JoinResult joinResult, List<Pair<Integer, Integer>> joinValues, HypercubeManager manager) throws Exception {
+                      JoinResult joinResult, List<Pair<Integer, Integer>> attributeValueBound, HypercubeManager manager) throws Exception {
         // Initialize query and context variables
         super(query, executionContext, joinResult);
         // Choose variable order arbitrarily
@@ -222,6 +224,7 @@ public class StaticLFTJ extends MultiWayJoin {
         }
 
         this.manager = manager;
+        this.attributeValueBound = Arrays.stream(order).mapToObj(attributeValueBound::get).collect(Collectors.toList());
     }
 
     /**
@@ -317,13 +320,6 @@ public class StaticLFTJ extends MultiWayJoin {
                                 equiPair.toString());
                 return false;
             }
-			/*
-			else {
-				System.out.println(
-						"Equality satisfied: " +
-						equiPair.toString());
-			}
-			*/
         }
         // No inconsistencies were found - passed check
         return true;
@@ -344,235 +340,55 @@ public class StaticLFTJ extends MultiWayJoin {
         backtracked = true;
     }
 
-    double rewardTuple(List<List<Integer>> attributesIndexStart) {
-        // end of join, get the progress of each iteration
-        Map<LFTJiter, Integer> tableTrieLevel = new HashMap<>();
-        List<List<Integer>> attributesIndexEnd = new ArrayList<>();
-//        List<List<Integer>> attributesIndexOffset = new ArrayList<>();
-        List<List<Integer>> attributesCardinality = new ArrayList<>();
-        for (int attributeId = 0; attributeId < nrVars; attributeId++) {
-            List<LFTJiter> curIters = itersByVar.get(attributeId);
-            List<Integer> attributeIndexEnd = new ArrayList<>();
-//            List<Integer> attributeIndexOffset = new ArrayList<>();
-            List<Integer> attributeCardinality = new ArrayList<>();
-            for (int iterId = 0; iterId < curIters.size(); iterId++) {
-                LFTJiter curIter = curIters.get(iterId);
-                int trieLevel = tableTrieLevel.getOrDefault(curIter, 0);
-                attributeIndexEnd.add(curIter.curTuples[trieLevel]);
-//                attributeIndexOffset.add(curIter.card - curIter.curTuples[trieLevel]);
-                attributeCardinality.add(curIter.card);
-                tableTrieLevel.put(curIter, trieLevel + 1);
-            }
-            attributesIndexEnd.add(attributeIndexEnd);
-//            attributesIndexOffset.add(attributeIndexOffset);
-            attributesCardinality.add(attributeCardinality);
-        }
-//        System.out.println("attributesIndexStart:" + attributesIndexStart);
-//        System.out.println("attributesIndexEnd:" + attributesIndexEnd);
-//        System.out.println("attributesCardinality:" + attributesCardinality);
-        // calculate reward based on the offset and delta tuples
-//        double scaledReward = 1;
-//        for (int i = 0; i < attributesCardinality.get(0).size(); i++) {
-//            double deltaReward = ((double) (attributesIndexEnd.get(0).get(i)) - attributesIndexStart.get(0).get(i)) / ((double) (attributesCardinality.get(0).get(i)) - attributesIndexEnd.get(0).get(i));
-//            scaledReward = Double.min(deltaReward, scaledReward);
-//        }
-//        return scaledReward;
-
-        double scaledReward = 0;
-        double scale = 1;
-        for (int i = 0; i < attributesCardinality.size(); i++) {
-            int nrAttribute = attributesCardinality.get(i).size();
-            List<Double> deltaRewards = new ArrayList<>();
-            double totalReward = 0;
-            for (int j = 0; j < nrAttribute; j++) {
-                double deltaReward = ((double) (attributesIndexEnd.get(i).get(j)) - attributesIndexStart.get(i).get(j)) / ((double) (attributesCardinality.get(i).get(j)) - attributesIndexEnd.get(i).get(j) + 1);
-                deltaRewards.add(deltaReward);
-                totalReward += deltaReward;
-            }
-            double reward = Collections.min(deltaRewards);
-            if (i > 0) {
-                scale *= attributesCardinality.get(i).get(deltaRewards.indexOf(reward));
-            }
-            scaledReward += totalReward / scale;
-        }
-        scaledReward = (scaledReward > 0) ? scaledReward : 0;
-        return scaledReward;
-    }
-
-    double rewardValue(List<List<Integer>> attributesValueStart) {
-        // end of join, get the progress of each iteration
-        Map<LFTJiter, Integer> tableTrieLevel = new HashMap<>();
-        List<List<Integer>> attributesValueEnd = new ArrayList<>();
-//        List<List<Integer>> attributesValueLower = new ArrayList<>();
-        List<List<Integer>> attributesValueUpper = new ArrayList<>();
-        for (int attributeId = 0; attributeId < nrVars; attributeId++) {
-            List<LFTJiter> curIters = itersByVar.get(attributeId);
-            List<Integer> attributeValueEnd = new ArrayList<>();
-            List<Integer> attributeValueUpper = new ArrayList<>();
-//            List<Integer> attributeValueLower = new ArrayList<>();
-            for (int iterId = 0; iterId < curIters.size(); iterId++) {
-                LFTJiter curIter = curIters.get(iterId);
-                int trieLevel = tableTrieLevel.getOrDefault(curIter, 0);
-                attributeValueEnd.add(curIter.keyAtLevel(trieLevel));
-//                attributeValueLower.add(curIter.minValueAtLevel(trieLevel));
-                attributeValueUpper.add(curIter.maxValueAtLevel(trieLevel));
-//                System.out.println("attributeId, iterId:" + attributeId + "," + iterId);
-//                System.out.println("current start:" + attributesValueStart.get(attributeId).get(iterId));
-//                System.out.println("current current:" + curIter.keyAtLevel(trieLevel));
-//                System.out.println("max value:" + curIter.maxValueAtLevel(trieLevel));
-                tableTrieLevel.put(curIter, trieLevel + 1);
-            }
-            attributesValueEnd.add(attributeValueEnd);
-//            attributesValueLower.add(attributeValueLower);
-            attributesValueUpper.add(attributeValueUpper);
-        }
-//        System.out.println("attributesValueStart:" + attributesValueStart);
-//        System.out.println("attributesValueEnd:" + attributesValueEnd);
-//        System.out.println("attributesValueLower:" + attributesValueLower);
-//        System.out.println("attributesValueUpper:" + attributesValueUpper);
-        // calculate reward based on the offset and delta tuples
-//        double scaledReward = 1;
-//        for (int i = 0; i < attributesValueDelta.get(0).size(); i++) {
-//            System.out.println("attributesValueOffset.get(0).get(i)" + attributesValueOffset.get(0).get(i));
-//            double deltaReward = ((double) (attributesValueDelta.get(0).get(i))) / ( attributesValueOffset.get(0).get(i) + 1);
-//            scaledReward *= deltaReward;
-//        }
-//        return scaledReward;
-
-//        double scaledReward = Double.MAX_VALUE;
-//        for (int i = 0; i < attributesValueDelta.get(0).size(); i++) {
-//            System.out.println("attributesValueOffset.get(0).get(i)" + attributesValueOffset.get(0).get(i));
-//            double deltaReward = ((double) (attributesValueDelta.get(0).get(i))) / ( attributesValueOffset.get(0).get(i) + 1);
-//            scaledReward = Double.min(deltaReward, scaledReward);
-//        }
-
-//        double scaledReward = 1;
-//        List<Integer> curProgress = new ArrayList<>();
-//        List<Integer> maxProgress = new ArrayList<>();
-//        for (int i = 0; i < 1; i++) {
-//            double minStart = Collections.min(attributesValueStart.get(i));
-//            double minEnd = Collections.min(attributesValueEnd.get(i));
-//            double upperBound = Collections.min(attributesValueUpper.get(i));
-//            scaledReward = (minEnd - minStart) / (upperBound - minEnd + 1);
-//        }
-//        return scaledReward;
-
-        double scaledReward = 0;
-//        List<Integer> curProgress = new ArrayList<>();
-//        List<Integer> maxProgress = new ArrayList<>();
-        double scale = 1;
-        for (int i = 0; i < attributesValueStart.size(); i++) {
-            double minStart = Collections.min(attributesValueStart.get(i));
-            double minEnd = Collections.min(attributesValueEnd.get(i));
-            double upperBound = Collections.min(attributesValueUpper.get(i));
-//            double lowerBound = Collections.min(attributesValueLower.get(i));
-            if (i > 0) {
-                scale *= upperBound;
-            }
-//            System.out.println("progress:" + (minEnd - minStart));
-//            System.out.println("scale:" + scale);
-            if (upperBound - minEnd + 1 != 0) {
-                scaledReward += (minEnd - minStart) / ((upperBound - minEnd + 1) * scale);
-            }
-        }
-        scaledReward = (scaledReward > 0) ? scaledReward : 0;
-        return scaledReward;
-
-    }
-
     /**
      * Resumes join operation for a fixed number of steps.
      *
      * @param budget how many iterations are allowed
      * @throws Exception
      */
-    double resumeJoin(long budget, StateLFTJ state) throws Exception {
+    double resumeJoin(long budget) throws Exception {
 
-        // Do we freshly resume after being suspended?
-        boolean afterSuspension = (roundCtr > 0);
-        boolean init = false;
+        Hypercube selectCube = manager.allocateHypercube();
+        // change it with current order, exploreDomain is the domain for current order
+        List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
+        // set the start position of LFTJ
 
-        afterSuspension &= (state.isAhead || state.isReuse);
+        // step one: reset the iterator
+        for (LFTJiter curIters : idToIter) {
+            curIters.reset();
+        }
 
-        // Initialize state and flags to prepare budgeted execution
-        if (state.lastIndex >= 0 && !afterSuspension) {
-            // if we share progress from another order
-            // init the max key of join
-            curVariableID = state.lastIndex;
-
-            // move the LFTJiter to corresponding place
-            for (LFTJiter curIters : idToIter) {
-                curIters.reset();
-            }
-
-            init = true;
-            for (int i = 0; i <= curVariableID; i++) {
-                int prevKey = state.tupleValues[attributeOrder[i]];
+        curVariableID = 0;
+        // step two: move iterator to start of unexplored part
+        for (int i = 0; i < attributeOrder.length; i++) {
+            int startKey = exploreDomain.get(i).getFirst();
+            int lowerBound = attributeValueBound.get(i).getFirst();
+            int upperBound = attributeValueBound.get(i).getSecond();
+            if (startKey > lowerBound) {
                 List<LFTJiter> curIters = itersByVar.get(i);
                 for (LFTJiter curIter : curIters) {
                     curIter.open();
-                    curIter.seek(prevKey);
+                    curIter.seek(startKey);
                 }
-
-                boolean isEnd = false;
-                for (LFTJiter curIter : curIters) {
-                    if (curIter.atEnd()) {
-                        // we cache the value of previous
-                        // Go one level up in each trie
-                        for (LFTJiter iter : curIters) {
-                            iter.up();
-                        }
-                        backtrack();
-                        isEnd = true;
-                        break;
+                // sort the LFTJ iterator
+                Collections.sort(curIters, new Comparator<LFTJiter>() {
+                    @Override
+                    public int compare(LFTJiter o1, LFTJiter o2) {
+                        return Integer.compare(o1.key(), o2.key());
                     }
-                }
+                });
+                // init join frames
+                joinFrames.get(i).p = 0;
+                joinFrames.get(i).curIters = curIters;
+                joinFrames.get(i).nrCurIters = curIters.size();
+                joinFrames.get(i).maxKey = curIters.get(curIters.size() - 1).key();
+                joinFrames.get(i).maxIterPos = curIters.size() - 1;
 
-                if (!isEnd) {
-
-                    Collections.sort(curIters, new Comparator<LFTJiter>() {
-                        @Override
-                        public int compare(LFTJiter o1, LFTJiter o2) {
-                            return Integer.compare(o1.key(), o2.key());
-                        }
-                    });
-
-                    joinFrames.get(i).p = 0;
-                    joinFrames.get(i).curIters = curIters;
-                    joinFrames.get(i).nrCurIters = curIters.size();
-                    joinFrames.get(i).maxKey = curIters.get(curIters.size() - 1).key();
-                    joinFrames.get(i).maxIterPos = curIters.size() - 1;
-
-                } else {
-                    init = false;
-                }
+                curVariableID++;
             }
-
-
-            if (curVariableID == -1) {
-                finished = true;
-                return 0;
-            }
-
         }
 
-        // start position of each table iterate
-        List<List<Integer>> attributesIndexStart = new ArrayList<>();
-        List<List<Integer>> attributesValuesStart = new ArrayList<>();
-        Map<LFTJiter, Integer> tableTrieLevel = new HashMap<>();
-        for (List<LFTJiter> curIters : itersByVar) {
-            List<Integer> attributeIndexStart = new ArrayList<>();
-            List<Integer> attributeValueStart = new ArrayList<>();
-            for (LFTJiter curIter : curIters) {
-                int trieLevel = tableTrieLevel.getOrDefault(curIter, 0);
-                attributeIndexStart.add(curIter.curTuples[trieLevel]);
-                attributeValueStart.add(curIter.keyAtLevel(trieLevel));
-                tableTrieLevel.put(curIter, trieLevel + 1);
-            }
-            attributesIndexStart.add(attributeIndexStart);
-            attributesValuesStart.add(attributeValueStart);
-        }
-
+        // step three, start the join
         // Initialize reward-related statistics
         lastNrResults = 0;
 
@@ -587,99 +403,94 @@ public class StaticLFTJ extends MultiWayJoin {
                 break;
             }
 
+            // current position
             JoinFrame joinFrame = curVariableID >= nrVars ?
                     null : joinFrames.get(curVariableID);
+
             // Go directly to point of interrupt?
-            if (afterSuspension) {
-                afterSuspension = false;
-            } else {
-                if (backtracked) {
-
-                    // if it is backtracked
-                    backtracked = false;
-                    LFTJiter minIter = joinFrame.curIters.get(joinFrame.p);
-                    minIter.seek(joinFrame.maxKey + 1);
-                    if (minIter.atEnd()) {
-                        //cache value here
-
-                        //first get all iterator before this iteration position
-                        for (int i = 0; i < curVariableID; i++) {
-                            List<LFTJiter> prevIters = itersByVar.get(i);
-
-
-                        }
-
-                        // Go one level up in each trie
-                        for (LFTJiter iter : joinFrame.curIters) {
-                            iter.up();
-                        }
-                        backtrack();
-                        continue;
+            if (backtracked) {
+                // if it is backtracked
+                backtracked = false;
+                LFTJiter minIter = joinFrame.curIters.get(joinFrame.p);
+                minIter.seek(joinFrame.maxKey + 1);
+                // if iterator reaches to the final position
+                if (minIter.atEnd()) {
+                    // Go one level up in each trie
+                    for (LFTJiter iter : joinFrame.curIters) {
+                        iter.up();
                     }
-                    joinFrame.maxKey = minIter.key();
-                    joinFrame.p = (joinFrame.p + 1) % joinFrame.nrCurIters;
-
-                } else {
-                    // Have we completed a result tuple?
-                    if (curVariableID >= nrVars) {
-                        addResultTuple();
-                        backtrack();
-                        continue;
-                    }
-                    // Collect relevant iterators
-                    joinFrame.curIters = itersByVar.get(curVariableID);
-                    joinFrame.nrCurIters = joinFrame.curIters.size();
-
-                    if (init) {
-                        init = false;
-                    } else {
-                        // Order iterators and check for early termination
-                        if (!leapfrogInit(joinFrame.curIters)) {
-                            // Go one level up in each trie
-                            for (LFTJiter iter : joinFrame.curIters) {
-                                iter.up();
-                            }
-                            backtrack();
-                            continue;
-                        }
-                    }
-
-                    joinFrame.p = 0;
-                    joinFrame.maxIterPos = (joinFrame.nrCurIters + joinFrame.p - 1) % joinFrame.nrCurIters;
-                    joinFrame.maxKey = joinFrame.curIters.get(joinFrame.maxIterPos).key();
+                    backtrack();
+                    continue;
                 }
+                // does not reach to the end position
+                joinFrame.maxKey = minIter.key();
+                joinFrame.p = (joinFrame.p + 1) % joinFrame.nrCurIters;
+
+            } else {
+                // go to next level
+                // Have we completed a result tuple?
+                if (curVariableID >= nrVars) {
+                    addResultTuple();
+                    backtrack();
+                    continue;
+                }
+
+                // Collect relevant iterators
+                joinFrame.curIters = itersByVar.get(curVariableID);
+                joinFrame.nrCurIters = joinFrame.curIters.size();
+
+                // Order iterators and check for early termination
+                if (!leapfrogInit(joinFrame.curIters)) {
+                    // Go one level up in each trie
+                    for (LFTJiter iter : joinFrame.curIters) {
+                        iter.up();
+                    }
+                    backtrack();
+                    continue;
+                }
+
+                // Execute search procedure
+                joinFrame.p = 0;
+                joinFrame.maxIterPos = (joinFrame.nrCurIters+joinFrame.p-1) % joinFrame.nrCurIters;
+                joinFrame.maxKey = joinFrame.curIters.get(joinFrame.maxIterPos).key();
             }
 
-
+            // execute join
             while (true) {
                 // Count current round
                 --budget;
                 JoinStats.nrIterations++;
+                // Check for timeout and not in the last end
+                if (budget <= 0) {
+                    // timeout, save final state
+                    // hypercube
+                    List<Pair<Integer, Integer>> unfinishDomain = new ArrayList<>();
+                    for (int i = 0; i <= curVariableID; i++) {
+                        int unfinishStart = joinFrames.get(i).maxKey;
+                        int unfinishEnd = attributeValueBound.get(i).getSecond();
+                        unfinishDomain.add(new Pair<>(unfinishStart, unfinishEnd));
+                    }
+                    for (int i = curVariableID + 1; i < nrVars; i++) {
+                        unfinishDomain.add(new Pair<>(attributeValueBound.get(i).getFirst(), attributeValueBound.get(i).getSecond()));
+                    }
+                    // change the order to origin order
+                    List<Pair<Integer, Integer>> finalUnfinishDomain = unfinishDomain;
+                    unfinishDomain = IntStream.range(0, nrVars).mapToObj(i -> finalUnfinishDomain.get(attributeOrder[i])).collect(Collectors.toList());
+                    Hypercube unfinishCube = new Hypercube(unfinishDomain);
+                    manager.updateInterval(selectCube, unfinishCube);
+                    return 1 - unfinishCube.getVolume() / (double) selectCube.getVolume();
+                }
+
                 // Get current key
                 LFTJiter minIter = joinFrame.curIters.get(joinFrame.p);
                 int minKey = minIter.key();
-                // Check for timeout and not in the last end
-                if (budget <= 0 && !minIter.atEnd()) {
-                    // Save final state
-                    state.lastIndex = curVariableID;
-                    Arrays.fill(state.tupleValues, 0);
-                    for (int attrCtr = 0; attrCtr <= curVariableID; ++attrCtr) {
-                        int currentKey = joinFrames.get(attrCtr).maxKey;
-                        if (currentKey > 0) {
-                            state.tupleValues[attributeOrder[attrCtr]] = currentKey;
-                        }
-                        state.tupleValues[attributeOrder[attrCtr]] = currentKey;
-                    }
-                    return rewardValue(attributesValuesStart);
-                    //return rewardTuple(attributesIndexStart);
-                }
 
                 // Did we find a match between iterators?
                 if (minKey == joinFrame.maxKey) {
                     // test whether key are cached or not
                     advance();
+                    // go to next level
                     break;
-
                 } else {
                     // min key not equal max key
                     minIter.seek(joinFrame.maxKey);
@@ -697,18 +508,9 @@ public class StaticLFTJ extends MultiWayJoin {
                     }
                 }
             }
-        }
 
-        state.lastIndex = curVariableID;
-        Arrays.fill(state.tupleValues, 0);
-        for (int attrCtr = 0; attrCtr <= curVariableID; ++attrCtr) {
-            int currentKey = joinFrames.get(attrCtr).maxKey;
-            if (currentKey > 0) {
-                state.tupleValues[attributeOrder[attrCtr]] = currentKey;
-            }
         }
-//        return rewardTuple(attributesIndexStart);
-        return rewardValue(attributesValuesStart);
+        return 0;
     }
 
     @Override

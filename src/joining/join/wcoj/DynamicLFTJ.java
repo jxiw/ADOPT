@@ -16,13 +16,6 @@ import query.QueryInfo;
 import util.ArrayUtil;
 import util.Pair;
 
-/**
- * Implements variant of the Leapfrog Trie Join
- * (see paper "Leapfrog Triejoin: a worst-case
- * optimal join algorithm" by T. Veldhuizen).
- *
- * @author immanueltrummer
- */
 public class DynamicLFTJ extends DynamicMWJoin {
 
     /**
@@ -66,14 +59,16 @@ public class DynamicLFTJ extends DynamicMWJoin {
         this.tracker = new ProgressTrackerLFTJ(query.nrAttribute);
         // Init the hypercube, collect value range of each column
         for (Set<ColumnRef> joinAttributes: query.equiJoinAttribute) {
-            int lb = Integer.MAX_VALUE;
-            int ub = Integer.MIN_VALUE;
+            // lb is the max value among all iterators lower bound
+            // ub is the min value among all iterators upper bound
+            int lb = Integer.MIN_VALUE;
+            int ub = Integer.MAX_VALUE;
             for (ColumnRef attribute: joinAttributes) {
                 ColumnData columnData = BufferManager.colToData.get(attribute);
                 if (columnData instanceof IntData) {
                     IntData columnIntData = (IntData) columnData;
-                    lb = Math.min(lb, ArrayUtil.getLowerBound(columnIntData.data));
-                    ub = Math.max(ub, ArrayUtil.getUpperBound(columnIntData.data));
+                    lb = Math.max(lb, ArrayUtil.getLowerBound(columnIntData.data));
+                    ub = Math.min(ub, ArrayUtil.getUpperBound(columnIntData.data));
                     System.out.println("lb:" + lb + ", ub" + ub);
                 }
             }
@@ -88,7 +83,6 @@ public class DynamicLFTJ extends DynamicMWJoin {
     public double execute(int[] order) throws Exception {
         AttributeOrder attributeOrder = new AttributeOrder(order);
         // continue from order
-        StateLFTJ state = tracker.continueFrom(attributeOrder);
         StaticLFTJ pickedOp;
         if (orderToLFTJ.containsKey(attributeOrder)){
             pickedOp = orderToLFTJ.get(attributeOrder);
@@ -99,14 +93,7 @@ public class DynamicLFTJ extends DynamicMWJoin {
             orderToLFTJ.put(attributeOrder, pickedOp);
         }
 
-//        System.out.println("lftj order:" + Arrays.stream(order).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList()));
-//        System.out.println("lftj order:" + Arrays.toString(order));
-//        System.out.println("start state:" + state);
-        state.isReuse = previousOrder != null && previousOrder.equals(attributeOrder);
-        double reward = pickedOp.resumeJoin(100, state);
-        tracker.updateProgress(attributeOrder, state);
-//        System.out.println("results:" + pickedOp.lastNrResults);
-        System.out.println("end state:" + state);
+        double reward = pickedOp.resumeJoin(100);
         System.out.println("lftj reward:" + reward);
         previousOrder = attributeOrder;
         isFinish = pickedOp.isFinished();

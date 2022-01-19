@@ -3,7 +3,9 @@ package joining.join.wcoj;
 import util.Pair;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Hypercube {
 
@@ -16,6 +18,18 @@ public class Hypercube {
         this.dim = intervals.size();
     }
 
+    public int getVolume() {
+        int volume = 1;
+        for (Pair<Integer, Integer> interval: intervals) {
+            volume *= (interval.getSecond() - interval.getFirst());
+        }
+        return volume;
+    }
+
+    public List<Pair<Integer, Integer>> unfoldCube(int[] order) {
+        return Arrays.stream(order).mapToObj(intervals::get).collect(Collectors.toList());
+    }
+
     public void addDimension(int start, int end) {
         intervals.add(new Pair<Integer, Integer>(start, end));
     }
@@ -26,10 +40,10 @@ public class Hypercube {
             // interval on dimension i
             Pair<Integer, Integer> intervalOnI = intervals.get(i);
             Pair<Integer, Integer> subIntervalOnI = subtractCube.intervals.get(i);
-            int intervalOnIStart = intervalOnI.getKey();
-            int intervalOnIEnd = intervalOnI.getValue();
-            int subIntervalOnIStart = subIntervalOnI.getKey();
-            int subIntervalOnIEnd = subIntervalOnI.getValue();
+            int intervalOnIStart = intervalOnI.getFirst();
+            int intervalOnIEnd = intervalOnI.getSecond();
+            int subIntervalOnIStart = subIntervalOnI.getFirst();
+            int subIntervalOnIEnd = subIntervalOnI.getSecond();
             if (intervalOnIStart < subIntervalOnIStart && intervalOnIEnd > subIntervalOnIEnd) {
                 // e.g., 1, 7; 3, 6
                 Pair<Integer, Integer> newIntervalOnI1 = new Pair<>(intervalOnIStart, subIntervalOnIStart - 1);
