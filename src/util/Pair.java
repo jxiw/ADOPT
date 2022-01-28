@@ -36,9 +36,6 @@ public class Pair<K, V> implements Serializable {
 
     @Override
     public String toString() {
-        return "Pair{" +
-                "first=" + first +
-                ", second=" + second +
-                '}';
+        return String.format("[%s,%s]", first, second);
     }
 }

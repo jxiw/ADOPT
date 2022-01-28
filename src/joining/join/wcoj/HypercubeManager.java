@@ -21,6 +21,9 @@ public class HypercubeManager {
     }
 
     public Hypercube allocateHypercube() {
+        if (hypercubes.size() == 0) {
+            return null;
+        }
         // sample hypercube according to its volume
         Hypercube selectCube = hypercubes.get(0);
         List<Integer> volumes = hypercubes.stream().map(Hypercube::getVolume).collect(Collectors.toList());

@@ -205,15 +205,15 @@ public class StaticLFTJ extends MultiWayJoin {
                     Set<Integer> globalKey = dependency.stream().map(key -> order[key]).collect(Collectors.toSet());
                     Set<Integer> globalValue = attributeLater.stream().map(key -> order[key]).collect(Collectors.toSet());
 
-//                    System.out.println("key+++++");
-//                    for (int k : globalKey) {
-//                        System.out.println(query.equiJoinAttribute.get(k));
-//                    }
-//                    System.out.println("value+++++");
-//                    for (int v : globalValue) {
-//                        System.out.println(query.equiJoinAttribute.get(v));
-//                    }
-//                    System.out.println("+++++");
+                    System.out.println("key+++++");
+                    for (int k : globalKey) {
+                        System.out.println(query.equiJoinAttribute.get(k));
+                    }
+                    System.out.println("value+++++");
+                    for (int v : globalValue) {
+                        System.out.println(query.equiJoinAttribute.get(v));
+                    }
+                    System.out.println("+++++");
 //                    cacheAttributes.put(globalKey, attributeLater);
 
                 }
@@ -347,168 +347,187 @@ public class StaticLFTJ extends MultiWayJoin {
      * @throws Exception
      */
     double resumeJoin(long budget) throws Exception {
+        // check available budget
+        while (budget > 0) {
+            // if we have enough budget
 
-        Hypercube selectCube = manager.allocateHypercube();
-        // change it with current order, exploreDomain is the domain for current order
-        List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
-        // set the start position of LFTJ
-
-        // step one: reset the iterator
-        for (LFTJiter curIters : idToIter) {
-            curIters.reset();
-        }
-
-        curVariableID = 0;
-        // step two: move iterator to start of unexplored part
-        for (int i = 0; i < attributeOrder.length; i++) {
-            int startKey = exploreDomain.get(i).getFirst();
-            int lowerBound = attributeValueBound.get(i).getFirst();
-            int upperBound = attributeValueBound.get(i).getSecond();
-            if (startKey > lowerBound) {
-                List<LFTJiter> curIters = itersByVar.get(i);
-                for (LFTJiter curIter : curIters) {
-                    curIter.open();
-                    curIter.seek(startKey);
-                }
-                // sort the LFTJ iterator
-                Collections.sort(curIters, new Comparator<LFTJiter>() {
-                    @Override
-                    public int compare(LFTJiter o1, LFTJiter o2) {
-                        return Integer.compare(o1.key(), o2.key());
-                    }
-                });
-                // init join frames
-                joinFrames.get(i).p = 0;
-                joinFrames.get(i).curIters = curIters;
-                joinFrames.get(i).nrCurIters = curIters.size();
-                joinFrames.get(i).maxKey = curIters.get(curIters.size() - 1).key();
-                joinFrames.get(i).maxIterPos = curIters.size() - 1;
-
-                curVariableID++;
-            }
-        }
-
-        // step three, start the join
-        // Initialize reward-related statistics
-        lastNrResults = 0;
-
-        // We had at least one iteration
-        roundCtr += 1;
-        // Until we finish processing (break)
-        while (true) {
-
-            // Did we finish processing?
-            if (curVariableID < 0) {
+            Hypercube selectCube = manager.allocateHypercube();
+            if (selectCube == null) {
                 finished = true;
-                break;
+                return 0;
+            }
+            // change it with current order, exploreDomain is the domain for current order
+            List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
+
+            System.out.println("select hypercube:" + selectCube);
+            System.out.println("select explore domain:" + exploreDomain);
+            System.out.println("attribute value bound:" + attributeValueBound);
+            // set the start position of LFTJ
+
+            // step one: reset the iterator
+            for (LFTJiter curIters : idToIter) {
+                curIters.reset();
             }
 
-            // current position
-            JoinFrame joinFrame = curVariableID >= nrVars ?
-                    null : joinFrames.get(curVariableID);
-
-            // Go directly to point of interrupt?
-            if (backtracked) {
-                // if it is backtracked
-                backtracked = false;
-                LFTJiter minIter = joinFrame.curIters.get(joinFrame.p);
-                minIter.seek(joinFrame.maxKey + 1);
-                // if iterator reaches to the final position
-                if (minIter.atEnd()) {
-                    // Go one level up in each trie
-                    for (LFTJiter iter : joinFrame.curIters) {
-                        iter.up();
+            curVariableID = 0;
+            // step two: move iterator to start of unexplored part
+            for (int i = 0; i < attributeOrder.length; i++) {
+                int startKey = exploreDomain.get(i).getFirst();
+                int lowerBound = attributeValueBound.get(i).getFirst();
+                // there are some problems in the end position
+//                int upperBound = attributeValueBound.get(i).getSecond();
+                if (startKey > lowerBound) {
+                    List<LFTJiter> curIters = itersByVar.get(i);
+                    for (LFTJiter curIter : curIters) {
+                        curIter.open();
+                        curIter.seek(startKey);
                     }
-                    backtrack();
-                    continue;
+                    // sort the LFTJ iterator
+                    Collections.sort(curIters, new Comparator<LFTJiter>() {
+                        @Override
+                        public int compare(LFTJiter o1, LFTJiter o2) {
+                            return Integer.compare(o1.key(), o2.key());
+                        }
+                    });
+                    // init join frames
+                    joinFrames.get(i).p = 0;
+                    joinFrames.get(i).curIters = curIters;
+                    joinFrames.get(i).nrCurIters = curIters.size();
+                    joinFrames.get(i).maxKey = curIters.get(curIters.size() - 1).key();
+                    joinFrames.get(i).maxIterPos = curIters.size() - 1;
+
+                    curVariableID++;
                 }
-                // does not reach to the end position
-                joinFrame.maxKey = minIter.key();
-                joinFrame.p = (joinFrame.p + 1) % joinFrame.nrCurIters;
-
-            } else {
-                // go to next level
-                // Have we completed a result tuple?
-                if (curVariableID >= nrVars) {
-                    addResultTuple();
-                    backtrack();
-                    continue;
-                }
-
-                // Collect relevant iterators
-                joinFrame.curIters = itersByVar.get(curVariableID);
-                joinFrame.nrCurIters = joinFrame.curIters.size();
-
-                // Order iterators and check for early termination
-                if (!leapfrogInit(joinFrame.curIters)) {
-                    // Go one level up in each trie
-                    for (LFTJiter iter : joinFrame.curIters) {
-                        iter.up();
-                    }
-                    backtrack();
-                    continue;
-                }
-
-                // Execute search procedure
-                joinFrame.p = 0;
-                joinFrame.maxIterPos = (joinFrame.nrCurIters+joinFrame.p-1) % joinFrame.nrCurIters;
-                joinFrame.maxKey = joinFrame.curIters.get(joinFrame.maxIterPos).key();
             }
 
-            // execute join
+            // step three, start the join
+            // Initialize reward-related statistics
+            lastNrResults = 0;
+
+            // We had at least one iteration
+            roundCtr += 1;
+            // Until we finish processing (break)
             while (true) {
-                // Count current round
-                --budget;
-                JoinStats.nrIterations++;
-                // Check for timeout and not in the last end
-                if (budget <= 0) {
-                    // timeout, save final state
-                    // hypercube
-                    List<Pair<Integer, Integer>> unfinishDomain = new ArrayList<>();
-                    for (int i = 0; i <= curVariableID; i++) {
-                        int unfinishStart = joinFrames.get(i).maxKey;
-                        int unfinishEnd = attributeValueBound.get(i).getSecond();
-                        unfinishDomain.add(new Pair<>(unfinishStart, unfinishEnd));
-                    }
-                    for (int i = curVariableID + 1; i < nrVars; i++) {
-                        unfinishDomain.add(new Pair<>(attributeValueBound.get(i).getFirst(), attributeValueBound.get(i).getSecond()));
-                    }
-                    // change the order to origin order
-                    List<Pair<Integer, Integer>> finalUnfinishDomain = unfinishDomain;
-                    unfinishDomain = IntStream.range(0, nrVars).mapToObj(i -> finalUnfinishDomain.get(attributeOrder[i])).collect(Collectors.toList());
-                    Hypercube unfinishCube = new Hypercube(unfinishDomain);
-                    manager.updateInterval(selectCube, unfinishCube);
-                    return 1 - unfinishCube.getVolume() / (double) selectCube.getVolume();
+
+                // Did we finish processing?
+                if (curVariableID < 0) {
+                    // finish query
+                    finished = true;
+                    return 0;
                 }
 
-                // Get current key
-                LFTJiter minIter = joinFrame.curIters.get(joinFrame.p);
-                int minKey = minIter.key();
+                // current position
+                JoinFrame joinFrame = curVariableID >= nrVars ?
+                        null : joinFrames.get(curVariableID);
 
-                // Did we find a match between iterators?
-                if (minKey == joinFrame.maxKey) {
-                    // test whether key are cached or not
-                    advance();
-                    // go to next level
-                    break;
-                } else {
-                    // min key not equal max key
-                    minIter.seek(joinFrame.maxKey);
+                // Go directly to point of interrupt?
+                if (backtracked) {
+                    // if it is backtracked
+                    backtracked = false;
+                    LFTJiter minIter = joinFrame.curIters.get(joinFrame.p);
+                    minIter.seek(joinFrame.maxKey + 1);
+                    // if iterator reaches to the final position
                     if (minIter.atEnd()) {
                         // Go one level up in each trie
                         for (LFTJiter iter : joinFrame.curIters) {
                             iter.up();
                         }
                         backtrack();
+                        continue;
+                    }
+                    // does not reach to the end position
+                    joinFrame.maxKey = minIter.key();
+                    joinFrame.p = (joinFrame.p + 1) % joinFrame.nrCurIters;
+
+                } else {
+                    // go to next level
+                    // Have we completed a result tuple?
+                    if (curVariableID >= nrVars) {
+                        addResultTuple();
+                        backtrack();
+                        continue;
+                    }
+
+                    // Collect relevant iterators
+                    joinFrame.curIters = itersByVar.get(curVariableID);
+                    joinFrame.nrCurIters = joinFrame.curIters.size();
+
+                    // Order iterators and check for early termination
+                    if (!leapfrogInit(joinFrame.curIters)) {
+                        // Go one level up in each trie
+                        for (LFTJiter iter : joinFrame.curIters) {
+                            iter.up();
+                        }
+                        backtrack();
+                        continue;
+                    }
+
+                    // Execute search procedure
+                    joinFrame.p = 0;
+                    joinFrame.maxIterPos = (joinFrame.nrCurIters + joinFrame.p - 1) % joinFrame.nrCurIters;
+                    joinFrame.maxKey = joinFrame.curIters.get(joinFrame.maxIterPos).key();
+                }
+
+                // execute join
+                while (true) {
+                    // Count current round
+                    --budget;
+                    JoinStats.nrIterations++;
+                    // Check for timeout and not in the last end
+                    if (budget <= 0) {
+                        // timeout, save final state
+                        // hypercube
+                        List<Pair<Integer, Integer>> unfinishDomain = new ArrayList<>();
+                        for (int i = 0; i <= curVariableID; i++) {
+                            int unfinishStart = joinFrames.get(i).maxKey;
+                            int unfinishEnd = attributeValueBound.get(i).getSecond();
+                            unfinishDomain.add(new Pair<>(unfinishStart, unfinishEnd));
+                        }
+                        for (int i = curVariableID + 1; i < nrVars; i++) {
+                            unfinishDomain.add(new Pair<>(attributeValueBound.get(i).getFirst(), attributeValueBound.get(i).getSecond()));
+                        }
+                        // change the order to origin order
+                        final ArrayList finalUnfinishDomain = new ArrayList(unfinishDomain);
+                        System.out.println("finalUnfinishDomain:" + finalUnfinishDomain);
+                        unfinishDomain.sort(Comparator.comparing(item -> attributeOrder[finalUnfinishDomain.indexOf(item)]));
+                        // unfinishDomain = IntStream.range(0, nrVars).mapToObj(i -> finalUnfinishDomain.get(attributeOrder[i])).collect(Collectors.toList());
+                        System.out.println("finalUnfinishDomain2:" + unfinishDomain);
+                        Hypercube unfinishCube = new Hypercube(unfinishDomain);
+                        System.out.println("unfinishCube:" + unfinishCube);
+                        System.out.println("selectCube:" + selectCube);
+                        manager.updateInterval(selectCube, unfinishCube);
+                        return 1 - unfinishCube.getVolume() / (double) selectCube.getVolume();
+                    }
+
+                    // Get current key
+                    LFTJiter minIter = joinFrame.curIters.get(joinFrame.p);
+                    int minKey = minIter.key();
+
+                    // Did we find a match between iterators?
+                    if (minKey == joinFrame.maxKey) {
+                        // test whether key are cached or not
+                        advance();
+                        // go to next level
                         break;
                     } else {
-                        // Min-iter to max-iter
-                        joinFrame.maxKey = minIter.key();
-                        joinFrame.p = (joinFrame.p + 1) % joinFrame.nrCurIters;
+                        // min key not equal max key
+                        minIter.seek(joinFrame.maxKey);
+                        if (minIter.atEnd()) {
+                            // Go one level up in each trie
+                            for (LFTJiter iter : joinFrame.curIters) {
+                                iter.up();
+                            }
+                            backtrack();
+                            break;
+                        } else {
+                            // Min-iter to max-iter
+                            joinFrame.maxKey = minIter.key();
+                            joinFrame.p = (joinFrame.p + 1) % joinFrame.nrCurIters;
+                        }
                     }
                 }
-            }
 
+            }
         }
         return 0;
     }

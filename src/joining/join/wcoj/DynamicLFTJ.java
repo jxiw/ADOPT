@@ -76,12 +76,15 @@ public class DynamicLFTJ extends DynamicMWJoin {
         }
         // init the hypercube
         manager = new HypercubeManager(joinValues);
-
     }
 
     @Override
     public double execute(int[] order) throws Exception {
         AttributeOrder attributeOrder = new AttributeOrder(order);
+
+        System.out.println("lftj order:" + Arrays.stream(order).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList()));
+        System.out.println("lftj order:" + Arrays.toString(order));
+
         // continue from order
         StaticLFTJ pickedOp;
         if (orderToLFTJ.containsKey(attributeOrder)){
