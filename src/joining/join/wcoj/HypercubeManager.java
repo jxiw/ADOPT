@@ -3,6 +3,7 @@ package joining.join.wcoj;
 import util.Pair;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,7 @@ public class HypercubeManager {
         hypercubes = new ArrayList<>();
         hypercubes.add(cube);
         totalVolume = cube.getVolume();
+        System.out.println("totalVolume:" + totalVolume);
     }
 
     public Hypercube allocateHypercube() {
@@ -35,8 +37,8 @@ public class HypercubeManager {
         System.out.println("hypercubes:" + hypercubes);
         // sample hypercube according to its volume
         Hypercube selectCube = hypercubes.get(0);
-        List<Integer> volumes = hypercubes.stream().map(Hypercube::getVolume).collect(Collectors.toList());
-        double totalVolume = volumes.stream().mapToDouble(Integer::doubleValue).sum();
+        List<Double> volumes = hypercubes.stream().map(Hypercube::getVolume).collect(Collectors.toList());
+        double totalVolume = volumes.stream().mapToDouble(a-> a).sum();
         List<Double> probs = volumes.stream().map(v -> v / totalVolume).collect(Collectors.toList());
         double probGen = Math.random();
         double cumulativeProb = 0 ;
@@ -46,6 +48,7 @@ public class HypercubeManager {
             if (cumulativeProb < probGen) {
                 // choose i-th hypercube
                 selectCube = hypercubes.get(i);
+                break;
             }
         }
         return selectCube;
@@ -59,9 +62,14 @@ public class HypercubeManager {
         for (Hypercube remainHypercube:remainHypercubes) {
             remainVolume += remainHypercube.getVolume();
             // swap the order for remainHypercube
+            System.out.println("before swap:" + remainHypercube);
+            System.out.println("order:" + Arrays.toString(order));
             remainHypercube.alignToUniversalOrder(order);
+            System.out.println("after swap:" + remainHypercube);
+            System.out.println("cube volume:" + remainHypercube.getVolume());
         }
         hypercubes.addAll(remainHypercubes);
+        System.out.println("parentCube volume:" + parentCube.getVolume());
         return parentCube.getVolume() - remainVolume;
     }
 }

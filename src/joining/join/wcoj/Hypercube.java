@@ -8,7 +8,7 @@ import java.util.stream.IntStream;
 
 public class Hypercube {
 
-    final private List<Pair<Integer, Integer>> intervals;
+    private List<Pair<Integer, Integer>> intervals;
 
     final int dim;
 
@@ -17,8 +17,8 @@ public class Hypercube {
         this.dim = intervals.size();
     }
 
-    public int getVolume() {
-        int volume = 1;
+    public double getVolume() {
+        double volume = 1;
         for (Pair<Integer, Integer> interval: intervals) {
             volume *= (interval.getSecond() - interval.getFirst());
         }
@@ -35,7 +35,12 @@ public class Hypercube {
 
     public void alignToUniversalOrder(int order[]) {
         // [1, 0, 2], [[1, 3], [4, 5], [2, 6]] -> [[4, 5], [1, 3], [2, 6]]
-        intervals.sort(Comparator.comparing(s -> order[intervals.indexOf(s)]));
+        Pair<Integer, Integer>[] reorderInterval = new Pair[dim];
+        for (int i = 0; i < dim; i++) {
+            reorderInterval[order[i]] = intervals.get(i);
+        }
+        intervals = Arrays.asList(reorderInterval);
+//        intervals.sort(Comparator.comparing(s -> order[intervals.indexOf(s)]));
     }
 
     public List<Hypercube> subtract(Hypercube subtractCube) {
@@ -160,5 +165,17 @@ public class Hypercube {
         int[] order = {1, 2, 0};
         hypercube.alignToUniversalOrder(order);
         System.out.println(hypercube);
+
+        List<Pair<Integer, Integer>> intervals2 = new ArrayList<>();
+        intervals2.add(new Pair<>(3002, 4000));
+        intervals2.add(new Pair<>(2001, 3000));
+        intervals2.add(new Pair<>(1001, 2000));
+        intervals2.add(new Pair<>(2, 1000));
+        Hypercube hypercube2 = new Hypercube(intervals2);
+        int[] order2 = {0, 3, 1, 2};
+        hypercube2.alignToUniversalOrder(order2);
+        System.out.println(hypercube2);
+//        after swap:hypercube:[[3002,4000], [1001,2000], [2,1000], [2001,3000]]
+
     }
 }

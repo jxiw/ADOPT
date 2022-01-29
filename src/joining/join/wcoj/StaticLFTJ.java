@@ -361,7 +361,7 @@ public class StaticLFTJ extends MultiWayJoin {
             // exploreDomain is the domain for current order
             List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
             System.out.println("select hypercube:" + selectCube);
-//            System.out.println("select explore domain:" + exploreDomain);
+            System.out.println("select explore domain:" + exploreDomain);
             System.out.println("attribute value bound:" + attributeValueBound);
 
             // step one: reset the iterator
@@ -377,6 +377,7 @@ public class StaticLFTJ extends MultiWayJoin {
             for (int i = 0; i < attributeOrder.length; i++) {
                 int startKey = exploreDomain.get(i).getFirst();
                 int lowerBound = attributeValueBound.get(i).getFirst();
+                System.out.println("startKey:" + startKey + ", lowerBound:" + lowerBound);
                 // if the start key is not the lowest value of that attribute, set the start position
                 if (startKey > lowerBound) {
                     List<LFTJiter> curIters = itersByVar.get(i);
