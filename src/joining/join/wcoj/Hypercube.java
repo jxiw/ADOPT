@@ -2,10 +2,9 @@ package joining.join.wcoj;
 
 import util.Pair;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Hypercube {
 
@@ -32,6 +31,11 @@ public class Hypercube {
 
     public void addDimension(int start, int end) {
         intervals.add(new Pair<Integer, Integer>(start, end));
+    }
+
+    public void alignToUniversalOrder(int order[]) {
+        // [1, 0, 2], [[1, 3], [4, 5], [2, 6]] -> [[4, 5], [1, 3], [2, 6]]
+        intervals.sort(Comparator.comparing(s -> order[intervals.indexOf(s)]));
     }
 
     public List<Hypercube> subtract(Hypercube subtractCube) {
@@ -136,10 +140,25 @@ public class Hypercube {
         points5.add(10);
         points5.add(7);
         points5.add(8);
+        List<Integer> points6 = new ArrayList<>();
+        // if reach to [5, 4]
+        points6.add(5);
+        points6.add(3);
+        points6.add(8);
+        List<Integer> points7 = new ArrayList<>();
+        // if reach to [5]
+        points7.add(4);
+        points7.add(7);
+        points7.add(8);
         System.out.println(hypercube.subtractByPoint(points1));
         System.out.println(hypercube.subtractByPoint(points2));
         System.out.println(hypercube.subtractByPoint(points3));
         System.out.println(hypercube.subtractByPoint(points4));
         System.out.println(hypercube.subtractByPoint(points5));
+        System.out.println(hypercube.subtractByPoint(points6));
+        System.out.println(hypercube.subtractByPoint(points7));
+        int[] order = {1, 2, 0};
+        hypercube.alignToUniversalOrder(order);
+        System.out.println(hypercube);
     }
 }

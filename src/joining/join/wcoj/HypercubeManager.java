@@ -14,16 +14,25 @@ public class HypercubeManager {
      */
     List<Hypercube> hypercubes;
 
+    /**
+     *
+     * @param total volumne
+     */
+    double totalVolume = 0;
+
     public HypercubeManager(List<Pair<Integer, Integer>> joinValues) {
         Hypercube cube = new Hypercube(joinValues);
         hypercubes = new ArrayList<>();
         hypercubes.add(cube);
+        totalVolume = cube.getVolume();
     }
 
     public Hypercube allocateHypercube() {
         if (hypercubes.size() == 0) {
+            // finish the execution
             return null;
         }
+        System.out.println("hypercubes:" + hypercubes);
         // sample hypercube according to its volume
         Hypercube selectCube = hypercubes.get(0);
         List<Integer> volumes = hypercubes.stream().map(Hypercube::getVolume).collect(Collectors.toList());
@@ -42,8 +51,17 @@ public class HypercubeManager {
         return selectCube;
     }
 
-    public void updateInterval(Hypercube parentCube, Hypercube subCube) {
+    public double updateInterval(Hypercube parentCube, List<Integer> endValues, int[] order) {
         hypercubes.remove(parentCube);
-        hypercubes.addAll(parentCube.subtract(subCube));
+        Hypercube cubeWithOrder = new Hypercube(parentCube.unfoldCube(order));
+        List<Hypercube> remainHypercubes = cubeWithOrder.subtractByPoint(endValues);
+        double remainVolume = 0;
+        for (Hypercube remainHypercube:remainHypercubes) {
+            remainVolume += remainHypercube.getVolume();
+            // swap the order for remainHypercube
+            remainHypercube.alignToUniversalOrder(order);
+        }
+        hypercubes.addAll(remainHypercubes);
+        return parentCube.getVolume() - remainVolume;
     }
 }
