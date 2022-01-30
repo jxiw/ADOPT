@@ -362,7 +362,7 @@ public class StaticLFTJ extends MultiWayJoin {
             List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
             System.out.println("select hypercube:" + selectCube);
             System.out.println("select explore domain:" + exploreDomain);
-            System.out.println("attribute value bound:" + attributeValueBound);
+//            System.out.println("attribute value bound:" + attributeValueBound);
 
             // step one: reset the iterator
             for (LFTJiter curIters : idToIter) {
@@ -370,39 +370,41 @@ public class StaticLFTJ extends MultiWayJoin {
             }
 
             // set the start position of LFTJ
+            backtracked = false;
             curVariableID = 0;
             // step two: move iterator to start of unexplored part
             // case 1: [10], [10], [1, 100]
             // case 2: [1, 100], [10], [10]
-            for (int i = 0; i < attributeOrder.length; i++) {
-                int startKey = exploreDomain.get(i).getFirst();
-                int lowerBound = attributeValueBound.get(i).getFirst();
-                System.out.println("startKey:" + startKey + ", lowerBound:" + lowerBound);
-                // if the start key is not the lowest value of that attribute, set the start position
-                if (startKey > lowerBound) {
-                    List<LFTJiter> curIters = itersByVar.get(i);
-                    for (LFTJiter curIter : curIters) {
-                        curIter.open();
-                        curIter.seek(startKey);
-                    }
-                    // sort the LFTJ iterator
-                    Collections.sort(curIters, new Comparator<LFTJiter>() {
-                        @Override
-                        public int compare(LFTJiter o1, LFTJiter o2) {
-                            return Integer.compare(o1.key(), o2.key());
-                        }
-                    });
-                    // init join frames
-                    joinFrames.get(i).p = 0;
-                    joinFrames.get(i).curIters = curIters;
-                    joinFrames.get(i).nrCurIters = curIters.size();
-                    joinFrames.get(i).maxKey = curIters.get(curIters.size() - 1).key();
-                    joinFrames.get(i).maxIterPos = curIters.size() - 1;
-                    curVariableID++;
-                } else {
-                    break;
-                }
-            }
+
+//            for (int i = 0; i < attributeOrder.length; i++) {
+//                int startKey = exploreDomain.get(i).getFirst();
+//                int lowerBound = attributeValueBound.get(i).getFirst();
+//                System.out.println("startKey:" + startKey + ", lowerBound:" + lowerBound);
+//                // if the start key is not the lowest value of that attribute, set the start position
+//                if (startKey > lowerBound) {
+//                    List<LFTJiter> curIters = itersByVar.get(i);
+//                    for (LFTJiter curIter : curIters) {
+//                        curIter.open();
+//                        curIter.seek(startKey);
+//                    }
+//                    // sort the LFTJ iterator
+//                    Collections.sort(curIters, new Comparator<LFTJiter>() {
+//                        @Override
+//                        public int compare(LFTJiter o1, LFTJiter o2) {
+//                            return Integer.compare(o1.key(), o2.key());
+//                        }
+//                    });
+//                    // init join frames
+//                    joinFrames.get(i).p = 0;
+//                    joinFrames.get(i).curIters = curIters;
+//                    joinFrames.get(i).nrCurIters = curIters.size();
+//                    joinFrames.get(i).maxKey = curIters.get(curIters.size() - 1).key();
+//                    joinFrames.get(i).maxIterPos = curIters.size() - 1;
+//                    curVariableID++;
+//                } else {
+//                    break;
+//                }
+//            }
 
             // step three, start the join
             // Initialize reward-related statistics
@@ -417,6 +419,7 @@ public class StaticLFTJ extends MultiWayJoin {
                 if (curVariableID < 0) {
                     // finish the current hypercube
                     reward += selectCube.getVolume() / manager.totalVolume;
+                    manager.finishHyperCube(selectCube);
                     break;
                 }
 
@@ -513,12 +516,13 @@ public class StaticLFTJ extends MultiWayJoin {
                             int endValue = joinFrames.get(i).maxKey;
                             endValues.add(endValue);
                         }
-                        // for position curVariableID
+                        // for position curVariableID, [5, 9 ...], [5, 8, max, max]
+                        // todo
                         endValues.add(joinFrames.get(curVariableID).maxKey - 1);
                         for (int i = curVariableID + 1; i < nrVars; i++) {
-                            endValues.add(attributeValueBound.get(i).getFirst());
+                            endValues.add(exploreDomain.get(i).getSecond());
                         }
-                        System.out.println("end values:" + endValues);
+                        System.out.println("endValues:" + endValues);
                         // update interval
                         double processVolume = manager.updateInterval(selectCube, endValues, attributeOrder);
                         reward += processVolume / manager.totalVolume;

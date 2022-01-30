@@ -43,6 +43,18 @@ public class Hypercube {
 //        intervals.sort(Comparator.comparing(s -> order[intervals.indexOf(s)]));
     }
 
+    public boolean overlap(Hypercube cube) {
+        for (int i = 0; i < dim; i++) {
+            Pair<Integer, Integer> interval1 = intervals.get(i);
+            Pair<Integer, Integer> interval2 = cube.intervals.get(i);
+            // test whether interval1 overlap interval2
+            if (!(interval1.getFirst() <= interval2.getSecond() && interval2.getFirst() <= interval1.getSecond())){
+                return false;
+            }
+        }
+        return true;
+    }
+
     public List<Hypercube> subtract(Hypercube subtractCube) {
         System.out.println("currentCube:" + this);
         System.out.println("subtractCube:" + subtractCube);

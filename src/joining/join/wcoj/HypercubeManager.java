@@ -29,13 +29,32 @@ public class HypercubeManager {
         System.out.println("totalVolume:" + totalVolume);
     }
 
+    public boolean checkOverlap() {
+        for (int i = 0; i < hypercubes.size() - 1; i++) {
+            for (int j = i + 1; j < hypercubes.size(); j++) {
+                if (hypercubes.get(i).overlap(hypercubes.get(j))) {
+                    System.out.println(hypercubes.get(i));
+                    System.out.println(hypercubes.get(j));
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public Hypercube allocateHypercube() {
         if (hypercubes.size() == 0) {
             // finish the execution
             return null;
         }
-        System.out.println("hypercubes:" + hypercubes);
+        System.out.println("number of cubes:" + hypercubes.size());
+        // check the overlap of hypercubes
+        if (checkOverlap()) {
+            System.out.println("error");
+            System.exit(0);
+        }
         // sample hypercube according to its volume
+        // todo
         Hypercube selectCube = hypercubes.get(0);
         List<Double> volumes = hypercubes.stream().map(Hypercube::getVolume).collect(Collectors.toList());
         double totalVolume = volumes.stream().mapToDouble(a-> a).sum();
@@ -63,7 +82,7 @@ public class HypercubeManager {
             remainVolume += remainHypercube.getVolume();
             // swap the order for remainHypercube
             System.out.println("before swap:" + remainHypercube);
-            System.out.println("order:" + Arrays.toString(order));
+//            System.out.println("order:" + Arrays.toString(order));
             remainHypercube.alignToUniversalOrder(order);
             System.out.println("after swap:" + remainHypercube);
             System.out.println("cube volume:" + remainHypercube.getVolume());
@@ -71,5 +90,9 @@ public class HypercubeManager {
         hypercubes.addAll(remainHypercubes);
         System.out.println("parentCube volume:" + parentCube.getVolume());
         return parentCube.getVolume() - remainVolume;
+    }
+
+    public void finishHyperCube(Hypercube selectCube) {
+        hypercubes.remove(selectCube);
     }
 }

@@ -87,7 +87,7 @@ public class DynamicLFTJ extends DynamicMWJoin {
 
         // continue from order
         StaticLFTJ pickedOp;
-        if (orderToLFTJ.containsKey(attributeOrder)){
+        if (orderToLFTJ.containsKey(attributeOrder)) {
             pickedOp = orderToLFTJ.get(attributeOrder);
         }
         else {
@@ -96,10 +96,12 @@ public class DynamicLFTJ extends DynamicMWJoin {
             orderToLFTJ.put(attributeOrder, pickedOp);
         }
 
-        double reward = pickedOp.resumeJoin(100);
+        double reward = pickedOp.resumeJoin(5000);
         System.out.println("lftj reward:" + reward);
         previousOrder = attributeOrder;
-        isFinish = pickedOp.isFinished();
+        if (pickedOp.isFinished()) {
+            isFinish = true;
+        }
         return reward;
     }
 
