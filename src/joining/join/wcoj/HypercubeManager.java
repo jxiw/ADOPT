@@ -47,26 +47,28 @@ public class HypercubeManager {
             // finish the execution
             return null;
         }
-        System.out.println("number of cubes:" + hypercubes.size());
+//        System.out.println("number of cubes:" + hypercubes.size());
         // check the overlap of hypercubes
-        if (checkOverlap()) {
-            System.out.println("error");
-            System.exit(0);
-        }
+//        if (checkOverlap()) {
+//            System.out.println("error");
+//            System.exit(0);
+//        }
         // sample hypercube according to its volume
         // todo
         Hypercube selectCube = hypercubes.get(0);
         List<Double> volumes = hypercubes.stream().map(Hypercube::getVolume).collect(Collectors.toList());
         double totalVolume = volumes.stream().mapToDouble(a-> a).sum();
         List<Double> probs = volumes.stream().map(v -> v / totalVolume).collect(Collectors.toList());
+//        System.out.println("probs:" + probs);
         double probGen = Math.random();
         double cumulativeProb = 0 ;
         for (int i = 0; i < probs.size(); i++) {
             double prob = probs.get(i);
             cumulativeProb += prob;
-            if (cumulativeProb < probGen) {
+            if (cumulativeProb >= probGen) {
                 // choose i-th hypercube
                 selectCube = hypercubes.get(i);
+//                System.out.println("id:" + i);
                 break;
             }
         }
@@ -81,14 +83,14 @@ public class HypercubeManager {
         for (Hypercube remainHypercube:remainHypercubes) {
             remainVolume += remainHypercube.getVolume();
             // swap the order for remainHypercube
-            System.out.println("before swap:" + remainHypercube);
+//            System.out.println("before swap:" + remainHypercube);
 //            System.out.println("order:" + Arrays.toString(order));
             remainHypercube.alignToUniversalOrder(order);
-            System.out.println("after swap:" + remainHypercube);
-            System.out.println("cube volume:" + remainHypercube.getVolume());
+//            System.out.println("after swap:" + remainHypercube);
+//            System.out.println("cube volume:" + remainHypercube.getVolume());
         }
         hypercubes.addAll(remainHypercubes);
-        System.out.println("parentCube volume:" + parentCube.getVolume());
+//        System.out.println("parentCube volume:" + parentCube.getVolume());
         return parentCube.getVolume() - remainVolume;
     }
 

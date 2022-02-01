@@ -360,8 +360,8 @@ public class StaticLFTJ extends MultiWayJoin {
             // swap the dimension of hypercube according to the current order
             // exploreDomain is the domain for current order
             List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
-            System.out.println("select hypercube:" + selectCube);
-            System.out.println("select explore domain:" + exploreDomain);
+//            System.out.println("select hypercube:" + selectCube);
+//            System.out.println("select explore domain:" + exploreDomain);
 //            System.out.println("attribute value bound:" + attributeValueBound);
 
             // step one: reset the iterator
@@ -422,7 +422,7 @@ public class StaticLFTJ extends MultiWayJoin {
                     // finish the current hypercube
                     reward += selectCube.getVolume() / manager.totalVolume;
                     manager.finishHyperCube(selectCube);
-                    System.out.println("remove cube " + selectCube);
+//                    System.out.println("remove cube " + selectCube);
                     break;
                 }
 
