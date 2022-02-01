@@ -96,7 +96,7 @@ public class DynamicLFTJ extends DynamicMWJoin {
             orderToLFTJ.put(attributeOrder, pickedOp);
         }
 
-        double reward = pickedOp.resumeJoin(5000);
+        double reward = pickedOp.resumeJoin(1000);
         System.out.println("lftj reward:" + reward);
         previousOrder = attributeOrder;
         if (pickedOp.isFinished()) {

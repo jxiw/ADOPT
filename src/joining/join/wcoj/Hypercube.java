@@ -20,7 +20,7 @@ public class Hypercube {
     public double getVolume() {
         double volume = 1;
         for (Pair<Integer, Integer> interval: intervals) {
-            volume *= (interval.getSecond() - interval.getFirst());
+            volume *= (interval.getSecond() - interval.getFirst() + 1);
         }
         return volume;
     }

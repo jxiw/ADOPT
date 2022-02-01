@@ -415,11 +415,14 @@ public class StaticLFTJ extends MultiWayJoin {
             // Until we finish processing (break)
             while (true) {
 
+//                System.out.println("curVariableID:" + curVariableID);
+
                 // Did we finish processing?
                 if (curVariableID < 0) {
                     // finish the current hypercube
                     reward += selectCube.getVolume() / manager.totalVolume;
                     manager.finishHyperCube(selectCube);
+                    System.out.println("remove cube " + selectCube);
                     break;
                 }
 
@@ -518,7 +521,8 @@ public class StaticLFTJ extends MultiWayJoin {
                         }
                         // for position curVariableID, [5, 9 ...], [5, 8, max, max]
                         // todo
-                        endValues.add(joinFrames.get(curVariableID).maxKey - 1);
+                         endValues.add(joinFrames.get(curVariableID).maxKey - 1);
+//                        endValues.add(joinFrames.get(curVariableID).maxKey);
                         for (int i = curVariableID + 1; i < nrVars; i++) {
                             endValues.add(exploreDomain.get(i).getSecond());
                         }

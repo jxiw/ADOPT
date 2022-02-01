@@ -352,7 +352,7 @@ public class LFTJiter {
         // Try exponential search
         int pos = 1;
         int stepSize = 2;
-        if (keyAt(lb) == seekKey) {
+        if (keyAt(lb) >= seekKey) {
             return lb;
         } else if (keyAt(ub) < seekKey) {
             return -1;

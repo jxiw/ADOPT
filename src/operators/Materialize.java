@@ -138,7 +138,7 @@ public class Materialize {
 			ColumnRef srcDBref = columnMappings.get(srcQueryRef);
 			ColumnData srcData = BufferManager.colToData.get(srcDBref);
 			ColumnData targetData = srcData.copyRows(tuples, tableIdx);
-			System.out.println("srcData:" + srcData.cardinality);
+//			System.out.println("srcData:" + srcData.cardinality);
 			// Insert into buffer pool
 			BufferManager.colToData.put(targetRef, targetData);
 		});
