@@ -19,7 +19,7 @@ public class JoinConfig {
 	/**
 	 * Number of steps performed per episode.
 	 */
-	public static int BUDGET_PER_EPISODE = 500;
+	public static int BUDGET_PER_EPISODE = 500000;
 	/**
 	 * Weight for UCT exploration term (used to select
 	 * most interesting action to try next). This
@@ -49,5 +49,8 @@ public class JoinConfig {
 	 */
 	public static final boolean FORGET = false;
 
-	public static int[] order;
+	/**
+	 *
+	 */
+	public static final int NTHREAD = 10;
 }

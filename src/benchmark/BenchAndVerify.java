@@ -2,15 +2,9 @@ package benchmark;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
+import config.JoinConfig;
 
 import java.util.Map.Entry;
 
@@ -65,6 +59,8 @@ public class BenchAndVerify {
 		// Initialize database
 		String SkinnerDbDir = args[0];
 		String queryDir = args[1];
+		int budget = Integer.parseInt(args[2]);
+		JoinConfig.BUDGET_PER_EPISODE = budget;
 //		String PgDB = args[2];
 //		String PgUser = args[3];
 //		String PgPassword = args.length==5?args[4]:"";

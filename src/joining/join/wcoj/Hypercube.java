@@ -22,6 +22,7 @@ public class Hypercube {
         for (Pair<Integer, Integer> interval: intervals) {
             volume *= (interval.getSecond() - interval.getFirst() + 1);
         }
+//        System.out.println("volume:" + volume);
         return volume;
     }
 

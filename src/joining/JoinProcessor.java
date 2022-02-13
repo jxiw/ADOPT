@@ -71,7 +71,7 @@ public class JoinProcessor {
         // distinct if enable
         // decomposition
         log("Creating unique join keys ...");
-        query.aliasToTable.keySet().parallelStream().forEach(alias -> {
+        query.aliasToTable.keySet().stream().forEach(alias -> {
             try {
                 List<String> joinRequiredCols = new ArrayList<String>();
                 for (ColumnRef joinRequiredCol : query.colsForJoins) {
@@ -87,6 +87,7 @@ public class JoinProcessor {
                 e.printStackTrace();
             }
         });
+
 
         // join phrase
         long joinStartMillis = System.currentTimeMillis();

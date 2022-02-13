@@ -9,7 +9,6 @@ import data.IntData;
 import joining.join.DynamicMWJoin;
 import joining.join.MultiWayJoin;
 import joining.plan.AttributeOrder;
-import net.sf.jsqlparser.schema.Column;
 import preprocessing.Context;
 import query.ColumnRef;
 import query.QueryInfo;
@@ -21,7 +20,7 @@ public class DynamicLFTJ extends DynamicMWJoin {
     /**
      * Avoids redundant evaluation work by tracking evaluation progress.
      */
-    public final ProgressTrackerLFTJ tracker;
+//    public final ProgressTrackerLFTJ tracker;
 
     /**
      * Whether finish or not.
@@ -56,7 +55,7 @@ public class DynamicLFTJ extends DynamicMWJoin {
         // Clear cache of tuple orders
         LFTJiter.queryOrderCache.clear();
         joinStartMillis = System.currentTimeMillis();
-        this.tracker = new ProgressTrackerLFTJ(query.nrAttribute);
+//        this.tracker = new ProgressTrackerLFTJ(query.nrAttribute);
         // Init the hypercube, collect value range of each column
         for (Set<ColumnRef> joinAttributes: query.equiJoinAttribute) {
             // lb is the max value among all iterators lower bound
@@ -64,7 +63,13 @@ public class DynamicLFTJ extends DynamicMWJoin {
             int lb = Integer.MIN_VALUE;
             int ub = Integer.MAX_VALUE;
             for (ColumnRef attribute: joinAttributes) {
-                ColumnData columnData = BufferManager.colToData.get(attribute);
+                // Retrieve corresponding data
+                String alias = attribute.aliasName;
+                String table = preSummary.aliasToDistinct.get(alias);
+                String column = attribute.columnName;
+                ColumnRef baseRef = new ColumnRef(table, column);
+                ColumnData columnData = BufferManager.getData(baseRef);
+                System.out.println(columnData.getClass().getName());
                 if (columnData instanceof IntData) {
                     IntData columnIntData = (IntData) columnData;
                     lb = Math.max(lb, ArrayUtil.getLowerBound(columnIntData.data));

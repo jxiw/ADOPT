@@ -1,9 +1,11 @@
 package joining.join.wcoj;
 
+import joining.uct.SelectionPolicy;
 import util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,12 +13,13 @@ public class HypercubeManager {
 
     /**
      * hypercubes
-     *
      */
     List<Hypercube> hypercubes;
 
+    public static final CubeSelectionPolicy DEFAULT_CUBE_SELECTION =
+            CubeSelectionPolicy.VOLUMEPR;
+
     /**
-     *
      * @param total volumne
      */
     double totalVolume = 0;
@@ -26,7 +29,7 @@ public class HypercubeManager {
         hypercubes = new ArrayList<>();
         hypercubes.add(cube);
         totalVolume = cube.getVolume();
-        System.out.println("totalVolume:" + totalVolume);
+//        System.out.println("totalVolume:" + totalVolume);
     }
 
     public boolean checkOverlap() {
@@ -42,6 +45,24 @@ public class HypercubeManager {
         return false;
     }
 
+    public List<Hypercube> allocateNHypercube(int nrCubes) {
+        if (hypercubes.size() < nrCubes) {
+            return hypercubes;
+        } else {
+            switch (DEFAULT_CUBE_SELECTION) {
+                case FIRST:
+                    return hypercubes.stream().limit(nrCubes).collect(Collectors.toList());
+                case VOLUMEPR:
+                    //
+                case RANDOM:
+                    Collections.shuffle(hypercubes);
+                    return hypercubes.stream().limit(nrCubes).collect(Collectors.toList());
+                default:
+                    return hypercubes.stream().limit(nrCubes).collect(Collectors.toList());
+            }
+        }
+    }
+
     public Hypercube allocateHypercube() {
         if (hypercubes.size() == 0) {
             // finish the execution
@@ -53,24 +74,27 @@ public class HypercubeManager {
 //            System.out.println("error");
 //            System.exit(0);
 //        }
-        // sample hypercube according to its volume
-        // todo
         Hypercube selectCube = hypercubes.get(0);
-        List<Double> volumes = hypercubes.stream().map(Hypercube::getVolume).collect(Collectors.toList());
-        double totalVolume = volumes.stream().mapToDouble(a-> a).sum();
-        List<Double> probs = volumes.stream().map(v -> v / totalVolume).collect(Collectors.toList());
-//        System.out.println("probs:" + probs);
-        double probGen = Math.random();
-        double cumulativeProb = 0 ;
-        for (int i = 0; i < probs.size(); i++) {
-            double prob = probs.get(i);
-            cumulativeProb += prob;
-            if (cumulativeProb >= probGen) {
-                // choose i-th hypercube
-                selectCube = hypercubes.get(i);
-//                System.out.println("id:" + i);
-                break;
-            }
+        switch (DEFAULT_CUBE_SELECTION) {
+            case FIRST:
+                return selectCube;
+            case RANDOM:
+                return hypercubes.get((int)(Math.random() * hypercubes.size()));
+            case VOLUMEPR:
+                List<Double> volumes = hypercubes.stream().map(Hypercube::getVolume).collect(Collectors.toList());
+                double totalVolume = volumes.stream().mapToDouble(a -> a).sum();
+                List<Double> probs = volumes.stream().map(v -> v / totalVolume).collect(Collectors.toList());
+                double probGen = Math.random();
+                double cumulativeProb = 0;
+                for (int i = 0; i < probs.size(); i++) {
+                    double prob = probs.get(i);
+                    cumulativeProb += prob;
+                    if (cumulativeProb >= probGen) {
+                        // choose i-th hypercube
+                        selectCube = hypercubes.get(i);
+                        break;
+                    }
+                }
         }
         return selectCube;
     }
@@ -80,7 +104,7 @@ public class HypercubeManager {
         Hypercube cubeWithOrder = new Hypercube(parentCube.unfoldCube(order));
         List<Hypercube> remainHypercubes = cubeWithOrder.subtractByPoint(endValues);
         double remainVolume = 0;
-        for (Hypercube remainHypercube:remainHypercubes) {
+        for (Hypercube remainHypercube : remainHypercubes) {
             remainVolume += remainHypercube.getVolume();
             // swap the order for remainHypercube
 //            System.out.println("before swap:" + remainHypercube);
