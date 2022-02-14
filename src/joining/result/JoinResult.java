@@ -53,6 +53,10 @@ public class JoinResult {
 		}
 		*/
 	}
+
+	public void merge(JoinResult newResult) {
+		tuples.addAll(newResult.tuples);
+	}
 	
 	void addSubtree(ResultNode resultNode, int level, 
 			int[] resultIndices, List<ResultTuple> tuples) {

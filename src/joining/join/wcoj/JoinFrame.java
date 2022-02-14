@@ -20,7 +20,7 @@ public class JoinFrame {
 	 * Relevant LFTJ iterators that are
 	 * relevant to current variable.
 	 */
-	List<LFTJiter> curIters = null;
+	List<LFTJoin> curIters = null;
 	/**
 	 * Number of currently relevant iterators.
 	 */

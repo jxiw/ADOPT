@@ -1,6 +1,5 @@
 package joining.join.wcoj;
 
-import joining.uct.SelectionPolicy;
 import util.Pair;
 
 import java.util.ArrayList;
@@ -50,8 +49,6 @@ public class HypercubeManager {
             return hypercubes;
         } else {
             switch (DEFAULT_CUBE_SELECTION) {
-                case FIRST:
-                    return hypercubes.stream().limit(nrCubes).collect(Collectors.toList());
                 case VOLUMEPR:
                     //
                 case RANDOM:

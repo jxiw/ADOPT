@@ -10,7 +10,6 @@ import config.JoinConfig;
 import joining.join.MultiWayJoin;
 import joining.join.OldJoin;
 import joining.join.wcoj.DynamicLFTJ;
-import joining.join.wcoj.LFTjoin;
 import joining.result.ResultTuple;
 import joining.uct.ExplorationWeightPolicy;
 import joining.uct.SelectionPolicy;

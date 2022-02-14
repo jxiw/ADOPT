@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import buffer.BufferManager;
+import config.JoinConfig;
 import data.ColumnData;
 import data.IntData;
 import joining.join.DynamicMWJoin;
@@ -101,7 +102,7 @@ public class DynamicLFTJ extends DynamicMWJoin {
             orderToLFTJ.put(attributeOrder, pickedOp);
         }
 
-        double reward = pickedOp.resumeJoin(1000);
+        double reward = pickedOp.resumeJoin(JoinConfig.BUDGET_PER_EPISODE);
         System.out.println("lftj reward:" + reward);
         previousOrder = attributeOrder;
         if (pickedOp.isFinished()) {
