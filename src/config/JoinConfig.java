@@ -25,7 +25,7 @@ public class JoinConfig {
 	 * most interesting action to try next). This
 	 * factor may be dynamically adapted.
 	 */
-	public static double EXPLORATION_WEIGHT = 1E-10;
+	public static double EXPLORATION_WEIGHT = 1E-5;
 //			1E-5;
 	/**
 	 * Determines how the weight for the exploration term
@@ -52,5 +52,7 @@ public class JoinConfig {
 	/**
 	 *
 	 */
-	public static final int NTHREAD = 10;
+	public static final int NTHREAD = 32;
+
+	public static final double MIN_REWARD = 1e-15;
 }

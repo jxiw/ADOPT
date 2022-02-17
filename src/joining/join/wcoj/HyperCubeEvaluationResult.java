@@ -17,10 +17,13 @@ public class HyperCubeEvaluationResult {
 
     public List<Integer> endValues;
 
-    public HyperCubeEvaluationResult(Hypercube selectCube, boolean isFinish, JoinResult joinResult, List<Integer> endValues) {
+    public long remainBudget;
+
+    public HyperCubeEvaluationResult(Hypercube selectCube, boolean isFinish, JoinResult joinResult, List<Integer> endValues, long remainBudget) {
         this.selectCube = selectCube;
         this.isFinish = isFinish;
         this.joinResult = joinResult;
         this.endValues = endValues;
+        this.remainBudget = remainBudget;
     }
 }

@@ -65,10 +65,10 @@ public class StaticLFTJ extends MultiWayJoin {
      * Whether entire result was generated.
      */
     boolean finished = false;
-    /**
-     * Counds iterations of the main loop.
-     */
-    long roundCtr = 0;
+//    /**
+//     * Counds iterations of the main loop.
+//     */
+//    long roundCtr = 0;
 
     HypercubeManager manager;
 
@@ -216,7 +216,7 @@ public class StaticLFTJ extends MultiWayJoin {
      */
     double resumeJoin(long budget) throws Exception {
         // check available budget
-        System.out.println("attribute value bound:" + attributeValueBound);
+//        System.out.println("attribute value bound:" + attributeValueBound);
         double reward = 0;
         List<Hypercube> selectCubes = manager.allocateNHypercube(JoinConfig.NTHREAD);
         if (selectCubes.size() == 0) {
@@ -233,13 +233,18 @@ public class StaticLFTJ extends MultiWayJoin {
             HyperCubeEvaluationResult result = futureResult.get();
             boolean isFinish = result.isFinish;
             Hypercube selectCube = result.selectCube;
-            System.out.println("isFinish:" + isFinish);
+//            System.out.println("isFinish:" + isFinish);
             if (isFinish) {
-                reward += selectCube.getVolume() / manager.totalVolume;
+                // how many budget do we use
+                long useBudget = budget - result.remainBudget;
+//                System.out.println("useBudget:" + useBudget);
+//                System.out.println("processVolume1:" + selectCube.getVolume());
+                reward += (selectCube.getVolume() / manager.totalVolume) * (budget / (double) useBudget);
                 manager.finishHyperCube(selectCube);
                 MultiWayJoin.result.merge(result.joinResult);
             } else {
                 double processVolume = manager.updateInterval(selectCube, result.endValues, attributeOrder);
+//                System.out.println("processVolume2:" + processVolume);
                 reward += processVolume / manager.totalVolume;
                 MultiWayJoin.result.merge(result.joinResult);
             }
@@ -251,7 +256,7 @@ public class StaticLFTJ extends MultiWayJoin {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        return reward;
+        return Math.max(reward, JoinConfig.MIN_REWARD);
     }
 
     @Override

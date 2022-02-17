@@ -16,10 +16,10 @@ public class HypercubeManager {
     List<Hypercube> hypercubes;
 
     public static final CubeSelectionPolicy DEFAULT_CUBE_SELECTION =
-            CubeSelectionPolicy.VOLUMEPR;
+            CubeSelectionPolicy.FIRST;
 
     /**
-     * @param total volumne
+     * @param total volume
      */
     double totalVolume = 0;
 
@@ -100,6 +100,8 @@ public class HypercubeManager {
         hypercubes.remove(parentCube);
         Hypercube cubeWithOrder = new Hypercube(parentCube.unfoldCube(order));
         List<Hypercube> remainHypercubes = cubeWithOrder.subtractByPoint(endValues);
+//        System.out.println("cubeWithOrder:" + cubeWithOrder);
+//        System.out.println("remainHypercubes:" + remainHypercubes);
         double remainVolume = 0;
         for (Hypercube remainHypercube : remainHypercubes) {
             remainVolume += remainHypercube.getVolume();
@@ -111,8 +113,10 @@ public class HypercubeManager {
 //            System.out.println("cube volume:" + remainHypercube.getVolume());
         }
         hypercubes.addAll(remainHypercubes);
-//        System.out.println("parentCube volume:" + parentCube.getVolume());
-        return parentCube.getVolume() - remainVolume;
+//        System.out.println("parentCube volume:" + cubeWithOrder.getVolume());
+//        System.out.println("remain Volume:" + remainVolume);
+//        System.out.println("process Volume:" + (cubeWithOrder.getVolume() - remainVolume));
+        return cubeWithOrder.getVolume() - remainVolume;
     }
 
     public void finishHyperCube(Hypercube selectCube) {

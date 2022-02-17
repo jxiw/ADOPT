@@ -14,7 +14,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
 
     private final Hypercube selectCube;
 
-    private final int[] attributeOrder;
+//    private final int[] attributeOrder;
 
     private final int nrJoined;
 
@@ -79,7 +79,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
     public HyperCubeEvaluationTask(long budget, Hypercube selectCube, int[] attributeOrder,
                                    LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar) {
         this.selectCube = selectCube;
-        this.attributeOrder = attributeOrder;
+//        this.attributeOrder = attributeOrder;
         this.exploreDomain = selectCube.unfoldCube(attributeOrder);
         // for every table in from clause
         this.nrJoined = idToIter.length;
@@ -127,7 +127,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
 
     @Override
     public HyperCubeEvaluationResult call() throws Exception {
-        System.out.println("exploreDomain:" + exploreDomain);
+//        System.out.println("exploreDomain:" + exploreDomain);
         // step one: reset the iterator
         for (LFTJoin join : joins) {
             join.reset();
@@ -251,7 +251,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
                     }
 
 //                    System.out.println("endValues:" + endValues);
-                    HyperCubeEvaluationResult result = new HyperCubeEvaluationResult(selectCube, false, joinResult, endValues);
+                    HyperCubeEvaluationResult result = new HyperCubeEvaluationResult(selectCube, false, joinResult, endValues, budget);
                     return result;
                 }
 
@@ -283,9 +283,8 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
                 }
             }
         }
-        System.out.println("dfssdd");
         //  finish query
-        HyperCubeEvaluationResult result = new HyperCubeEvaluationResult(selectCube, true, joinResult, null);
+        HyperCubeEvaluationResult result = new HyperCubeEvaluationResult(selectCube, true, joinResult, null, budget);
         return result;
     }
 }
