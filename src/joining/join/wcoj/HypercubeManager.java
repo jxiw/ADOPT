@@ -60,6 +60,13 @@ public class HypercubeManager {
         }
     }
 
+    public List<List<Hypercube>> allocateNHypercubeEachThread(int nrPartition) {
+        if (hypercubes.size() == 0) {
+            return null;
+        }
+        return ArrayUtilities.batches(hypercubes, nrPartition);
+    }
+
     public Hypercube allocateHypercube() {
         if (hypercubes.size() == 0) {
             // finish the execution

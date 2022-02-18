@@ -3,6 +3,7 @@ package joining.join.wcoj;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class ArrayUtilities {
 
@@ -38,19 +39,35 @@ public class ArrayUtilities {
         }
     }
 
+    public static <T> List<List<T>> batches(List<T> source, int nrPartition) {
+        int size = source.size();
+        int length = (int) Math.ceil(source.size() / (double) nrPartition);
+        int fullChunks = (size - 1) / length;
+        return IntStream.range(0, fullChunks + 1).mapToObj(
+                n -> source.subList(n * length, n == fullChunks ? size : (n + 1) * length)).collect(Collectors.toList());
+    }
+
+
     public static void main(String[] args) {
 //        List<int[]> combinations = permutations(3);
 //        System.out.println(combinations.size());
 //        for (int[] combination : combinations) {
 //            System.out.println(Arrays.toString(combination));
 //        }
-        List<Integer> test = new ArrayList<>();
-        test.add(34);
-        test.add(56);
-        System.out.println(test.hashCode());
-        test = new ArrayList<>();
-        test.add(56);
-        test.add(34);
-        System.out.println(test.hashCode());
+
+//        List<Integer> test = new ArrayList<>();
+//        test.add(34);
+//        test.add(56);
+//        System.out.println(test.hashCode());
+//        test = new ArrayList<>();
+//        test.add(56);
+//        test.add(34);
+//        System.out.println(test.hashCode());
+
+        List<Integer> l1 = Arrays.asList();
+        int nrThreads = 32;
+        int nrPerThread = (int) Math.ceil(l1.size() / (double) nrThreads);
+        System.out.println("nrPerThread:"+ nrPerThread);
+        System.out.println(ArrayUtilities.batches(l1, nrPerThread));
     }
 }

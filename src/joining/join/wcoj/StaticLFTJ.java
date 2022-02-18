@@ -217,34 +217,30 @@ public class StaticLFTJ extends MultiWayJoin {
     double resumeJoin(long budget) throws Exception {
         // check available budget
 //        System.out.println("attribute value bound:" + attributeValueBound);
-        double reward = 0;
-        List<Hypercube> selectCubes = manager.allocateNHypercube(JoinConfig.NTHREAD);
-        if (selectCubes.size() == 0) {
+
+        List<List<Hypercube>> selectCubePartitions = manager.allocateNHypercubeEachThread(JoinConfig.NTHREAD);
+        if (selectCubePartitions == null) {
             finished = true;
             return 0;
         }
         ExecutorService executorService = Executors.newFixedThreadPool(JoinConfig.NTHREAD);
         List<Future<HyperCubeEvaluationResult>> evaluateResults = new ArrayList<>();
-        for (int i = 0; i < selectCubes.size(); i++) {
-            Hypercube selectCube = selectCubes.get(i);
-            evaluateResults.add(executorService.submit(new HyperCubeEvaluationTask(budget, selectCube, attributeOrder, idToIter, itersNumberByVar)));
+        for (List<Hypercube> selectCubes : selectCubePartitions) {
+            evaluateResults.add(executorService.submit(new HyperCubeEvaluationTask(budget, selectCubes, attributeOrder, idToIter, itersNumberByVar)));
         }
+        double reward = 0;
         for (Future<HyperCubeEvaluationResult> futureResult : evaluateResults) {
             HyperCubeEvaluationResult result = futureResult.get();
-            boolean isFinish = result.isFinish;
-            Hypercube selectCube = result.selectCube;
-//            System.out.println("isFinish:" + isFinish);
-            if (isFinish) {
-                // how many budget do we use
-                long useBudget = budget - result.remainBudget;
-//                System.out.println("useBudget:" + useBudget);
-//                System.out.println("processVolume1:" + selectCube.getVolume());
-                reward += (selectCube.getVolume() / manager.totalVolume) * (budget / (double) useBudget);
-                manager.finishHyperCube(selectCube);
+            List<Hypercube> finishedHypercubes = result.finishedCubes;
+            Hypercube unfinishedHypercube = result.unfinishedCube;
+            for (Hypercube finishedCube : finishedHypercubes) {
+                reward += finishedCube.getVolume() / manager.totalVolume;
+                manager.finishHyperCube(finishedCube);
                 MultiWayJoin.result.merge(result.joinResult);
-            } else {
-                double processVolume = manager.updateInterval(selectCube, result.endValues, attributeOrder);
-//                System.out.println("processVolume2:" + processVolume);
+            }
+            // for unfinished hypercube
+            if (unfinishedHypercube != null) {
+                double processVolume = manager.updateInterval(unfinishedHypercube, result.endValues, attributeOrder);
                 reward += processVolume / manager.totalVolume;
                 MultiWayJoin.result.merge(result.joinResult);
             }

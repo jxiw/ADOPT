@@ -115,7 +115,7 @@ public class LFTJoin {
      * Advance to next trie level and reset
      * iterator to first associated position.
      */
-    public void open() throws Exception {
+    public void open() {
         int curTuple = curTrieLevel < 0 ? 0 : curTuples[curTrieLevel];
         int nextUB = card - 1;
         if (curTrieLevel >= 0) {

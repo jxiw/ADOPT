@@ -8,18 +8,21 @@ import java.util.stream.IntStream;
 
 public class Hypercube {
 
-    private List<Pair<Integer, Integer>> intervals;
+    public List<Pair<Integer, Integer>> intervals;
+
+//    public boolean explore;
 
     final int dim;
 
     public Hypercube(List<Pair<Integer, Integer>> intervals) {
         this.intervals = intervals;
         this.dim = intervals.size();
+//        this.explore = false;
     }
 
     public double getVolume() {
         double volume = 1;
-        for (Pair<Integer, Integer> interval: intervals.subList(0, 2)) {
+        for (Pair<Integer, Integer> interval: intervals) {
             volume *= (interval.getSecond() - interval.getFirst() + 1);
         }
 //        System.out.println("volume:" + volume);
