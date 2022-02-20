@@ -32,7 +32,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
      * in last invocation (used for reward
      * calculations).
      */
-    public int lastNrResults = -1;
+//    public int lastNrResults = -1;
     /**
      * Number of variables in input query (i.e.,
      * number of equivalence classes of join columns
@@ -110,7 +110,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
      */
     void addResultTuple() {
         // Update reward-related statistics
-        ++lastNrResults;
+//        ++lastNrResults;
         // Generate result tuple
         int[] resultTuple = new int[nrJoined];
         // Iterate over all joined tables
@@ -128,7 +128,6 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
         long startMillis = System.currentTimeMillis();
         List<Hypercube> finishCubes = new ArrayList<>();
         for (Hypercube selectCube : this.selectCubes) {
-
             // Select a hypercube to execute
             List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(this.attributeOrder);
 
@@ -139,6 +138,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
             }
 
             // set the start position of LFTJ
+            curVariableID = 0;
             backtracked = false;
             // step two: move iterator to start of unexplored part
             // case 1: [10], [10], [1, 100]
@@ -290,9 +290,12 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
                     }
                 }
             }
+
             // add select hypercube into finish cube
+            System.out.println("curVariableID" + curVariableID);
+            assert curVariableID == -1;
             finishCubes.add(selectCube);
-            if (budget < 0) {
+            if (budget <= 0) {
                 break;
             }
         }

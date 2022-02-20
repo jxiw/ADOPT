@@ -223,10 +223,19 @@ public class StaticLFTJ extends MultiWayJoin {
             finished = true;
             return 0;
         }
+        System.out.println("all hypercubes:" + manager.hypercubes);
         ExecutorService executorService = Executors.newFixedThreadPool(JoinConfig.NTHREAD);
         List<Future<HyperCubeEvaluationResult>> evaluateResults = new ArrayList<>();
+        int nrCubes = 0;
         for (List<Hypercube> selectCubes : selectCubePartitions) {
+            System.out.println("selectCubes:" + selectCubes);
+            nrCubes += selectCubes.size();
             evaluateResults.add(executorService.submit(new HyperCubeEvaluationTask(budget, selectCubes, attributeOrder, idToIter, itersNumberByVar)));
+        }
+        System.out.println("nrCubes:" + nrCubes);
+        System.out.println("nrCubes2:" + manager.hypercubes.size());
+        if (nrCubes != manager.hypercubes.size()) {
+            System.exit(0);
         }
         double reward = 0;
         for (Future<HyperCubeEvaluationResult> futureResult : evaluateResults) {

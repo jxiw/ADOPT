@@ -217,7 +217,7 @@ public class JoinProcessor {
         System.out.println("join time:" + (joinEndMillis - joinStartMillis));
 
         // Materialize result table
-        Collection<ResultTuple> tuples = DynamicLFTJ.result.getTuples();
+        Collection<ResultTuple> tuples = MultiWayJoin.result.getTuples();
         int nrTuples = tuples.size();
         System.out.println("Materializing join result with " + nrTuples + " tuples ...");
         String targetRelName = NamingConfig.JOINED_NAME;
