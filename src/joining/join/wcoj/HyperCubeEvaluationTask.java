@@ -159,6 +159,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
 
                 // Go directly to point of interrupt?
                 if (backtracked) {
+                    --budget;
                     // if it is backtracked
                     backtracked = false;
                     LFTJoin minIter = joinFrame.curIters.get(joinFrame.p);
@@ -198,6 +199,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
                     for (LFTJoin iter : iters) {
                         iter.open();
                         iter.seek(startKey);
+                        budget -= 3;
                     }
 
                     // Check for early termination
@@ -235,7 +237,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
                 // execute join
                 while (true) {
                     // Count current round
-                    --budget;
+//                    --budget;
 //                JoinStats.nrIterations++;
                     // Check for timeout and not in the last end
                     if (budget <= 0) {
@@ -258,7 +260,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
 //                    System.out.println("endValues:" + endValues);
                         HyperCubeEvaluationResult result = new HyperCubeEvaluationResult(finishCubes, selectCube, joinResult, endValues);
                         long endMillis = System.currentTimeMillis();
-                        System.out.println("duration:" + (endMillis - startMillis));
+                        System.out.println("duration 1:" + (endMillis - startMillis));
                         return result;
                     }
 
@@ -274,6 +276,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
                         break;
                     } else {
                         // min key not equal max key
+                        --budget;
                         minIter.seek(joinFrame.maxKey);
                         if (minIter.atEnd()) {
                             // Go one level up in each trie
@@ -292,8 +295,6 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
             }
 
             // add select hypercube into finish cube
-            System.out.println("curVariableID" + curVariableID);
-            assert curVariableID == -1;
             finishCubes.add(selectCube);
             if (budget <= 0) {
                 break;
@@ -302,7 +303,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
         //  finish query
         HyperCubeEvaluationResult result = new HyperCubeEvaluationResult(finishCubes, null, joinResult, null);
         long endMillis = System.currentTimeMillis();
-        System.out.println("duration:" + (endMillis - startMillis));
+        System.out.println("duration 2:" + (endMillis - startMillis));
         return result;
     }
 }

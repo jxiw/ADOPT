@@ -22,8 +22,8 @@ public class HyperCubeEvaluationResult {
         this.unfinishedCube = unfinishedCube;
         this.joinResult = joinResult;
         this.endValues = endValues;
-        System.out.println("finishedCubes:" + finishedCubes);
-        System.out.println("unfinishedCube:" + unfinishedCube);
-        System.out.println("endValues:" + endValues);
+//        System.out.println("finishedCubes:" + finishedCubes);
+//        System.out.println("unfinishedCube:" + unfinishedCube);
+//        System.out.println("endValues:" + endValues);
     }
 }
