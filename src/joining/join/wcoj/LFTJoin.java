@@ -62,15 +62,17 @@ public class LFTJoin {
         return curCol.data[row];
     }
 
-    public void seek(int seekKey) {
+    public int seek(int seekKey) {
         // Search next tuple in current range
-        int next = seekInRange(seekKey, curUBs[curTrieLevel]);
+        int[] nextInfo = seekInRange(seekKey, curUBs[curTrieLevel]);
+        int next = nextInfo[0];
         // Did we find a tuple?
         if (next < 0) {
             curTuples[curTrieLevel] = card;
         } else {
             curTuples[curTrieLevel] = next;
         }
+        return nextInfo[1];
     }
 
     /**
@@ -83,19 +85,21 @@ public class LFTJoin {
         curTrieLevel = -1;
     }
 
-    public int seekInRange(int seekKey, int ub) {
+    public int[] seekInRange(int seekKey, int ub) {
         // Count search in trie
         int lb = curTuples[curTrieLevel];
         // Try exponential search
         int pos = 1;
         int stepSize = 2;
         if (keyAt(lb) >= seekKey) {
-            return lb;
+            return new int[]{lb, 1};
         } else if (keyAt(ub) < seekKey) {
-            return -1;
+            return new int[]{-1, 2};
         }
+        int cost = 2;
         while ((lb + pos) <= ub && keyAt(lb + pos) < seekKey) {
             pos = pos * stepSize;
+            cost += 1;
         }
         // the key belongs to [lb + pos/2 + 1, lb + pos]
         int start = lb + pos / stepSize + 1;
@@ -107,23 +111,27 @@ public class LFTJoin {
             } else {
                 start = middle + 1;
             }
+            cost += 1;
         }
-        return start;
+        return new int[]{start, cost};
     }
 
     /**
      * Advance to next trie level and reset
      * iterator to first associated position.
      */
-    public void open() {
+    public int open() {
         int curTuple = curTrieLevel < 0 ? 0 : curTuples[curTrieLevel];
         int nextUB = card - 1;
+        int cost = 0;
         if (curTrieLevel >= 0) {
             for (int i = 0; i <= curTrieLevel; ++i) {
                 nextUB = Math.min(curUBs[i], nextUB);
             }
             int curKey = key();
-            int nextPos = seekInRange(curKey + 1, nextUB);
+            int[] nextInfo = seekInRange(curKey + 1, nextUB);
+            int nextPos = nextInfo[0];
+            cost += nextInfo[1];
             if (nextPos >= 0) {
                 nextUB = Math.min(nextPos - 1, nextUB);
             }
@@ -131,13 +139,14 @@ public class LFTJoin {
         ++curTrieLevel;
         curUBs[curTrieLevel] = nextUB;
         curTuples[curTrieLevel] = curTuple;
+        return cost;
     }
 
     /**
      * Proceeds to next key in current trie level.
      */
-    public void next() {
-        seek(key() + 1);
+    public int next() {
+        return seek(key() + 1);
     }
 
     /**

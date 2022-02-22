@@ -159,11 +159,10 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
 
                 // Go directly to point of interrupt?
                 if (backtracked) {
-                    --budget;
                     // if it is backtracked
                     backtracked = false;
                     LFTJoin minIter = joinFrame.curIters.get(joinFrame.p);
-                    minIter.seek(joinFrame.maxKey + 1);
+                    budget -= minIter.seek(joinFrame.maxKey + 1);
                     // Check for early termination
                     // if iterator reach to the end of select hypercube
                     if (minIter.atEnd() || minIter.key() > exploreDomain.get(curVariableID).getSecond()) {
@@ -197,9 +196,8 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
                     int endKey = exploreDomain.get(curVariableID).getSecond();
                     // open lftj iterator
                     for (LFTJoin iter : iters) {
-                        iter.open();
-                        iter.seek(startKey);
-                        budget -= 3;
+                        budget -= iter.open();
+                        budget -= iter.seek(startKey);
                     }
 
                     // Check for early termination
@@ -276,8 +274,7 @@ public class HyperCubeEvaluationTask implements Callable<HyperCubeEvaluationResu
                         break;
                     } else {
                         // min key not equal max key
-                        --budget;
-                        minIter.seek(joinFrame.maxKey);
+                        budget -= minIter.seek(joinFrame.maxKey);
                         if (minIter.atEnd()) {
                             // Go one level up in each trie
                             for (LFTJoin iter : joinFrame.curIters) {
