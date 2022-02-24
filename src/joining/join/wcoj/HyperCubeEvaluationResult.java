@@ -9,21 +9,21 @@ public class HyperCubeEvaluationResult {
     /**
      *
      */
-    public List<Hypercube> finishedCubes;
+    public Hypercube selectCube;
 
-    public Hypercube unfinishedCube;
+    public boolean isFinish;
 
     public JoinResult joinResult;
 
     public List<Integer> endValues;
 
-    public HyperCubeEvaluationResult(List<Hypercube> finishedCubes, Hypercube unfinishedCube, JoinResult joinResult, List<Integer> endValues) {
-        this.finishedCubes = finishedCubes;
-        this.unfinishedCube = unfinishedCube;
+    public long remainBudget;
+
+    public HyperCubeEvaluationResult(Hypercube selectCube, boolean isFinish, JoinResult joinResult, List<Integer> endValues, long remainBudget) {
+        this.selectCube = selectCube;
+        this.isFinish = isFinish;
         this.joinResult = joinResult;
         this.endValues = endValues;
-//        System.out.println("finishedCubes:" + finishedCubes);
-//        System.out.println("unfinishedCube:" + unfinishedCube);
-//        System.out.println("endValues:" + endValues);
+        this.remainBudget = remainBudget;
     }
 }

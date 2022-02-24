@@ -17,7 +17,7 @@ public class UctNode {
     /**
      * Used for randomized selection policy.
      */
-    final Random random = new Random();
+    final Random random = new Random(42);
     /**
      * The query for which we are optimizing.
      */
@@ -106,7 +106,7 @@ public class UctNode {
     public UctNode(long roundCtr, QueryInfo query, 
     		boolean useHeuristic, DynamicMWJoin joinOp) {
     	// Count node generation
-    	++JoinStats.nrUctNodes;
+//    	++JoinStats.nrUctNodes;
         this.query = query;
         this.nrTables = query.nrJoined;
         createdIn = roundCtr;
@@ -143,7 +143,7 @@ public class UctNode {
      */
     public UctNode(long roundCtr, UctNode parent, int joinedTable) {
     	// Count node generation
-    	++JoinStats.nrUctNodes;
+//    	++JoinStats.nrUctNodes;
         createdIn = roundCtr;
         treeLevel = parent.treeLevel + 1;
         nrActions = parent.nrActions - 1;

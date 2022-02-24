@@ -1,12 +1,13 @@
 package joining.join;
 
+import joining.result.JoinResult;
 import preprocessing.Context;
 import query.QueryInfo;
 
 /**
  * A multi-way join operator that executes joins in a
  * sequence of small time slices. The difference to
- * {@link joning.join.MultiWayJoin} is that join orders
+ * {@link joining.join.MultiWayJoin} is that join orders
  * can be changed in each invocation. 
  * 
  * @author immanueltrummer
@@ -25,6 +26,11 @@ public abstract class DynamicMWJoin extends MultiWayJoin {
     		Context executionContext) throws Exception {
 		super(query, executionContext);
 	}
+
+	public double execute(int[] order) {
+		return 0;
+	}
+
 	/**
      * Executes given join order for a given number of steps.
      * 
@@ -32,5 +38,5 @@ public abstract class DynamicMWJoin extends MultiWayJoin {
      * @return			reward (higher reward means faster progress)
      * @throws Exception 
      */
-    public abstract double execute(int[] order) throws Exception;
+    public abstract double execute(int[] order, JoinResult result) throws Exception;
 }

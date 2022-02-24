@@ -13,6 +13,7 @@ import joining.plan.JoinOrder;
 import joining.plan.LeftDeepPlan;
 import joining.progress.ProgressTracker;
 import joining.progress.State;
+import joining.result.JoinResult;
 import preprocessing.Context;
 import query.QueryInfo;
 import statistics.JoinStats;
@@ -113,7 +114,7 @@ public class OldJoin extends DynamicMWJoin {
      * @param order   table join order
      */
 	@Override
-	public double execute(int[] order) throws Exception {
+	public double execute(int[] order, JoinResult resultTuples) throws Exception {
     	log("Context:\t" + preSummary.toString());
     	log("Join order:\t" + Arrays.toString(order));
     	log("Aliases:\t" + Arrays.toString(query.aliases));
@@ -138,11 +139,13 @@ public class OldJoin extends DynamicMWJoin {
         //logger.println("Start state " + state);
         int[] offsets = tracker.tableOffset;
         executeWithBudget(plan, state, offsets);
-        double reward = reward(joinOrder.order, 
+        double reward = reward(joinOrder.order,
         		tupleIndexDelta, offsets);
         tracker.updateProgress(joinOrder, state);
+        resultTuples = result;
         return reward;
 	}
+
 	/**
 	 * Evaluates list of given predicates on current tuple
 	 * indices and returns true iff all predicates evaluate
@@ -213,7 +216,7 @@ public class OldJoin extends DynamicMWJoin {
         // at each iteration start, tuple indices contain next tuple
         // combination to look at.
         while (remainingBudget > 0 && joinIndex >= 0) {
-        	++JoinStats.nrIterations;
+//        	++JoinStats.nrIterations;
         	//log("Offsets:\t" + Arrays.toString(offsets));
         	//log("Indices:\t" + Arrays.toString(tupleIndices));
             // Get next table in join order
@@ -228,7 +231,7 @@ public class OldJoin extends DynamicMWJoin {
             if ((PreConfig.PRE_FILTER || unaryPred == null || 
             		unaryPred.evaluate(tupleIndices)>0) &&
             		evaluateAll(applicablePreds.get(joinIndex), tupleIndices)) {
-            	++JoinStats.nrTuples;
+//            	++JoinStats.nrTuples;
                 // Do we have a complete result row?
                 if(joinIndex == plan.joinOrder.order.length - 1) {
                     // Complete result row -> add to result

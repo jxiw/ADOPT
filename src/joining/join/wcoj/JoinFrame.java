@@ -6,7 +6,7 @@ import java.util.List;
  * Summarizes all information about one specific
  * variable in a join order that is relevant to
  * resume LFT join.
- * 
+ *
  * @author immanueltrummer
  *
  */

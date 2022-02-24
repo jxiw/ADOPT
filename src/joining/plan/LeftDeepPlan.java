@@ -55,7 +55,7 @@ public class LeftDeepPlan {
 			Map<Expression, KnaryBoolEval> evalMap, int[] order) 
 					throws Exception {
 		// Count generated plan
-		++JoinStats.nrPlansTried;
+//		++JoinStats.nrPlansTried;
 		int nrTables = query.nrJoined;
 		this.joinOrder = new JoinOrder(order);
 		// Initialize remaining predicates

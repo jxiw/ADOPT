@@ -1,6 +1,8 @@
 package joining.uct;
 
+import joining.ParallelLFTJ;
 import joining.join.DynamicMWJoin;
+import joining.result.JoinResult;
 import query.QueryInfo;
 import statistics.JoinStats;
 
@@ -17,7 +19,7 @@ public class UctNodeLFTJ {
     /**
      * Used for randomized selection policy.
      */
-    final Random random = new Random(42);
+    final Random random = new Random();
     /**
      * The query for which we are optimizing.
      */
@@ -79,7 +81,7 @@ public class UctNodeLFTJ {
     /**
      * Evaluates a given join order and accumulates results.
      */
-    final DynamicMWJoin joinOp;
+    final ParallelLFTJ joinOp;
     /**
      * Indicates whether the search space is restricted to
      * join orders that avoid Cartesian products. This
@@ -95,6 +97,9 @@ public class UctNodeLFTJ {
      * is activated.
      */
     final Set<Integer> recommendedActions;
+
+
+
     /**
      * Initialize UCT root node.
      *
@@ -104,9 +109,9 @@ public class UctNodeLFTJ {
      * @param joinOp		multi-way join operator allowing fast join order switching
      */
     public UctNodeLFTJ(long roundCtr, QueryInfo query,
-                   boolean useHeuristic, DynamicMWJoin joinOp) {
+                   boolean useHeuristic, ParallelLFTJ joinOp) {
         // Count node generation
-        ++JoinStats.nrUctNodes;
+//        ++JoinStats.nrUctNodes;
         this.query = query;
         this.nrAttributes = query.equiJoinAttribute.size();
         createdIn = roundCtr;
@@ -143,7 +148,7 @@ public class UctNodeLFTJ {
      */
     public UctNodeLFTJ(long roundCtr, UctNodeLFTJ parent, int joinedAttribute) {
         // Count node generation
-        ++JoinStats.nrUctNodes;
+//        ++JoinStats.nrUctNodes;
         createdIn = roundCtr;
         treeLevel = parent.treeLevel + 1;
         nrActions = parent.nrActions - 1;

@@ -6,7 +6,7 @@ import com.koloboke.collect.map.hash.HashDoubleIntMaps;
 
 import config.LoggingConfig;
 import data.DoubleData;
-import statistics.JoinStats;
+//import statistics.JoinStats;
 
 /**
  * Indexes double values (not necessarily unique).
@@ -95,7 +95,7 @@ public class DoubleIndex extends Index {
 		int firstPos = keyToPositions.getOrDefault(value, -1);
 		// No indexed values?
 		if (firstPos < 0) {
-			JoinStats.nrUniqueIndexLookups += 1;
+//			JoinStats.nrUniqueIndexLookups += 1;
 			return cardinality;
 		}
 		// Can we return first indexed value?
@@ -106,10 +106,10 @@ public class DoubleIndex extends Index {
 		// Get number of indexed values
 		int nrVals = positions[firstPos];
 		// Update index-related statistics
-		JoinStats.nrIndexEntries += nrVals;
-		if (nrVals==1) {
-			JoinStats.nrUniqueIndexLookups += 1;
-		}
+//		JoinStats.nrIndexEntries += nrVals;
+//		if (nrVals==1) {
+//			JoinStats.nrUniqueIndexLookups += 1;
+//		}
 		// Restrict search range via binary search
 		int lowerBound = firstPos + 1;
 		int upperBound = firstPos + nrVals;

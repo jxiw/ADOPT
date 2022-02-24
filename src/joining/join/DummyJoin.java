@@ -2,6 +2,7 @@ package joining.join;
 
 import java.util.Random;
 
+import joining.result.JoinResult;
 import query.QueryInfo;
 
 /**
@@ -23,7 +24,7 @@ public class DummyJoin extends DynamicMWJoin {
 	}
 
 	@Override
-	public double execute(int[] order) throws Exception {
+	public double execute(int[] order, JoinResult result) throws Exception {
 		return random.nextDouble();
 	}
 

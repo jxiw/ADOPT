@@ -27,7 +27,7 @@ import preprocessing.Preprocessor;
 import print.RelationPrinter;
 import query.ColumnRef;
 import query.QueryInfo;
-import statistics.JoinStats;
+//import statistics.JoinStats;
 
 /**
  * Benchmarks pre-, join, and post-processing stage and compares

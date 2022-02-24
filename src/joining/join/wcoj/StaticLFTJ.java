@@ -31,30 +31,19 @@ import statistics.JoinStats;
 import util.Pair;
 
 public class StaticLFTJ extends MultiWayJoin {
-//    /**
-//     * Maps alias IDs to corresponding iterator.
-//     */
-//    final Map<String, LFTJiter> aliasToIter;
     /**
      * Contains at i-th position iterator over
      * i-th element in query from clause.
      */
-    final LFTJiter[] idToIter;
+    public final LFTJiter[] idToIter;
     /**
      * Order of variables (i.e., equivalence classes
      * of join attributes connected via equality
      * predicates).
      */
     final List<Set<ColumnRef>> varOrder;
-    /**
-     * Contains at i-th position the iterators
-     * involved in obtaining keys for i-th
-     * variable (consistent with global
-     * variable order).
-     */
-    final List<List<LFTJiter>> itersByVar;
 
-    final List<List<Integer>> itersNumberByVar;
+    public final List<List<Integer>> itersNumberByVar;
     /**
      * Number of variables in input query (i.e.,
      * number of equivalence classes of join columns
@@ -65,22 +54,10 @@ public class StaticLFTJ extends MultiWayJoin {
      * Whether entire result was generated.
      */
     boolean finished = false;
-//    /**
-//     * Counds iterations of the main loop.
-//     */
-//    long roundCtr = 0;
-
-    HypercubeManager manager;
 
     final int[] attributeOrder;
 
     List<Pair<Integer, Integer>> attributeValueBound;
-
-//    boolean isCache = false;
-
-//    Map<String, Set<Integer>> joinTableToAttributeIdx;
-
-//    Map<CacheAttribute, Set<Integer>> cacheAttributes;
 
     /**
      * Initialize join for given query.
@@ -89,21 +66,13 @@ public class StaticLFTJ extends MultiWayJoin {
      * @param executionContext summarizes procesing context
      * @throws Exception
      */
-    public StaticLFTJ(QueryInfo query, Context executionContext, int[] order,
-                      JoinResult joinResult, List<Pair<Integer, Integer>> attributeValueBound, HypercubeManager manager) throws Exception {
+    public StaticLFTJ(QueryInfo query, Context executionContext, int[] order, List<Pair<Integer, Integer>> attributeValueBound) throws Exception {
         // Initialize query and context variables
-        super(query, executionContext, joinResult);
-        // Choose variable order arbitrarily
-//		varOrder = new ArrayList<>();
-//		varOrder.addAll(query.equiJoinClasses);
-//		Collections.shuffle(varOrder);
+        super(query, executionContext);
         attributeOrder = order;
         varOrder = Arrays.stream(order).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList());
         nrVars = query.equiJoinClasses.size();
-//        System.out.println("Variable Order: " + varOrder);
-//        attributesCardinality = new ArrayList();
         // Initialize iterators
-//        long stime2 = System.currentTimeMillis();
         Map<String, LFTJiter> aliasToIter = new HashMap<>();
         HashMap<String, Integer> aliasToNumber = new HashMap<>();
         idToIter = new LFTJiter[nrJoined];
@@ -114,25 +83,16 @@ public class StaticLFTJ extends MultiWayJoin {
             aliasToIter.put(alias, iter);
             aliasToNumber.put(alias, aliasCtr);
             idToIter[aliasCtr] = iter;
-        }
-//        long stime3 = System.currentTimeMillis();
+        };
         // Group iterators by variable
-        itersByVar = new ArrayList<>();
         itersNumberByVar = new ArrayList<>();
         for (Set<ColumnRef> var : varOrder) {
-            List<LFTJiter> curVarIters = new ArrayList<>();
             List<Integer> curNumberIters = new ArrayList<>();
-//            List<Integer> attributeCardinality = new ArrayList<>();
             for (ColumnRef colRef : var) {
                 String alias = colRef.aliasName;
-                LFTJiter iter = aliasToIter.get(alias);
-                curVarIters.add(iter);
                 curNumberIters.add(aliasToNumber.get(alias));
-//                attributeCardinality.add(iter.card);
             }
-            itersByVar.add(curVarIters);
             itersNumberByVar.add(curNumberIters);
-//            attributesCardinality.add(attributeCardinality);
         }
 
 
@@ -203,66 +163,19 @@ public class StaticLFTJ extends MultiWayJoin {
 ////            System.out.println("joinTableToAttributeIdx:" + joinTableToAttributeIdx);
 //        }
 
-        this.manager = manager;
         this.attributeValueBound = Arrays.stream(order).mapToObj(attributeValueBound::get).collect(Collectors.toList());
     }
 
-
-
-    /**
-     * Resumes join operation for a fixed number of steps.
-     *
-     * @param budget how many iterations are allowed
-     */
-    double resumeJoin(long budget) throws Exception {
-        // check available budget
-//        System.out.println("attribute value bound:" + attributeValueBound);
-
-        List<List<Hypercube>> selectCubePartitions = manager.allocateNHypercubeEachThread(JoinConfig.NTHREAD);
-        if (selectCubePartitions == null) {
-            finished = true;
-            return 0;
-        }
-//        System.out.println("all hypercubes:" + manager.hypercubes);
-        ExecutorService executorService = Executors.newFixedThreadPool(JoinConfig.NTHREAD);
-        List<Future<HyperCubeEvaluationResult>> evaluateResults = new ArrayList<>();
-        int nrCubes = 0;
-        for (List<Hypercube> selectCubes : selectCubePartitions) {
-//            System.out.println("selectCubes:" + selectCubes);
-            nrCubes += selectCubes.size();
-            evaluateResults.add(executorService.submit(new HyperCubeEvaluationTask(budget, selectCubes, attributeOrder, idToIter, itersNumberByVar)));
-        }
-//        System.out.println("nrCubes:" + nrCubes);
-//        System.out.println("nrCubes2:" + manager.hypercubes.size());
-        if (nrCubes != manager.hypercubes.size()) {
-            System.exit(0);
-        }
-        double reward = 0;
-        for (Future<HyperCubeEvaluationResult> futureResult : evaluateResults) {
-            HyperCubeEvaluationResult result = futureResult.get();
-            List<Hypercube> finishedHypercubes = result.finishedCubes;
-            Hypercube unfinishedHypercube = result.unfinishedCube;
-            for (Hypercube finishedCube : finishedHypercubes) {
-                reward += finishedCube.getVolume() / manager.totalVolume;
-                manager.finishHyperCube(finishedCube);
-                MultiWayJoin.result.merge(result.joinResult);
-            }
-            // for unfinished hypercube
-            if (unfinishedHypercube != null) {
-                double processVolume = manager.updateInterval(unfinishedHypercube, result.endValues, attributeOrder);
-                reward += processVolume / manager.totalVolume;
-                MultiWayJoin.result.merge(result.joinResult);
-            }
-        }
-
-        executorService.shutdown();
-        try {
-            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return Math.max(reward, JoinConfig.MIN_REWARD);
-    }
+//    /**
+//     * Resumes join operation for a fixed number of steps.
+//     *
+//     * @param budget how many iterations are allowed
+//     */
+//    double resumeJoin(long budget) throws Exception {
+//        // check available budget
+//
+//
+//    }
 
     @Override
     public boolean isFinished() {
