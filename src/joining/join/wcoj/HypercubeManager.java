@@ -4,11 +4,13 @@ import config.JoinConfig;
 import util.Pair;
 
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class HypercubeManager {
 
@@ -17,19 +19,39 @@ public class HypercubeManager {
      */
     public static BlockingDeque<Hypercube> hypercubes;
 
-    public static ConcurrentHashMap<Long, Boolean> isWorking;
+//    public static ConcurrentHashMap<Long, Boolean> isWorking;
 
     public static final CubeSelectionPolicy DEFAULT_CUBE_SELECTION =
             CubeSelectionPolicy.FIRST;
 
-    public static double totalVolume = 0;
+    public static AtomicInteger nrCube;
 
-    public HypercubeManager(List<Pair<Integer, Integer>> joinValues) {
-        Hypercube cube = new Hypercube(joinValues);
+    public static double totalVolume;
+
+    public static void init(List<Pair<Integer, Integer>> joinValues, int initNrCube) {
         hypercubes = new LinkedBlockingDeque<Hypercube>();
-        hypercubes.add(cube);
-        totalVolume = cube.getVolume();
-        isWorking = new ConcurrentHashMap<>();
+        int rangeInFirstDim = joinValues.get(0).getSecond() - joinValues.get(0).getFirst();
+        int rangeInEachPartition = rangeInFirstDim / initNrCube;
+        int firstDimStart = joinValues.get(0).getFirst();
+        int firstDimEnd = joinValues.get(0).getSecond();
+//        System.out.println("cube:" + cube);
+        for (int i = 0; i < initNrCube; i++) {
+            int partitionStart = firstDimStart + i * rangeInEachPartition;
+            int partitionEnd = firstDimStart + (i + 1) * rangeInEachPartition - 1;
+            if (i == initNrCube - 1) {
+                partitionEnd = firstDimEnd;
+            }
+            List<Pair<Integer, Integer>> subJoinValues = new ArrayList<>(joinValues);
+            subJoinValues.set(0, new Pair<>(partitionStart, partitionEnd));
+            Hypercube cube = new Hypercube(subJoinValues);
+//            System.out.println("cube:" + cube);
+            hypercubes.add(cube);
+            totalVolume += cube.getVolume();
+        }
+
+//        totalVolume = cube.getVolume();
+//        isWorking = new ConcurrentHashMap<>();
+        nrCube = new AtomicInteger(initNrCube);
 //        System.out.println("totalVolume:" + totalVolume);
     }
 
@@ -110,15 +132,15 @@ public class HypercubeManager {
 
     public static Hypercube allocateHypercube() throws InterruptedException {
         Hypercube cube = hypercubes.take();
-        long threadId = Thread.currentThread().getId();
-        System.out.println("threadId 1:" + threadId);
-        isWorking.put(threadId, true);
+//        long threadId = Thread.currentThread().getId();
+//        System.out.println("threadId 1:" + threadId);
+//        isWorking.put(threadId, true);
         return cube;
     }
 
 
     public static double updateInterval(Hypercube parentCube, List<Integer> endValues, int[] order) {
-        long threadId = Thread.currentThread().getId();
+//        long threadId = Thread.currentThread().getId();
         Hypercube cubeWithOrder = new Hypercube(parentCube.unfoldCube(order));
         List<Hypercube> remainHypercubes = cubeWithOrder.subtractByPoint(endValues);
 //        System.out.println("cubeWithOrder:" + cubeWithOrder);
@@ -139,16 +161,19 @@ public class HypercubeManager {
 //        System.out.println("process Volume:" + (cubeWithOrder.getVolume() - remainVolume));
 
         hypercubes.addAll(remainHypercubes);
-        System.out.println("threadId 22222:" + threadId);
-        isWorking.put(threadId, false);
-        System.out.println("threadId 2:" + threadId);
+        nrCube.addAndGet(remainHypercubes.size() - 1);
+
+//        System.out.println("threadId 22222:" + threadId);
+//        isWorking.put(threadId, false);
+//        System.out.println("threadId 2:" + threadId);
         return cubeWithOrder.getVolume() - remainVolume;
     }
 
     public static void finishHyperCube() {
-        long threadId = Thread.currentThread().getId();
-        isWorking.put(threadId, false);
-        System.out.println("threadId 2----:" + threadId);
+//        long threadId = Thread.currentThread().getId();
+//        isWorking.put(threadId, false);
+//        System.out.println("threadId 2----:" + threadId);
+        nrCube.decrementAndGet();
     }
 
     public static boolean isFinished() {

@@ -22,7 +22,8 @@ public class Hypercube {
 
     public double getVolume() {
         double volume = 1;
-        for (Pair<Integer, Integer> interval: intervals) {
+        int toIndex = Math.min(3, intervals.size());
+        for (Pair<Integer, Integer> interval: intervals.subList(0, toIndex)) {
             volume *= (interval.getSecond() - interval.getFirst() + 1);
         }
 //        System.out.println("volume:" + volume);
@@ -144,7 +145,7 @@ public class Hypercube {
         List<Integer> points1 = new ArrayList<>();
         points1.add(5);
         points1.add(4);
-        points1.add(6);
+        points1.add(8);
         List<Integer> points2 = new ArrayList<>();
         points2.add(3);
         points2.add(6);

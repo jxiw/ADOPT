@@ -9,7 +9,7 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.List;
 
-import joining.result.ResultTuple;
+//import joining.result.ResultTuple;
 
 /**
  * Represents content of numeric column.
@@ -85,11 +85,11 @@ public class DoubleData extends ColumnData implements Serializable {
 	}
 
 	@Override
-	public ColumnData copyRows(Collection<ResultTuple> tuples, int tableIdx) {
+	public ColumnData copyRows(List<int[]> tuples, int tableIdx) {
 		DoubleData copyColumn = new DoubleData(tuples.size());
 		int copiedRowCtr = 0;
-		for (ResultTuple compositeTuple : tuples) {
-			int baseTuple = compositeTuple.baseIndices[tableIdx];
+		for (int[] compositeTuple : tuples) {
+			int baseTuple = compositeTuple[tableIdx];
 			copyColumn.data[copiedRowCtr] = data[baseTuple];
 			copyColumn.isNull.set(copiedRowCtr, isNull.get(baseTuple));
 			++copiedRowCtr;

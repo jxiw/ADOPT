@@ -36,31 +36,35 @@ public class ParallelJoinTask implements Callable<ParallelJoinResult> {
         int[] attributeOrder = new int[query.nrAttribute];
         // Get default action selection policy
         SelectionPolicy policy = JoinConfig.DEFAULT_SELECTION;
-        while (true) {
+        long startMillis = System.currentTimeMillis();
+//        System.out.println("start in system:" + startMillis);
+        while (!this.parallelLFTJ.isFinish) {
             ++roundCtr;
             double reward = root.sample(roundCtr, attributeOrder, policy);
-            if (reward == -100) {
-                break;
-            }
 
-            boolean isWorking = false;
-            synchronized (HypercubeManager.isWorking) {
-                for (boolean b : HypercubeManager.isWorking.values()) {
-                    if (b) {
-                        isWorking = true;
-                        break;
-                    }
-                }
-            }
+//            boolean isWorking = false;
+//            synchronized (HypercubeManager.isWorking) {
+//                for (boolean b : HypercubeManager.isWorking.values()) {
+//                    if (b) {
+//                        isWorking = true;
+//                        break;
+//                    }
+//                }
+//            }
 
-            if (!isWorking && HypercubeManager.isFinished()) {
+            if (HypercubeManager.nrCube.get() == 0 && HypercubeManager.isFinished()) {
                 // notify other thread to terminate
-                for (int i = 0; i < JoinConfig.NTHREAD; i++) {
+//                System.out.println("end in system:" + System.currentTimeMillis());
+                for (int i = 0; i < JoinConfig.NTHREAD ; i++) {
                     HypercubeManager.hypercubes.add(new Hypercube(new ArrayList<>()));
                 }
                 break;
             }
         }
+        long endMillis = System.currentTimeMillis();
+        System.out.println("thread:"+ Thread.currentThread().getId() + ", duration in ms:" + (endMillis - startMillis));
+        System.out.println("thread:"+ Thread.currentThread().getId() + ", execution time in ms:" + parallelLFTJ.executionTime);
+        System.out.println("thread:"+ Thread.currentThread().getId() + ", wait time in ms:" + parallelLFTJ.waitTime);
         return new ParallelJoinResult(joinResult);
     }
 

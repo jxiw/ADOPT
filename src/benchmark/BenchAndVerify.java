@@ -236,6 +236,7 @@ public class BenchAndVerify {
 		benchOut.close();
 //		pgOut.close();
 		skinnerOut.close();
+		JoinProcessor.executorService.shutdown();
 	}
 
 }

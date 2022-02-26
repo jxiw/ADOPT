@@ -24,12 +24,13 @@ public class StaticLFTJCollections {
 
     static Context executionContext;
 
-    static List<Pair<Integer, Integer>> joinValueBound = new ArrayList<>();
+    static List<Pair<Integer, Integer>> joinValueBound;
 
-    public StaticLFTJCollections(QueryInfo query, Context executionContext) throws Exception {
+    public static void init(QueryInfo query, Context executionContext) throws Exception {
         StaticLFTJCollections.query = query;
         StaticLFTJCollections.executionContext = executionContext;
         StaticLFTJCollections.staticLFTJMap = new ConcurrentHashMap<>();
+        StaticLFTJCollections.joinValueBound = new ArrayList<>();
         for (Set<ColumnRef> joinAttributes : query.equiJoinAttribute) {
             // lb is the max value among all iterators lower bound
             // ub is the min value among all iterators upper bound

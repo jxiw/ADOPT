@@ -5,7 +5,7 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.List;
 
-import joining.result.ResultTuple;
+//import joining.result.ResultTuple;
 
 /**
  * Represents data contained in one table column.
@@ -93,7 +93,7 @@ public abstract class ColumnData implements Serializable {
 	 * @return			new column that copies given rows
 	 */
 	public abstract ColumnData copyRows(
-			Collection<ResultTuple> tuples, int tableIdx);
+			List<int[]> tuples, int tableIdx);
 	/**
 	 * Returns number of rows stored for column.
 	 * 

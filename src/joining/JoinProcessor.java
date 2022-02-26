@@ -11,9 +11,10 @@ import catalog.CatalogManager;
 import config.LoggingConfig;
 import config.NamingConfig;
 import config.JoinConfig;
+import joining.join.wcoj.Hypercube;
 import joining.join.wcoj.HypercubeManager;
+import joining.join.wcoj.LFTJiter;
 import joining.result.JoinResult;
-import joining.result.ResultTuple;
 import operators.Distinct;
 import operators.Materialize;
 import preprocessing.Context;
@@ -32,6 +33,8 @@ public class JoinProcessor {
      * generated for the current query.
      */
     static int nrLogEntries = 0;
+
+    public static final ExecutorService executorService = Executors.newFixedThreadPool(JoinConfig.NTHREAD);
 //
     /**
      * Executes the join phase and stores result in relation.
@@ -69,33 +72,39 @@ public class JoinProcessor {
         // join phrase
         long joinStartMillis = System.currentTimeMillis();
         // Initialize UCT join order search tree
-        StaticLFTJCollections staticLFTJCollections = new StaticLFTJCollections(query, context);
-        HypercubeManager manager = new HypercubeManager(StaticLFTJCollections.joinValueBound);
+        StaticLFTJCollections.init(query, context);
+        HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.NTHREAD);
         JoinResult result = new JoinResult(query.nrJoined);
-        ExecutorService executorService = Executors.newFixedThreadPool(JoinConfig.NTHREAD);
+        System.out.println("start cube number:" + HypercubeManager.hypercubes.size());
+
         List<Future<ParallelJoinResult>> evaluateResults = new ArrayList<>();
         for (int i = 0; i < JoinConfig.NTHREAD; i++) {
             evaluateResults.add(executorService.submit(new ParallelJoinTask(query)));
         }
 
         for (Future<ParallelJoinResult> futureResult : evaluateResults) {
+//            System.out.println("merge prev start:" + System.currentTimeMillis());
             ParallelJoinResult joinResult = futureResult.get();
+//            System.out.println("merge start:" + System.currentTimeMillis());
             result.merge(joinResult.result);
+//            System.out.println("merge end:" + System.currentTimeMillis());
         }
 
-        executorService.shutdown();
-        try {
-            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        executorService.shutdown();
+//        try {
+//            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
 
         System.out.println("hypercubes:" + HypercubeManager.hypercubes.size());
         long joinEndMillis = System.currentTimeMillis();
         System.out.println("join time:" + (joinEndMillis - joinStartMillis));
 
+        LFTJiter.clearCache();
+
         // Materialize result table
-        Collection<ResultTuple> tuples = result.getTuples();
+        List<int[]> tuples = result.getTuples();
         int nrTuples = tuples.size();
         System.out.println("Materializing join result with " + nrTuples + " tuples ...");
         String targetRelName = NamingConfig.JOINED_NAME;

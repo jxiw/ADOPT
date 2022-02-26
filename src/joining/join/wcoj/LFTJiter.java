@@ -63,16 +63,16 @@ public class LFTJiter {
      * can be reused across different join orders
      * for the same query.
      */
-    final static Map<List<ColumnRef>, Integer[]> queryOrderCache =
+    static Map<List<ColumnRef>, Integer[]> queryOrderCache =
             new HashMap<>();
     /**
      * Caches tuple orderings for base tables that can
      * be reused across different queries.
      */
-    final static Map<List<ColumnRef>, Integer[]> baseOrderCache =
+    static Map<List<ColumnRef>, Integer[]> baseOrderCache =
             new HashMap<>();
 //
-//    static long sortTime = 0;
+    static long sortTime = 0;
 //
 //    static long lftTime1 = 0;
 //
@@ -167,7 +167,7 @@ public class LFTJiter {
                     tupleOrder[i] = i;
                 }
 
-//                long startCreateTime = System.currentTimeMillis();
+                long startCreateTime = System.currentTimeMillis();
                 // Sort tuples by global variable order
                 Arrays.parallelSort(tupleOrder, new Comparator<Integer>() {
                     public int compare(Integer row1, Integer row2) {
@@ -188,9 +188,9 @@ public class LFTJiter {
                         return 0;
                     }
                 });
-//                long endCreateTime = System.currentTimeMillis();
-//                sortTime += (endCreateTime - startCreateTime);
-//                System.out.println("sort time:" + sortTime);
+                long endCreateTime = System.currentTimeMillis();
+                sortTime += (endCreateTime - startCreateTime);
+                System.out.println("sort time:" + sortTime);
 
                 // build hash map, tuple order position to real position
 //			ArrayList<Integer> uniqueTupleOrder = new ArrayList<>();
@@ -215,6 +215,11 @@ public class LFTJiter {
                 }
                 return tupleOrder;
             }
+    }
+
+    public static void clearCache() {
+        LFTJiter.queryOrderCache = new HashMap<>();
+        LFTJiter.baseOrderCache = new HashMap<>();
     }
 
 }

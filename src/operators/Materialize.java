@@ -12,7 +12,7 @@ import catalog.info.ColumnInfo;
 import catalog.info.TableInfo;
 import config.GeneralConfig;
 import data.ColumnData;
-import joining.result.ResultTuple;
+//import joining.result.ResultTuple;
 import query.ColumnRef;
 
 /**
@@ -92,7 +92,7 @@ public class Materialize {
 	 * @param targetRelName		name of materialized result relation
 	 * @throws Exception
 	 */
-	public static void execute(Collection<ResultTuple> tuples, 
+	public static void execute(List<int[]> tuples,
 			Map<String, Integer> tableToIdx, 
 			Collection<ColumnRef> sourceCols, 
 			Map<ColumnRef, ColumnRef> columnMappings, 
