@@ -1,6 +1,7 @@
 package joining;
 
 import buffer.BufferManager;
+import config.JoinConfig;
 import data.ColumnData;
 import data.IntData;
 import joining.join.wcoj.StaticLFTJ;
@@ -39,7 +40,10 @@ public class StaticLFTJCollections {
             for (ColumnRef attribute : joinAttributes) {
                 // Retrieve corresponding data
                 String alias = attribute.aliasName;
-                String table = executionContext.aliasToDistinct.get(alias);
+                String table = executionContext.aliasToFiltered.get(alias);
+                if (JoinConfig.DISTINCT_START) {
+                    table = executionContext.aliasToDistinct.get(alias);
+                }
                 String column = attribute.columnName;
                 ColumnRef baseRef = new ColumnRef(table, column);
                 ColumnData columnData = BufferManager.getData(baseRef);

@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import catalog.CatalogManager;
+import config.JoinConfig;
 import config.LoggingConfig;
 import expressions.ExpressionInfo;
 import expressions.compilation.EvaluatorType;
@@ -99,8 +100,10 @@ public abstract class MultiWayJoin {
         for (Entry<String,Integer> entry : 
         	query.aliasToIndex.entrySet()) {
         	String alias = entry.getKey();
-            String table = preSummary.aliasToDistinct.get(alias);
-//        	String table = preSummary.aliasToFiltered.get(alias);
+        	String table = preSummary.aliasToFiltered.get(alias);
+            if (JoinConfig.DISTINCT_START) {
+                table = preSummary.aliasToDistinct.get(alias);
+            }
         	int index = entry.getValue();
         	int cardinality = CatalogManager.getCardinality(table);
         	cardinalities[index] = cardinality;

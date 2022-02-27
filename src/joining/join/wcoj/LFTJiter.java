@@ -11,6 +11,7 @@ import java.util.Set;
 import buffer.BufferManager;
 import catalog.CatalogManager;
 import config.CheckConfig;
+import config.JoinConfig;
 import data.ColumnData;
 import data.IntData;
 import preprocessing.Context;
@@ -95,8 +96,10 @@ public class LFTJiter {
                     List<Set<ColumnRef>> globalVarOrder) throws Exception {
         // Get information on target table
         String alias = query.aliases[aliasID];
-        String table = context.aliasToDistinct.get(alias);
-//        String table = context.aliasToFiltered.get(alias);
+        String table = context.aliasToFiltered.get(alias);
+        if (JoinConfig.DISTINCT_START) {
+            table = context.aliasToDistinct.get(alias);
+        }
         card = CatalogManager.getCardinality(table);
         // Extract columns used for sorting
         List<ColumnRef> localColumns = new ArrayList<>();
@@ -151,8 +154,11 @@ public class LFTJiter {
         // No unary predicates for current alias?
         String alias = query.aliases[aliasID];
         boolean notFiltered = executionContext.
-                aliasToDistinct.get(alias).equals(alias);
-//                aliasToFiltered.get(alias).equals(alias);
+                aliasToFiltered.get(alias).equals(alias);
+        if (JoinConfig.DISTINCT_START) {
+            notFiltered = executionContext.aliasToFiltered.get(alias).equals(alias);
+        }
+
         // Did we cache tuple order for associated base tables?
         if (notFiltered && baseOrderCache.containsKey(localColumns)) {
             return baseOrderCache.get(localColumns);

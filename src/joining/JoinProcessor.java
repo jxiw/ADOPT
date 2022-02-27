@@ -21,6 +21,7 @@ import preprocessing.Context;
 import query.ColumnRef;
 import query.QueryInfo;
 import statistics.JoinStats;
+import util.CartesianProduct;
 
 /**
  * Controls the join phase.
@@ -36,6 +37,7 @@ public class JoinProcessor {
 
     public static final ExecutorService executorService = Executors.newFixedThreadPool(JoinConfig.NTHREAD);
 //
+
     /**
      * Executes the join phase and stores result in relation.
      * Also updates mapping from query column references to
@@ -52,22 +54,24 @@ public class JoinProcessor {
         // distinct if enable
         // decomposition
         log("Creating unique join keys ...");
-        query.aliasToTable.keySet().parallelStream().forEach(alias -> {
-            try {
-                List<String> joinRequiredCols = new ArrayList<String>();
-                for (ColumnRef joinRequiredCol : query.colsForJoins) {
-                    if (joinRequiredCol.aliasName.equals(alias)) {
-                        joinRequiredCols.add(joinRequiredCol.columnName);
+        if (JoinConfig.DISTINCT_START) {
+            query.aliasToTable.keySet().parallelStream().forEach(alias -> {
+                try {
+                    List<String> joinRequiredCols = new ArrayList<String>();
+                    for (ColumnRef joinRequiredCol : query.colsForJoins) {
+                        if (joinRequiredCol.aliasName.equals(alias)) {
+                            joinRequiredCols.add(joinRequiredCol.columnName);
+                        }
                     }
+                    String distinctName = NamingConfig.DISTINCT_PRE + alias;
+                    Distinct.execute(context.aliasToFiltered.get(alias), joinRequiredCols, distinctName);
+                    context.aliasToDistinct.put(alias, distinctName);
+                } catch (Exception e) {
+                    System.err.println("Error distincting " + alias);
+                    e.printStackTrace();
                 }
-                String distinctName = NamingConfig.DISTINCT_PRE + alias;
-                Distinct.execute(context.aliasToFiltered.get(alias), joinRequiredCols, distinctName);
-                context.aliasToDistinct.put(alias, distinctName);
-            } catch (Exception e) {
-                System.err.println("Error distincting " + alias);
-                e.printStackTrace();
-            }
-        });
+            });
+        }
 
         // join phrase
         long joinStartMillis = System.currentTimeMillis();
@@ -103,34 +107,36 @@ public class JoinProcessor {
 
         LFTJiter.clearCache();
 
-        // Materialize result table
-        List<int[]> tuples = result.getTuples();
-        int nrTuples = tuples.size();
-        System.out.println("Materializing join result with " + nrTuples + " tuples ...");
         String targetRelName = NamingConfig.JOINED_NAME;
-        Materialize.execute(tuples, query.aliasToIndex,
-                query.colsForPostProcessing,
-                context.columnMapping, targetRelName);
 
-//        Set<ResultTuple> realTuples = new HashSet<>();
-//        for (ResultTuple tuple : tuples) {
-//            int[] baseIndices = tuple.baseIndices;
-//            List<List<Integer>> realIndices = new ArrayList<>();
-//            for (int aliasCtr = 0; aliasCtr < query.nrJoined; ++aliasCtr) {
-//                String distinctTableName = context.aliasToDistinct.get(query.aliases[aliasCtr]);
-//                realIndices.add(Distinct.tableNamesToUniqueIndexes.get(distinctTableName).get(baseIndices[aliasCtr]));
-//            }
-//            List<List<Integer>> realIndicesFlatten = CartesianProduct.constructCombinations(realIndices);
-//			realIndicesFlatten.forEach(realIndex -> realTuples.add(
-//                    new ResultTuple(realIndex.stream().mapToInt(Integer::intValue).toArray())));
-//        }
+        if (JoinConfig.DISTINCT_END) {
+            List<int[]> tuples = result.getTuples();
+            List<int[]> realTuples = new ArrayList<>();
+            for (int[] tuple : tuples) {
+                List<List<Integer>> realIndices = new ArrayList<>();
+                for (int aliasCtr = 0; aliasCtr < query.nrJoined; ++aliasCtr) {
+                    String distinctTableName = context.aliasToDistinct.get(query.aliases[aliasCtr]);
+                    realIndices.add(Distinct.tableNamesToUniqueIndexes.get(distinctTableName).get(tuple[aliasCtr]));
+                }
+                List<List<Integer>> realIndicesFlatten = CartesianProduct.constructCombinations(realIndices);
+                realIndicesFlatten.forEach(realIndex -> realTuples.add(
+                        realIndex.stream().mapToInt(Integer::intValue).toArray()));
+            }
 
-//        int nrTuples = realTuples.size();
-//        log("Materializing join result with " + nrTuples + " tuples ...");
-//        String targetRelName = NamingConfig.JOINED_NAME;
-//        Materialize.execute(realTuples, query.aliasToIndex,
-//                query.colsForPostProcessing,
-//                context.columnMapping, targetRelName);
+            int nrTuples = realTuples.size();
+            log("Materializing join result with " + nrTuples + " tuples ...");
+            Materialize.execute(realTuples, query.aliasToIndex,
+                    query.colsForPostProcessing,
+                    context.columnMapping, targetRelName);
+        } else {
+            // Materialize result table
+            List<int[]> tuples = result.getTuples();
+            int nrTuples = tuples.size();
+            System.out.println("Materializing join result with " + nrTuples + " tuples ...");
+            Materialize.execute(tuples, query.aliasToIndex,
+                    query.colsForPostProcessing,
+                    context.columnMapping, targetRelName);
+        }
 
         // Update processing context
         context.columnMapping.clear();
