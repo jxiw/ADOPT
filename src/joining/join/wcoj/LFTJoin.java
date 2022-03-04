@@ -27,12 +27,15 @@ public class LFTJoin {
 
     final LFTJiter lftJiter;
 
+//    static long seekTime;
+
     public LFTJoin(LFTJiter lftJiter) {
         int nrLevels = lftJiter.nrLevels;
         this.curTuples = new int[nrLevels];
         this.curUBs = new int[nrLevels];
         this.lftJiter = lftJiter;
         this.card = lftJiter.card;
+//        this.seekTime = 0;
     }
 
     /**
@@ -86,6 +89,7 @@ public class LFTJoin {
     }
 
     public int[] seekInRange(int seekKey, int ub) {
+//        long startMillis = System.currentTimeMillis();
         // Count search in trie
         int lb = curTuples[curTrieLevel];
         // Try exponential search
@@ -113,6 +117,8 @@ public class LFTJoin {
             }
             cost += 1;
         }
+//        long endMillis = System.currentTimeMillis();
+//        seekTime += (endMillis - start);
         return new int[]{start, cost};
     }
 

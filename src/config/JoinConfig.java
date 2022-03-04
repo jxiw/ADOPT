@@ -52,7 +52,7 @@ public class JoinConfig {
 	/**
 	 *
 	 */
-	public static final int NTHREAD = 32;
+	public static int NTHREAD = 32;
 
 	public static final double MIN_REWARD = 1e-15;
 

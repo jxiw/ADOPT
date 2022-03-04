@@ -20,15 +20,15 @@ public class Hypercube {
 //        this.explore = false;
     }
 
-    public double getVolume() {
-        double volume = 1;
-        int toIndex = Math.min(3, intervals.size());
-        for (Pair<Integer, Integer> interval: intervals.subList(0, toIndex)) {
-            volume *= (interval.getSecond() - interval.getFirst() + 1);
-        }
-//        System.out.println("volume:" + volume);
-        return volume;
-    }
+//    public double getVolume() {
+//        double volume = 1;
+//        int toIndex = Math.min(3, intervals.size());
+//        for (Pair<Integer, Integer> interval: intervals.subList(0, toIndex)) {
+//            volume *= (interval.getSecond() - interval.getFirst() + 1);
+//        }
+////        System.out.println("volume:" + volume);
+//        return volume;
+//    }
 
     public List<Pair<Integer, Integer>> unfoldCube(int[] order) {
         return Arrays.stream(order).mapToObj(intervals::get).collect(Collectors.toList());

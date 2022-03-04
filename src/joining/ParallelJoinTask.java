@@ -9,6 +9,7 @@ import joining.uct.UctNodeLFTJ;
 import query.QueryInfo;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 public class ParallelJoinTask implements Callable<ParallelJoinResult> {
@@ -17,14 +18,16 @@ public class ParallelJoinTask implements Callable<ParallelJoinResult> {
 
     final QueryInfo query;
 
-    public JoinResult joinResult;
+//    public JoinResult joinResult;
+
+    public List<int[]> joinResult;
 
     private ParallelLFTJ parallelLFTJ;
 
     public ParallelJoinTask(QueryInfo query) {
 //        this.joinOp = joinOp;
         this.query = query;
-        this.joinResult = new JoinResult(query.nrJoined);
+        this.joinResult = new ArrayList<>();
         this.parallelLFTJ = new ParallelLFTJ(this.joinResult);
     }
 
@@ -62,7 +65,8 @@ public class ParallelJoinTask implements Callable<ParallelJoinResult> {
             }
         }
         long endMillis = System.currentTimeMillis();
-        System.out.println("thread:"+ Thread.currentThread().getId() + ", duration in ms:" + (endMillis - startMillis));
+        System.out.println("thread:"+ Thread.currentThread().getId() + ", total duration in ms:" + (endMillis - startMillis));
+        System.out.println("thread:"+ Thread.currentThread().getId() + ", init time in ms:" + parallelLFTJ.initLFTJTime);
         System.out.println("thread:"+ Thread.currentThread().getId() + ", execution time in ms:" + parallelLFTJ.executionTime);
         System.out.println("thread:"+ Thread.currentThread().getId() + ", wait time in ms:" + parallelLFTJ.waitTime);
         return new ParallelJoinResult(joinResult);

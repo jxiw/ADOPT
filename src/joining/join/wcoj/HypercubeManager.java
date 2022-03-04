@@ -26,7 +26,7 @@ public class HypercubeManager {
 
     public static AtomicInteger nrCube;
 
-    public static double totalVolume;
+//    public static double totalVolume;
 
     public static void init(List<Pair<Integer, Integer>> joinValues, int initNrCube) {
         hypercubes = new LinkedBlockingDeque<Hypercube>();
@@ -46,7 +46,7 @@ public class HypercubeManager {
             Hypercube cube = new Hypercube(subJoinValues);
 //            System.out.println("cube:" + cube);
             hypercubes.add(cube);
-            totalVolume += cube.getVolume();
+//            totalVolume += cube.getVolume();
         }
 
 //        totalVolume = cube.getVolume();
@@ -139,15 +139,15 @@ public class HypercubeManager {
     }
 
 
-    public static double updateInterval(Hypercube parentCube, List<Integer> endValues, int[] order) {
+    public static void updateInterval(Hypercube parentCube, List<Integer> endValues, int[] order) {
 //        long threadId = Thread.currentThread().getId();
         Hypercube cubeWithOrder = new Hypercube(parentCube.unfoldCube(order));
         List<Hypercube> remainHypercubes = cubeWithOrder.subtractByPoint(endValues);
 //        System.out.println("cubeWithOrder:" + cubeWithOrder);
 //        System.out.println("remainHypercubes:" + remainHypercubes);
-        double remainVolume = 0;
+//        double remainVolume = 0;
         for (Hypercube remainHypercube : remainHypercubes) {
-            remainVolume += remainHypercube.getVolume();
+//            remainVolume += remainHypercube.getVolume();
             // swap the order for remainHypercube
 //            System.out.println("before swap:" + remainHypercube);
 //            System.out.println("order:" + Arrays.toString(order));
@@ -166,7 +166,7 @@ public class HypercubeManager {
 //        System.out.println("threadId 22222:" + threadId);
 //        isWorking.put(threadId, false);
 //        System.out.println("threadId 2:" + threadId);
-        return cubeWithOrder.getVolume() - remainVolume;
+//        return cubeWithOrder.getVolume() - remainVolume;
     }
 
     public static void finishHyperCube() {

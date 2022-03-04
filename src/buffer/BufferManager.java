@@ -145,16 +145,17 @@ public class BufferManager {
 			// Generate debugging output
 			log("*** Column " + columnRef.toString() + " sample ***");
 			int cardinality = colToData.get(columnRef).getCardinality();
-			int sampleSize = Math.min(10, cardinality);
-			for (int i=0; i<sampleSize; ++i) {
-				switch (column.type) {
-				case STRING_CODE:
-					int code = ((IntData)object).data[i];
-					log(dictionary.getString(code));
-					break;
-				}
-			}
-			log("******");
+			System.out.println("cardinality:" + cardinality);
+//			int sampleSize = Math.min(10, cardinality);
+//			for (int i=0; i<sampleSize; ++i) {
+//				switch (column.type) {
+//				case STRING_CODE:
+//					int code = ((IntData)object).data[i];
+//					log(dictionary.getString(code));
+//					break;
+//				}
+//			}
+//			log("******");
 		}
 	}
 	/**

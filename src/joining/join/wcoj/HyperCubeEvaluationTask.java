@@ -4,6 +4,7 @@ import joining.result.JoinResult;
 import util.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class HyperCubeEvaluationTask {
 
@@ -11,7 +12,9 @@ public class HyperCubeEvaluationTask {
 
     private final int nrJoined;
 
-    private final JoinResult joinResult;
+    private final List<int[]> joinResult;
+
+    private final List<Pair<Integer, Integer>> attributeValueBound;
 
 //    private long budget;
 
@@ -71,7 +74,7 @@ public class HyperCubeEvaluationTask {
 
 //    HypercubeManager manager;
 
-    public HyperCubeEvaluationTask(LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar, JoinResult joinResult) {
+    public HyperCubeEvaluationTask(LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar, List<int[]> joinResult, List<Pair<Integer, Integer>> attributeValueBound) {
         // for every table in from clause
         this.nrJoined = idToIter.length;
         this.joins = new LFTJoin[nrJoined];
@@ -94,6 +97,7 @@ public class HyperCubeEvaluationTask {
             joinsByVar.add(joinByVar);
         }
         this.joinResult = joinResult;
+        this.attributeValueBound = attributeValueBound;
 //        this.manager = manager;
     }
 
@@ -126,6 +130,25 @@ public class HyperCubeEvaluationTask {
         joinResult.add(resultTuple);
     }
 
+    double rewardValue(List<Integer> attributesValueStart, List<Integer> attributesValueEnd) {
+        double scaledReward = 0;
+        double scale = 1;
+        for (int i = 0; i < attributesValueStart.size(); i++) {
+            double startInDimI = attributesValueStart.get(i);
+            double endInDimI = attributesValueEnd.get(i);
+            double lowerBoundInDimI = attributeValueBound.get(i).getFirst();
+            double upperBoundInDimI = attributeValueBound.get(i).getSecond();
+            if (i > 0) {
+                scale *= (upperBoundInDimI - lowerBoundInDimI + 1);
+            }
+            double currentReward = (endInDimI - startInDimI) / ((upperBoundInDimI - endInDimI + 1) * scale);
+            scaledReward += currentReward;
+//            System.out.println("startInDimI:" + startInDimI + ", endInDimI:" + endInDimI + ", lowerBoundInDimI:" + lowerBoundInDimI + ", upperBoundInDimI:" + upperBoundInDimI);
+//            System.out.println("currentReward:" + currentReward + ", scaledReward:" + scaledReward);
+        }
+        return scaledReward;
+    }
+
     public double execute(int budget, int[] attributeOrder, Hypercube selectCube) throws Exception {
 
 //        Hypercube selectCube = manager.allocateHypercube();
@@ -138,6 +161,9 @@ public class HyperCubeEvaluationTask {
         List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
 
 //        System.out.println("thread id:" + Thread.currentThread().getId() + ", exploreDomain:" + exploreDomain);
+
+        List<Integer> startExValues = exploreDomain.stream().map(Pair::getFirst).collect(Collectors.toList());
+        List<Integer> endExValues = exploreDomain.stream().map(Pair::getSecond).collect(Collectors.toList());
 
         // step one: reset the iterator
         for (LFTJoin join : joins) {
@@ -169,7 +195,7 @@ public class HyperCubeEvaluationTask {
                 // if it is backtracked
                 backtracked = false;
                 LFTJoin minIter = joinFrame.curIters.get(joinFrame.p);
-                minIter.seek(joinFrame.maxKey + 1);
+                budget -= minIter.seek(joinFrame.maxKey + 1);
                 // Check for early termination
                 // if iterator reach to the end of select hypercube
                 if (minIter.atEnd() || minIter.key() > exploreDomain.get(curVariableID).getSecond()) {
@@ -203,8 +229,8 @@ public class HyperCubeEvaluationTask {
                 int endKey = exploreDomain.get(curVariableID).getSecond();
                 // open lftj iterator
                 for (LFTJoin iter : iters) {
-                    iter.open();
-                    iter.seek(startKey);
+                    budget -= iter.open();
+                    budget -= iter.seek(startKey);
                 }
 
                 // Check for early termination
@@ -243,7 +269,7 @@ public class HyperCubeEvaluationTask {
             // execute join
             while (true) {
                 // Count current round
-                --budget;
+//                --budget;
 //                JoinStats.nrIterations++;
                 // Check for timeout and not in the last end
                 if (budget <= 0) {
@@ -265,9 +291,11 @@ public class HyperCubeEvaluationTask {
 
 //                    System.out.println("thread id:" + Thread.currentThread().getId() + ", end values:" + endValues);
 
-                    double processVolume = HypercubeManager.updateInterval(selectCube, endValues, attributeOrder);
-                    return processVolume / HypercubeManager.totalVolume;
-
+                    HypercubeManager.updateInterval(selectCube, endValues, attributeOrder);
+//                    double reward = processVolume / HypercubeManager.totalVolume;
+                    double reward = Math.max(rewardValue(startExValues, endValues), 0);
+//                    System.out.println("reward:" + reward);
+                    return reward;
                 }
 
                 // Get current key
@@ -282,7 +310,7 @@ public class HyperCubeEvaluationTask {
                     break;
                 } else {
                     // min key not equal max key
-                    minIter.seek(joinFrame.maxKey);
+                    budget -= minIter.seek(joinFrame.maxKey);
                     if (minIter.atEnd() || minIter.key() > endKey) {
                         // Go one level up in each trie
                         for (LFTJoin iter : joinFrame.curIters) {
@@ -301,6 +329,9 @@ public class HyperCubeEvaluationTask {
 
         //  finish query
         HypercubeManager.finishHyperCube();
-        return selectCube.getVolume() / HypercubeManager.totalVolume;
+//        double reward = selectCube.getVolume() / HypercubeManager.totalVolume;
+        double reward = Math.max(rewardValue(startExValues, endExValues), 0);
+//        System.out.println("reward:" + reward);
+        return reward;
     }
 }
