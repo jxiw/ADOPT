@@ -1,14 +1,11 @@
 package joining.join.wcoj;
 
-import config.JoinConfig;
+
 import util.Pair;
 
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,6 +22,8 @@ public class HypercubeManager {
             CubeSelectionPolicy.FIRST;
 
     public static AtomicInteger nrCube;
+
+//    public static long ts = 0;
 
 //    public static double totalVolume;
 
@@ -140,6 +139,7 @@ public class HypercubeManager {
 
 
     public static void updateInterval(Hypercube parentCube, List<Integer> endValues, int[] order) {
+//        long startMillis = System.currentTimeMillis();
 //        long threadId = Thread.currentThread().getId();
         Hypercube cubeWithOrder = new Hypercube(parentCube.unfoldCube(order));
         List<Hypercube> remainHypercubes = cubeWithOrder.subtractByPoint(endValues);
@@ -162,6 +162,9 @@ public class HypercubeManager {
 
         hypercubes.addAll(remainHypercubes);
         nrCube.addAndGet(remainHypercubes.size() - 1);
+
+//        long endMillis = System.currentTimeMillis();
+//        ts += (endMillis - startMillis);
 
 //        System.out.println("threadId 22222:" + threadId);
 //        isWorking.put(threadId, false);

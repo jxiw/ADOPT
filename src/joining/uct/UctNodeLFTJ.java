@@ -99,17 +99,16 @@ public class UctNodeLFTJ {
     final Set<Integer> recommendedActions;
 
 
-
     /**
      * Initialize UCT root node.
      *
-     * @param roundCtr     	current round number
-     * @param query        	the query which is optimized
-     * @param useHeuristic 	whether to avoid Cartesian products
-     * @param joinOp		multi-way join operator allowing fast join order switching
+     * @param roundCtr     current round number
+     * @param query        the query which is optimized
+     * @param useHeuristic whether to avoid Cartesian products
+     * @param joinOp       multi-way join operator allowing fast join order switching
      */
     public UctNodeLFTJ(long roundCtr, QueryInfo query,
-                   boolean useHeuristic, ParallelLFTJ joinOp) {
+                       boolean useHeuristic, ParallelLFTJ joinOp) {
         // Count node generation
 //        ++JoinStats.nrUctNodes;
         this.query = query;
@@ -139,11 +138,12 @@ public class UctNodeLFTJ {
             recommendedActions.add(action);
         }
     }
+
     /**
      * Initializes UCT node by expanding parent node.
      *
-     * @param roundCtr    current round number
-     * @param parent      parent node in UCT tree
+     * @param roundCtr        current round number
+     * @param parent          parent node in UCT tree
      * @param joinedAttribute new joined attributed
      */
     public UctNodeLFTJ(long roundCtr, UctNodeLFTJ parent, int joinedAttribute) {
@@ -203,11 +203,12 @@ public class UctNodeLFTJ {
             }
         }
     }
+
     /**
      * Select most interesting action to try next. Also updates
      * list of unvisited actions.
      *
-     * @param policy	policy used to select action
+     * @param policy policy used to select action
      * @return index of action to try next
      */
     int selectAction(SelectionPolicy policy) {
@@ -258,7 +259,7 @@ public class UctNodeLFTJ {
                         quality = random.nextDouble();
                         break;
                     case RANDOM_UCB1:
-                        if (treeLevel==0) {
+                        if (treeLevel == 0) {
                             quality = random.nextDouble();
                         } else {
                             quality = meanReward +
@@ -277,7 +278,7 @@ public class UctNodeLFTJ {
             // For epsilon greedy, return random action with
             // probability epsilon.
             if (policy.equals(SelectionPolicy.EPSILON_GREEDY)) {
-                if (random.nextDouble()<=JoinConfig.EPSILON) {
+                if (random.nextDouble() <= JoinConfig.EPSILON) {
                     return random.nextInt(nrActions);
                 }
             }
@@ -285,6 +286,7 @@ public class UctNodeLFTJ {
             return bestAction;
         } // if there are unvisited actions
     }
+
     /**
      * Updates UCT statistics after sampling.
      *
@@ -296,6 +298,7 @@ public class UctNodeLFTJ {
         ++nrTries[selectedAction];
         accumulatedReward[selectedAction] += reward;
     }
+
     /**
      * Randomly complete join order with remaining attributes,
      * invoke evaluation, and return obtained reward.
@@ -352,12 +355,13 @@ public class UctNodeLFTJ {
         // Evaluate completed join order and return reward
         return joinOp.execute(joinOrder);
     }
+
     /**
      * Recursively sample from UCT tree and return reward.
      *
      * @param roundCtr  current round (used as timestamp for expansion)
      * @param joinOrder partially completed join order
-     * @param policy	policy used to select actions
+     * @param policy    policy used to select actions
      * @return achieved reward
      */
     public double sample(long roundCtr, int[] joinOrder,
@@ -379,11 +383,48 @@ public class UctNodeLFTJ {
             // evaluate via recursive invocation or via playout
             UctNodeLFTJ child = childNodes[action];
             double reward = (child != null) ?
-                    child.sample(roundCtr, joinOrder, policy):
+                    child.sample(roundCtr, joinOrder, policy) :
                     playout(joinOrder);
             // update UCT statistics and return reward
             updateStatistics(action, reward);
             return reward;
+        }
+    }
+
+    public void getOptimalOrder(int[] order) {
+        if (treeLevel < nrAttributes) {
+            int bestAction = -1;
+            double bestQuality = -1;
+            for (int actionCtr = 0; actionCtr < nrActions; ++actionCtr) {
+                // Calculate index of current action
+                double meanReward = (nrTries[actionCtr] > 0) ? accumulatedReward[actionCtr] / nrTries[actionCtr] : 0;
+                if (meanReward > bestQuality) {
+                    bestAction = actionCtr;
+                    bestQuality = meanReward;
+                }
+            }
+            order[treeLevel] = nextAttributes[bestAction];
+            if (childNodes[bestAction] != null) {
+                childNodes[bestAction].getOptimalOrder(order);
+            }
+        }
+    }
+
+    public void getMostFreqOrder(int[] order) {
+        if (treeLevel < nrAttributes) {
+            int bestAction = -1;
+            int maxTries = -1;
+            for (int actionCtr = 0; actionCtr < nrActions; ++actionCtr) {
+                // Calculate index of current action
+                if (nrTries[actionCtr] > maxTries) {
+                    maxTries = nrTries[actionCtr];
+                    bestAction = actionCtr;
+                }
+            }
+            order[treeLevel] = nextAttributes[bestAction];
+            if (childNodes[bestAction] != null) {
+                childNodes[bestAction].getOptimalOrder(order);
+            }
         }
     }
 }

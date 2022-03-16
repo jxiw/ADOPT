@@ -10,24 +10,15 @@ import java.util.Map.Entry;
 
 import buffer.BufferManager;
 import catalog.CatalogManager;
-import catalog.info.TableInfo;
 import config.GeneralConfig;
-import config.NamingConfig;
 import config.StartupConfig;
 import diskio.PathUtil;
-import expressions.ExpressionInfo;
-import expressions.normalization.CollationVisitor;
-import expressions.printing.PgPrinter;
 import indexing.Indexer;
 import joining.JoinProcessor;
 import net.sf.jsqlparser.statement.select.PlainSelect;
-import postprocessing.PostProcessor;
 import preprocessing.Context;
 import preprocessing.Preprocessor;
-import print.RelationPrinter;
-import query.ColumnRef;
 import query.QueryInfo;
-//import statistics.JoinStats;
 
 /**
  * Benchmarks pre-, join, and post-processing stage and compares
@@ -60,10 +51,10 @@ public class BenchAndVerify {
         String queryDir = args[1];
         int budget = Integer.parseInt(args[2]);
         int nThread = Integer.parseInt(args[3]);
-//        double lr = Double.parseDouble(args[4]);
+        double lr = Double.parseDouble(args[4]);
         JoinConfig.NTHREAD = nThread;
         JoinConfig.BUDGET_PER_EPISODE = budget;
-//        JoinConfig.EXPLORATION_WEIGHT = lr;
+        JoinConfig.EXPLORATION_WEIGHT = lr;
 //		String PgDB = args[2];
 //		String PgUser = args[3];
 //		String PgPassword = args.length==5?args[4]:"";
@@ -101,13 +92,14 @@ public class BenchAndVerify {
             Context preSummary = Preprocessor.process(query);
             long preMillis = System.currentTimeMillis() - startMillis;
             long joinStartMillis = System.currentTimeMillis();
+            System.out.println("preMillis:" + preMillis);
             JoinProcessor.process(query, preSummary);
             long joinEndMillis = System.currentTimeMillis();
 //			System.out.println("join time:" + (joinEndMillis - joinStartMillis));
-            long postStartMillis = System.currentTimeMillis();
-            PostProcessor.process(query, preSummary,
-                    NamingConfig.FINAL_RESULT_NAME, true);
-            long postMillis = System.currentTimeMillis() - postStartMillis;
+//            long postStartMillis = System.currentTimeMillis();
+//            PostProcessor.process(query, preSummary,
+//                    NamingConfig.FINAL_RESULT_NAME, true);
+//            long postMillis = System.currentTimeMillis() - postStartMillis;
             long totalMillis = System.currentTimeMillis() - startMillis;
             System.out.println("totalMillis:" + totalMillis);
             // Check consistency with Postgres results: unary preds
@@ -208,10 +200,10 @@ public class BenchAndVerify {
 //			}
 //			pgOut.flush();
 //			// Output final result for Skinner
-            String resultRel = NamingConfig.FINAL_RESULT_NAME;
+//            String resultRel = NamingConfig.FINAL_RESULT_NAME;
 //			System.setOut(skinnerOut);
-            RelationPrinter.print(resultRel);
-            skinnerOut.flush();
+//            RelationPrinter.print(resultRel);
+//            skinnerOut.flush();
 //			System.setOut(console);
 //			// Generate output
 //			benchOut.print(entry.getKey() + "\t");

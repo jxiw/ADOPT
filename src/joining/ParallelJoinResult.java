@@ -1,13 +1,16 @@
 package joining;
 
-import joining.result.JoinResult;
-
-import java.util.List;
 
 public class ParallelJoinResult {
-    List<int[]> result;
+//    List<int[]> result;
 
-    public ParallelJoinResult(List<int[]> result) {
+    public long result;
+
+    public ParallelJoinResult(long result) {
         this.result = result;
     }
+
+    //    public ParallelJoinResult(List<int[]> result) {
+//        this.result = result;
+//    }
 }

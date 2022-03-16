@@ -1,5 +1,6 @@
 package joining.join.wcoj;
 
+import config.JoinConfig;
 import data.IntData;
 
 import java.util.Arrays;
@@ -27,7 +28,9 @@ public class LFTJoin {
 
     final LFTJiter lftJiter;
 
-//    static long seekTime;
+    public long seekTime;
+
+    int cachePos = 0;
 
     public LFTJoin(LFTJiter lftJiter) {
         int nrLevels = lftJiter.nrLevels;
@@ -35,7 +38,8 @@ public class LFTJoin {
         this.curUBs = new int[nrLevels];
         this.lftJiter = lftJiter;
         this.card = lftJiter.card;
-//        this.seekTime = 0;
+        this.seekTime = 0;
+        this.cachePos = 0;
     }
 
     /**
@@ -67,7 +71,7 @@ public class LFTJoin {
 
     public int seek(int seekKey) {
         // Search next tuple in current range
-        int[] nextInfo = seekInRange(seekKey, curUBs[curTrieLevel]);
+        int[] nextInfo =  seekInRangeExp(seekKey, curUBs[curTrieLevel]);
         int next = nextInfo[0];
         // Did we find a tuple?
         if (next < 0) {
@@ -88,8 +92,30 @@ public class LFTJoin {
         curTrieLevel = -1;
     }
 
-    public int[] seekInRange(int seekKey, int ub) {
-//        long startMillis = System.currentTimeMillis();
+    public int[] seekInRangeBinary(int seekKey, int ub) {
+        long startMillis = System.currentTimeMillis();
+        // Current tuple position is lower bound
+        int lb = curTuples[curTrieLevel];
+//        System.out.println("thread id:" +  + Thread.currentThread().getId() + ", curTrieLevel:" + curTrieLevel + ",seekKey:" + seekKey + ",lb:" + lb + "ub:" + ub);
+        int cost = 0;
+        // Until search bounds collapse
+        while (lb < ub) {
+            cost += 1;
+            int middle = (lb + ub) / 2;
+            if (keyAt(middle) >= seekKey) {
+                ub = middle;
+            } else {
+                lb = middle + 1;
+            }
+        }
+        int start = keyAt(lb) >= seekKey ? lb : -1;
+        long endMillis = System.currentTimeMillis();
+        seekTime += (endMillis - startMillis);
+        return new int[]{start, cost};
+    }
+
+    public int[] seekInRangeExp(int seekKey, int ub) {
+        long startMillis = System.currentTimeMillis();
         // Count search in trie
         int lb = curTuples[curTrieLevel];
         // Try exponential search
@@ -100,6 +126,9 @@ public class LFTJoin {
         } else if (keyAt(ub) < seekKey) {
             return new int[]{-1, 2};
         }
+//        if (curTrieLevel == 0) {
+//            lb = cachePos;
+//        }
         int cost = 2;
         while ((lb + pos) <= ub && keyAt(lb + pos) < seekKey) {
             pos = pos * stepSize;
@@ -117,8 +146,11 @@ public class LFTJoin {
             }
             cost += 1;
         }
-//        long endMillis = System.currentTimeMillis();
-//        seekTime += (endMillis - start);
+        long endMillis = System.currentTimeMillis();
+        seekTime += (endMillis - startMillis);
+//        if (curTrieLevel == 0 && start > cachePos) {
+//            cachePos = start;
+//        }
         return new int[]{start, cost};
     }
 
@@ -135,7 +167,7 @@ public class LFTJoin {
                 nextUB = Math.min(curUBs[i], nextUB);
             }
             int curKey = key();
-            int[] nextInfo = seekInRange(curKey + 1, nextUB);
+            int[] nextInfo = seekInRangeExp(curKey + 1, nextUB);
             int nextPos = nextInfo[0];
             cost += nextInfo[1];
             if (nextPos >= 0) {

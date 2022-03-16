@@ -1,26 +1,18 @@
 package joining;
 
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
-import catalog.CatalogManager;
 import config.LoggingConfig;
 import config.NamingConfig;
 import config.JoinConfig;
-import joining.join.MultiWayJoin;
 import joining.join.wcoj.*;
-import joining.result.JoinResult;
 import operators.Distinct;
-import operators.Materialize;
 import preprocessing.Context;
 import query.ColumnRef;
 import query.QueryInfo;
-import statistics.JoinStats;
-import util.CartesianProduct;
 
 /**
  * Controls the join phase.
@@ -35,7 +27,6 @@ public class JoinProcessor {
     static int nrLogEntries = 0;
 
     public static final ExecutorService executorService = Executors.newFixedThreadPool(JoinConfig.NTHREAD);
-//
 
     /**
      * Executes the join phase and stores result in relation.
@@ -80,7 +71,8 @@ public class JoinProcessor {
         StaticLFTJCollections.init(query, context);
         HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.NTHREAD);
 //        JoinResult result = new JoinResult(query.nrJoined);
-        MergedList<int[]> result = new MergedList<>();
+//        MergedList<int[]> result = new MergedList<>();
+        long resultTuple = 0;
 
         List<ParallelJoinTask> tasks = new ArrayList<>();
         System.out.println("start join");
@@ -95,11 +87,12 @@ public class JoinProcessor {
 //            System.out.println("merge prev start:" + System.currentTimeMillis());
             ParallelJoinResult joinResult = futureResult.get();
 //            System.out.println("merge start:" + System.currentTimeMillis());
-            long startMergeMillis = System.currentTimeMillis();
-            result.add(joinResult.result);
-            long endMergeMillis = System.currentTimeMillis();
-            mergeMillis += (endMergeMillis - startMergeMillis);
+//            long startMergeMillis = System.currentTimeMillis();
+//            result.add(joinResult.result);
+//            long endMergeMillis = System.currentTimeMillis();
+//            mergeMillis += (endMergeMillis - startMergeMillis);
 //            System.out.println("merge end:" + System.currentTimeMillis());
+            resultTuple += joinResult.result;
         }
 
 //        executorService.shutdown();
@@ -123,6 +116,8 @@ public class JoinProcessor {
         System.out.println("LFTJiter 2:" + LFTJiter.lftTime2);
         System.out.println("LFTJiter 3:" + LFTJiter.lftTime3);
         System.out.println("LFTJiter 4:" + LFTJiter.lftTime4);
+//        System.out.println("ts:" + HypercubeManager.ts);
+//        System.out.println("seekTime:" + LFTJoin.seekTime);
 
         LFTJiter.sortTime = 0;
         LFTJiter.lftTime1 = 0;
@@ -132,54 +127,11 @@ public class JoinProcessor {
         StaticLFTJ.part1 = 0;
         StaticLFTJ.part2 = 0;
 
-        //        MultiWayJoin.superTime2 = 0;
         LFTJiter.clearCache();
 
-        String targetRelName = NamingConfig.JOINED_NAME;
-
-        if (JoinConfig.DISTINCT_END) {
-            long startDistinctMills = System.currentTimeMillis();
-            List<int[]> realTuples = new ArrayList<>();
-            for (int[] tuple : result) {
-                List<List<Integer>> realIndices = new ArrayList<>();
-                for (int aliasCtr = 0; aliasCtr < query.nrJoined; ++aliasCtr) {
-                    String distinctTableName = context.aliasToDistinct.get(query.aliases[aliasCtr]);
-                    realIndices.add(Distinct.tableNamesToUniqueIndexes.get(distinctTableName).get(tuple[aliasCtr]));
-                }
-                List<List<Integer>> realIndicesFlatten = CartesianProduct.constructCombinations(realIndices);
-                realIndicesFlatten.forEach(realIndex -> realTuples.add(
-                        realIndex.stream().mapToInt(Integer::intValue).toArray()));
-            }
-
-            long endDistinctMills = System.currentTimeMillis();
-            System.out.println("distinct operator time:" + (endDistinctMills - startDistinctMills));
-
-            int nrTuples = realTuples.size();
-            System.out.println("Materializing join result with " + nrTuples + " tuples ...");
-            Materialize.execute(realTuples, query.aliasToIndex,
-                    query.colsForPostProcessing,
-                    context.columnMapping, targetRelName);
-        } else {
-            // Materialize result table
-            int nrTuples = result.size();
-            System.out.println("Materializing join result with " + nrTuples + " tuples ...");
-            Materialize.execute(result, query.aliasToIndex,
-                    query.colsForPostProcessing,
-                    context.columnMapping, targetRelName);
-        }
-
-        // Update processing context
-        context.columnMapping.clear();
-        for (ColumnRef postCol : query.colsForPostProcessing) {
-            String newColName = postCol.aliasName + "." + postCol.columnName;
-            ColumnRef newRef = new ColumnRef(targetRelName, newColName);
-            context.columnMapping.put(postCol, newRef);
-        }
-        // Store number of join result tuples
-        JoinStats.skinnerJoinCard = CatalogManager.
-                getCardinality(NamingConfig.JOINED_NAME);
-        // Measure execution time for join phase
-        JoinStats.joinMillis = System.currentTimeMillis() - startMillis;
+        System.out.println("------------");
+        System.out.println(resultTuple);
+        System.out.println("------------");
     }
 
     /**

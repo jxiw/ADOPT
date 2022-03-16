@@ -1,18 +1,15 @@
 package joining.join.wcoj;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import buffer.BufferManager;
 import catalog.CatalogManager;
-import config.CheckConfig;
 import config.JoinConfig;
 import data.ColumnData;
 import data.IntData;

@@ -18,7 +18,7 @@ public class ParallelLFTJ {
 
 //    private final JoinResult joinResult;
 
-    private final List<int[]> joinResult;
+//    private final List<int[]> joinResult;
 
     public long executionTime = 0;
 
@@ -28,16 +28,21 @@ public class ParallelLFTJ {
 
     public boolean isFinish = false;
 
-    public ParallelLFTJ(List<int[]> result) {
+    public long resultTuple = 0;
+
+    public ParallelLFTJ() {
         this.orderToLFTJ = new HashMap<>();
-        this.joinResult = result;
+//        this.joinResult = result;
         this.executionTime = 0;
         this.waitTime = 0;
         this.isFinish = false;
+        this.resultTuple = 0;
     }
 
     public double execute(int[] order) {
-//        System.out.println("order:" + Arrays.toString(order));
+//        if (Thread.currentThread().getId() % JoinConfig.NTHREAD == 0) {
+//            System.out.println("order:" + Arrays.toString(order));
+//        }
         AttributeOrder attributeOrder = new AttributeOrder(order);
         try {
             if (orderToLFTJ.containsKey(attributeOrder)) {
@@ -52,7 +57,9 @@ public class ParallelLFTJ {
                     return 0;
                 }
                 long startExecMillis = System.currentTimeMillis();
-                double reward = hyperCubeTask.execute(JoinConfig.BUDGET_PER_EPISODE, order, selectCube);
+                Pair<Double, Long> result = hyperCubeTask.execute(JoinConfig.BUDGET_PER_EPISODE, order, selectCube);
+                double reward = result.getFirst();
+                this.resultTuple += result.getSecond();
                 long endMillis = System.currentTimeMillis();
                 waitTime += startExecMillis - startWaitMillis;
                 executionTime += endMillis - startExecMillis;
@@ -63,7 +70,7 @@ public class ParallelLFTJ {
                 StaticLFTJ staticLFTJ = StaticLFTJCollections.generateLFTJ(attributeOrder);
                 long initEndMillis = System.currentTimeMillis();
                 List<Pair<Integer, Integer>> attributeValueBound = Arrays.stream(order).mapToObj(StaticLFTJCollections.joinValueBound::get).collect(Collectors.toList());
-                HyperCubeEvaluationTask hyperCubeTask = new HyperCubeEvaluationTask(staticLFTJ.idToIter, staticLFTJ.itersNumberByVar, this.joinResult, attributeValueBound);
+                HyperCubeEvaluationTask hyperCubeTask = new HyperCubeEvaluationTask(staticLFTJ.idToIter, staticLFTJ.itersNumberByVar, attributeValueBound);
                 orderToLFTJ.put(attributeOrder, hyperCubeTask);
                 long startWaitMillis = System.currentTimeMillis();
                 Hypercube selectCube = HypercubeManager.allocateHypercube();
@@ -73,7 +80,9 @@ public class ParallelLFTJ {
                     return 0;
                 }
                 long startExecMillis = System.currentTimeMillis();
-                double reward = hyperCubeTask.execute(JoinConfig.BUDGET_PER_EPISODE, order, selectCube);
+                Pair<Double, Long> result =  hyperCubeTask.execute(JoinConfig.BUDGET_PER_EPISODE, order, selectCube);
+                double reward = result.getFirst();
+                this.resultTuple += result.getSecond();
                 long endMillis = System.currentTimeMillis();
                 waitTime += startExecMillis - startWaitMillis;
                 executionTime += endMillis - startExecMillis;
