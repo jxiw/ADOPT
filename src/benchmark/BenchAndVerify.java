@@ -2,6 +2,8 @@ package benchmark;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import config.JoinConfig;
@@ -20,6 +22,7 @@ import expressions.normalization.CollationVisitor;
 import expressions.printing.PgPrinter;
 import indexing.Indexer;
 import joining.JoinProcessor;
+import joining.join.wcoj.ArrayUtilities;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import postprocessing.PostProcessor;
 import preprocessing.Context;
@@ -33,81 +36,97 @@ import query.QueryInfo;
  * Benchmarks pre-, join, and post-processing stage and compares
  * the output sizes against the sizes of results produced by
  * Postgres.
- * 
- * @author immanueltrummer
  *
+ * @author immanueltrummer
  */
 public class BenchAndVerify {
-	/**
-	 * Processes all queries in given directory.
-	 * 
-	 * @param args	first argument is Skinner DB directory, 
-	 * 				second argument is query directory
-	 * 				third argument is Postgres database name
-	 * 				fourth argument is Postgres user name
-	 * 				fifth argument is Postgres user password
-	 * @throws Exception
-	 */
-	public static void main(String[] args) throws Exception {
-		// Check for command line parameters
-		if (args.length != 2 && args.length != 3) {
-			System.out.println("Specify Skinner DB dir, "
-					+ "query directory, Postgres DB name, "
-					+ "Postgres user, and Postgres password!");
-			return;
-		}
-		// Initialize database
-		String SkinnerDbDir = args[0];
-		String queryDir = args[1];
-		int budget = Integer.parseInt(args[2]);
-		JoinConfig.BUDGET_PER_EPISODE = budget;
+    /**
+     * Processes all queries in given directory.
+     *
+     * @param args first argument is Skinner DB directory,
+     *             second argument is query directory
+     *             third argument is Postgres database name
+     *             fourth argument is Postgres user name
+     *             fifth argument is Postgres user password
+     * @throws Exception
+     */
+    public static void main(String[] args) throws Exception {
+        // Check for command line parameters
+//		if (args.length != 2 && args.length != 3) {
+//			System.out.println("Specify Skinner DB dir, "
+//					+ "query directory, Postgres DB name, "
+//					+ "Postgres user, and Postgres password!");
+//			return;
+//		}
+        // Initialize database
+        String SkinnerDbDir = args[0];
+        String queryDir = args[1];
+        int budget = Integer.parseInt(args[2]);
+        int nThread = Integer.parseInt(args[3]);
+//        double lr = Double.parseDouble(args[4]);
+        JoinConfig.NTHREAD = nThread;
+        JoinConfig.BUDGET_PER_EPISODE = budget;
+//        JoinConfig.EXPLORATION_WEIGHT = lr;
 //		String PgDB = args[2];
 //		String PgUser = args[3];
 //		String PgPassword = args.length==5?args[4]:"";
-		PathUtil.initSchemaPaths(SkinnerDbDir);
-		CatalogManager.loadDB(PathUtil.schemaPath);
-		PathUtil.initDataPaths(CatalogManager.currentDB);
-		System.out.println("Loading data ...");
-		GeneralConfig.inMemory = true;
-		BufferManager.loadDB();
-		System.out.println("Data loaded.");
-		Indexer.indexAll(StartupConfig.INDEX_CRITERIA);
-		// Read all queries from files
-		Map<String, PlainSelect> nameToQuery = 
-				BenchUtil.readAllQueries(queryDir);
-		// Open connection to Postgres 
+        PathUtil.initSchemaPaths(SkinnerDbDir);
+        CatalogManager.loadDB(PathUtil.schemaPath);
+        PathUtil.initDataPaths(CatalogManager.currentDB);
+        System.out.println("Loading data ...");
+        GeneralConfig.inMemory = true;
+        BufferManager.loadDB();
+        System.out.println("Data loaded.");
+        Indexer.indexAll(StartupConfig.INDEX_CRITERIA);
+        // Read all queries from files
+        Map<String, PlainSelect> nameToQuery =
+                BenchUtil.readAllQueries(queryDir);
+        // Open connection to Postgres
 //		String url = "jdbc:postgresql:" + PgDB;
 //		Properties props = new Properties();
 //		props.setProperty("user",PgUser);
 //		props.setProperty("password",PgPassword);
 //		Connection connection = DriverManager.getConnection(url, props);
 //		java.sql.Statement pgStatement = connection.createStatement();
-		// Open benchmark result file
-		PrintWriter benchOut = new PrintWriter("bench.txt");
+        // Open benchmark result file
+        PrintWriter benchOut = new PrintWriter("bench.txt");
 //		PrintStream pgOut = new PrintStream("pgResults.txt");
-		PrintStream skinnerOut = new PrintStream("skinnerResults.txt");
-		PrintStream console = System.out;
-		// Measure pre-processing time for each query
-		BenchUtil.writeBenchHeader(benchOut);
-		for (Entry<String, PlainSelect> entry : nameToQuery.entrySet()) {
-			System.out.println(entry.getKey());
-			System.out.println(entry.getValue().toString());
-			long startMillis = System.currentTimeMillis();
-			QueryInfo query = new QueryInfo(entry.getValue(),
-					false, -1, -1, null);
-			Context preSummary = Preprocessor.process(query);
-			long preMillis = System.currentTimeMillis() - startMillis;
-			long joinStartMillis = System.currentTimeMillis();
-			JoinProcessor.process(query, preSummary);
-			long joinEndMillis = System.currentTimeMillis();
+        PrintStream skinnerOut = new PrintStream("skinnerResults.txt");
+        PrintStream console = System.out;
+        // Measure pre-processing time for each query
+        BenchUtil.writeBenchHeader(benchOut);
+        for (Entry<String, PlainSelect> entry : nameToQuery.entrySet()) {
+            System.out.println(entry.getKey());
+            System.out.println(entry.getValue().toString());
+
+            QueryInfo query = new QueryInfo(entry.getValue(),
+                    false, -1, -1, null);
+            int nrJoinAttributes = query.equiJoinClasses.size();
+            List<int[]> orders = ArrayUtilities.permutations(nrJoinAttributes);
+//            for (int[] order : orders) {
+//                if (query.isValidAttributeOrder(order))
+//                    System.out.println(Arrays.toString(order));
+//            }
+            for (int[] order : orders) {
+                if (!query.isValidAttributeOrder(order)) {
+                    continue;
+                }
+                System.out.println("join order:" + Arrays.toString(order));
+                long startMillis = System.currentTimeMillis();
+                JoinConfig.order = order;
+                Context preSummary = Preprocessor.process(query);
+                long preMillis = System.currentTimeMillis() - startMillis;
+                long joinStartMillis = System.currentTimeMillis();
+                JoinProcessor.process(query, preSummary);
+                long joinEndMillis = System.currentTimeMillis();
 //			System.out.println("join time:" + (joinEndMillis - joinStartMillis));
-			long postStartMillis = System.currentTimeMillis();
-			PostProcessor.process(query, preSummary,
-					NamingConfig.FINAL_RESULT_NAME, true);
-			long postMillis = System.currentTimeMillis() - postStartMillis;
-			long totalMillis = System.currentTimeMillis() - startMillis;
-			System.out.println("totalMillis:" + totalMillis);
-			// Check consistency with Postgres results: unary preds
+//                long postStartMillis = System.currentTimeMillis();
+//                PostProcessor.process(query, preSummary,
+//                        NamingConfig.FINAL_RESULT_NAME, true);
+//                long postMillis = System.currentTimeMillis() - postStartMillis;
+                long totalMillis = System.currentTimeMillis() - startMillis;
+                System.out.println("totalMillis:" + totalMillis);
+                // Check consistency with Postgres results: unary preds
 //			for (ExpressionInfo expr : query.unaryPredicates) {
 //				// Unary predicates must refer to one table
 //				if (expr.aliasesMentioned.size() != 1) {
@@ -205,10 +224,10 @@ public class BenchAndVerify {
 //			}
 //			pgOut.flush();
 //			// Output final result for Skinner
-			String resultRel = NamingConfig.FINAL_RESULT_NAME;
+//                String resultRel = NamingConfig.FINAL_RESULT_NAME;
 //			System.setOut(skinnerOut);
-			RelationPrinter.print(resultRel);
-			skinnerOut.flush();
+//                RelationPrinter.print(resultRel);
+//                skinnerOut.flush();
 //			System.setOut(console);
 //			// Generate output
 //			benchOut.print(entry.getKey() + "\t");
@@ -228,15 +247,16 @@ public class BenchAndVerify {
 //			benchOut.print(JoinStats.maxReward + "\t");
 //			benchOut.println(JoinStats.totalWork);
 //			benchOut.flush();
-			// Clean up
-			BufferManager.unloadTempData();
-			CatalogManager.removeTempTables();
-		}
+                // Clean up
+                BufferManager.unloadTempData();
+                CatalogManager.removeTempTables();
+            }
+        }
 //		connection.close();
-		benchOut.close();
+        benchOut.close();
 //		pgOut.close();
-		skinnerOut.close();
-		JoinProcessor.executorService.shutdown();
-	}
+        skinnerOut.close();
+        JoinProcessor.executorService.shutdown();
+    }
 
 }

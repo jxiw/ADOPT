@@ -1,24 +1,23 @@
 package joining.join.wcoj;
 
-import joining.result.JoinResult;
+import joining.ParallelJoinResult;
 import util.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class HyperCubeEvaluationTask {
 
-    private final LFTJoin[] joins;
+    public final LFTJoin[] joins;
 
-    private final int nrJoined;
-
-    private final JoinResult joinResult;
-
-//    private long budget;
+    private final List<Pair<Integer, Integer>> attributeValueBound;
 
     /**
      * Index of current variable in attribute order.
      */
     int curVariableID = 0;
+
+    final ParallelJoinResult joinResult;
 
     /**
      * Number of result tuples produced
@@ -71,9 +70,9 @@ public class HyperCubeEvaluationTask {
 
 //    HypercubeManager manager;
 
-    public HyperCubeEvaluationTask(LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar, JoinResult joinResult) {
+    public HyperCubeEvaluationTask(LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar, List<Pair<Integer, Integer>> attributeValueBound, ParallelJoinResult joinResult) {
         // for every table in from clause
-        this.nrJoined = idToIter.length;
+        int nrJoined = idToIter.length;
         this.joins = new LFTJoin[nrJoined];
         for (int i = 0; i < nrJoined; i++) {
             this.joins[i] = new LFTJoin(idToIter[i]);
@@ -93,51 +92,32 @@ public class HyperCubeEvaluationTask {
             }
             joinsByVar.add(joinByVar);
         }
+        this.attributeValueBound = attributeValueBound;
         this.joinResult = joinResult;
-//        this.manager = manager;
     }
 
-    /**
-     * Add join result tuple based on current
-     * iterator positions.
-     */
-    void addResultTuple() throws Exception {
-        // Update reward-related statistics
-//        ++lastNrResults;
-        // Generate result tuple
-        int[] resultTuple = new int[nrJoined];
-        // Iterate over all joined tables
-        for (int aliasCtr = 0; aliasCtr < nrJoined; ++aliasCtr) {
-            LFTJoin iter = joins[aliasCtr];
-            resultTuple[aliasCtr] = iter.rid();
+    double rewardValue(List<Integer> attributesValueStart, List<Integer> attributesValueEnd) {
+        double scaledReward = 0;
+        double scale = 1;
+        for (int i = 0; i < attributesValueStart.size(); i++) {
+            double startInDimI = attributesValueStart.get(i);
+            double endInDimI = attributesValueEnd.get(i);
+            double lowerBoundInDimI = attributeValueBound.get(i).getFirst();
+            double upperBoundInDimI = attributeValueBound.get(i).getSecond();
+            if (i > 0) {
+                scale *= (upperBoundInDimI - lowerBoundInDimI + 1);
+            }
+            double currentReward = (endInDimI - startInDimI) / ((upperBoundInDimI - endInDimI + 1) * scale);
+            scaledReward += currentReward;
+//            System.out.println("startInDimI:" + startInDimI + ", endInDimI:" + endInDimI + ", lowerBoundInDimI:" + lowerBoundInDimI + ", upperBoundInDimI:" + upperBoundInDimI);
+//            System.out.println("currentReward:" + currentReward + ", scaledReward:" + scaledReward);
         }
-
-//        for (int[] rs: joinResult.tuples) {
-//            if (Arrays.equals(rs, resultTuple)) {
-//                System.out.println("thread id:" + Thread.currentThread().getId() + ", here is error");
-//                for (JoinFrame joinFrame: joinFrames) {
-//                    System.out.println("thread id:" + Thread.currentThread().getId() + ", max key:" + joinFrame.maxKey);
-//                }
-//                break;
-//            }
-//        }
-
-        // Add new result tuple
-        joinResult.add(resultTuple);
+        return scaledReward;
     }
 
-    public double execute(int budget, int[] attributeOrder, Hypercube selectCube) throws Exception {
-
-//        Hypercube selectCube = manager.allocateHypercube();
-//        System.out.println("attributeOrder:" + Arrays.toString(attributeOrder));
-
-//        Hypercube selectCube = HypercubeManager.allocateHypercube();
-
-//        System.out.println("selectCube:" + selectCube);
+    public void execute(int budget, int[] attributeOrder, Hypercube selectCube) throws Exception {
 
         List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
-
-//        System.out.println("thread id:" + Thread.currentThread().getId() + ", exploreDomain:" + exploreDomain);
 
         // step one: reset the iterator
         for (LFTJoin join : joins) {
@@ -156,10 +136,10 @@ public class HyperCubeEvaluationTask {
 
         // Until we finish processing (break)
         // finish the current hypercube
+
         while (curVariableID >= 0) {
 
             // Did we finish processing?
-
             // current position
             JoinFrame joinFrame = curVariableID >= nrVars ?
                     null : joinFrames.get(curVariableID);
@@ -188,7 +168,7 @@ public class HyperCubeEvaluationTask {
                 // go to next level
                 // Have we completed a result tuple?
                 if (curVariableID >= nrVars) {
-                    addResultTuple();
+                    joinResult.result += 1;
                     backtrack();
                     continue;
                 }
@@ -243,8 +223,6 @@ public class HyperCubeEvaluationTask {
             // execute join
             while (true) {
                 // Count current round
-                --budget;
-//                JoinStats.nrIterations++;
                 // Check for timeout and not in the last end
                 if (budget <= 0) {
 
@@ -258,16 +236,12 @@ public class HyperCubeEvaluationTask {
                     // for position curVariableID, [5, 9 ...], [5, 8, max, max]
                     // todo
                     endValues.add(joinFrames.get(curVariableID).maxKey - 1);
-//                        endValues.add(joinFrames.get(curVariableID).maxKey);
                     for (int i = curVariableID + 1; i < nrVars; i++) {
                         endValues.add(exploreDomain.get(i).getSecond());
                     }
 
-//                    System.out.println("thread id:" + Thread.currentThread().getId() + ", end values:" + endValues);
-
-                    double processVolume = HypercubeManager.updateInterval(selectCube, endValues, attributeOrder);
-                    return processVolume / HypercubeManager.totalVolume;
-
+                    HypercubeManager.updateInterval(selectCube, endValues, attributeOrder);
+                    return;
                 }
 
                 // Get current key
@@ -282,7 +256,7 @@ public class HyperCubeEvaluationTask {
                     break;
                 } else {
                     // min key not equal max key
-                    minIter.seek(joinFrame.maxKey);
+                    budget -= minIter.seek(joinFrame.maxKey);
                     if (minIter.atEnd() || minIter.key() > endKey) {
                         // Go one level up in each trie
                         for (LFTJoin iter : joinFrame.curIters) {
@@ -299,8 +273,9 @@ public class HyperCubeEvaluationTask {
             }
         }
 
+
         //  finish query
         HypercubeManager.finishHyperCube();
-        return selectCube.getVolume() / HypercubeManager.totalVolume;
+        return;
     }
 }

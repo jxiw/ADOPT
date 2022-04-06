@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import buffer.BufferManager;
 import catalog.CatalogManager;
@@ -17,7 +19,6 @@ import data.IntData;
 import preprocessing.Context;
 import query.ColumnRef;
 import query.QueryInfo;
-import statistics.JoinStats;
 
 public class LFTJiter {
     /**
@@ -36,7 +37,9 @@ public class LFTJiter {
      * they appear in the global variable
      * order.
      */
-    final Integer[] tupleOrder;
+//    Integer[] tupleOrder;
+    int[] tupleOrder;
+
     /**
      * Number of trie levels (i.e., number
      * of attributes the trie indexes).
@@ -58,30 +61,36 @@ public class LFTJiter {
      * (expressed as tuple index in tuple sort order).
      */
 //    final int[] curTuples;
+
+//    /**
+//     * Caches tuple orderings for tables after applying
+//     * query-specific unary predicates. Such orderings
+//     * can be reused across different join orders
+//     * for the same query.
+//     */
+//    static Map<List<ColumnRef>, Integer[]> queryOrderCache =
+//            new HashMap<>();
+//    /**
+//     * Caches tuple orderings for base tables that can
+//     * be reused across different queries.
+//     */
+//    static Map<List<ColumnRef>, Integer[]> baseOrderCache =
+//            new HashMap<>();
+
     /**
      * Caches tuple orderings for tables after applying
      * query-specific unary predicates. Such orderings
      * can be reused across different join orders
      * for the same query.
      */
-    static Map<List<ColumnRef>, Integer[]> queryOrderCache =
+    static Map<List<ColumnRef>, int[]> queryOrderCache =
             new HashMap<>();
     /**
      * Caches tuple orderings for base tables that can
      * be reused across different queries.
      */
-    static Map<List<ColumnRef>, Integer[]> baseOrderCache =
+    static Map<List<ColumnRef>, int[]> baseOrderCache =
             new HashMap<>();
-//
-    static long sortTime = 0;
-//
-//    static long lftTime1 = 0;
-//
-//    static long lftTime2 = 0;
-//
-//    static long lftTime3 = 0;
-//
-//    static long lftTime4 = 0;
 
     /**
      * Initializes iterator for given query and
@@ -104,7 +113,6 @@ public class LFTJiter {
         // Extract columns used for sorting
         List<ColumnRef> localColumns = new ArrayList<>();
         trieCols = new ArrayList<>();
-//        long stime1 = System.currentTimeMillis();
         for (Set<ColumnRef> eqClass : globalVarOrder) {
             for (ColumnRef colRef : eqClass) {
                 if (colRef.aliasName.equals(alias)) {
@@ -119,27 +127,9 @@ public class LFTJiter {
         // Initialize position array
         nrLevels = trieCols.size();
 
-        // Retrieve cached tuple order or sort
-//        long stime2 = System.currentTimeMillis();
-        tupleOrder = getTupleOrder(query,
+        getTupleOrder(query,
                 context, aliasID, localColumns);
-//        long stime3 = System.currentTimeMillis();
-        // Reset internal state
-//        reset();
 
-//        long stime4 = System.currentTimeMillis();
-        // Perform run time checks if activated
-//        IterChecker.checkIter(query, context,
-//                aliasID, globalVarOrder, this);
-//        long stime5 = System.currentTimeMillis();
-//        lftTime1 += (stime2 - stime1);
-//        lftTime2 += (stime3 - stime2);
-//        lftTime3 += (stime4 - stime3);
-//        lftTime4 += (stime5 - stime4);
-//        System.out.println("lftTime1:" + lftTime1);
-//        System.out.println("lftTime2:" + lftTime2);
-//        System.out.println("lftTime3:" + lftTime3);
-//        System.out.println("lftTime4:" + lftTime4);
     }
 
     /**
@@ -149,9 +139,10 @@ public class LFTJiter {
      * @param localColumns sort by those columns
      * @return array with sorted tuple indices
      */
-    Integer[] getTupleOrder(QueryInfo query, Context executionContext,
-                            int aliasID, List<ColumnRef> localColumns) {
+    void getTupleOrder(QueryInfo query, Context executionContext,
+                       int aliasID, List<ColumnRef> localColumns) {
         // No unary predicates for current alias?
+//        long initMillis = System.currentTimeMillis();
         String alias = query.aliases[aliasID];
         boolean notFiltered = executionContext.
                 aliasToFiltered.get(alias).equals(alias);
@@ -159,23 +150,17 @@ public class LFTJiter {
             notFiltered = executionContext.aliasToFiltered.get(alias).equals(alias);
         }
 
-        // Did we cache tuple order for associated base tables?
         if (notFiltered && baseOrderCache.containsKey(localColumns)) {
-            return baseOrderCache.get(localColumns);
-        } else
+            tupleOrder = baseOrderCache.get(localColumns);
+        } else {
             // Retrieve cached tuple order or sort
             if (queryOrderCache.containsKey(localColumns)) {
-                return queryOrderCache.get(localColumns);
+                tupleOrder = queryOrderCache.get(localColumns);
             } else {
                 // Initialize tuple order
-                Integer[] tupleOrder = new Integer[card];
-                for (int i = 0; i < card; ++i) {
-                    tupleOrder[i] = i;
-                }
 
-                long startCreateTime = System.currentTimeMillis();
-                // Sort tuples by global variable order
-                Arrays.parallelSort(tupleOrder, new Comparator<Integer>() {
+                tupleOrder = IntStream.range(0, card).boxed().parallel().sorted(new Comparator<Integer>() {
+                    @Override
                     public int compare(Integer row1, Integer row2) {
                         for (ColumnData colData : trieCols) {
                             int cmp = colData.compareRows(row1, row2);
@@ -193,34 +178,16 @@ public class LFTJiter {
                         }
                         return 0;
                     }
-                });
-                long endCreateTime = System.currentTimeMillis();
-                sortTime += (endCreateTime - startCreateTime);
-                System.out.println("sort time:" + sortTime);
+                }).mapToInt(i -> i).toArray();
 
-                // build hash map, tuple order position to real position
-//			ArrayList<Integer> uniqueTupleOrder = new ArrayList<>();
-//			for (int i = 1; i < card; i++) {
-//				int tupleIdx1 = tupleOrder[i - 1];
-//				int tupleIdx2 = tupleOrder[i];
-//				boolean unique = trieCols.parallelStream().anyMatch(column -> column.data[tupleIdx1] != column.data[tupleIdx2]);
-//				if (unique) {
-//					uniqueTupleOrder.add(i - 1);
-//				} else {
-//					System.out.println("same as prevous" + tupleIdx2);
-//				}
-//			}
-//			uniqueTupleOrder.add(card - 1);
-//			System.out.println("unique tuple size:" + uniqueTupleOrder.size());
-//			System.out.println("tuple size:" + tupleOrder.length);
                 // Distinguish by cache
                 if (notFiltered) {
                     baseOrderCache.put(localColumns, tupleOrder);
                 } else {
                     queryOrderCache.put(localColumns, tupleOrder);
                 }
-                return tupleOrder;
             }
+        }
     }
 
     public static void clearCache() {

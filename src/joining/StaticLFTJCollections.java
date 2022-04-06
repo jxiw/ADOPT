@@ -27,6 +27,8 @@ public class StaticLFTJCollections {
 
     static List<Pair<Integer, Integer>> joinValueBound;
 
+//    static long initTime = 0;
+
     public static void init(QueryInfo query, Context executionContext) throws Exception {
         StaticLFTJCollections.query = query;
         StaticLFTJCollections.executionContext = executionContext;
@@ -52,7 +54,7 @@ public class StaticLFTJCollections {
                     IntData columnIntData = (IntData) columnData;
                     lb = Math.max(lb, ArrayUtil.getLowerBound(columnIntData.data));
                     ub = Math.min(ub, ArrayUtil.getUpperBound(columnIntData.data));
-                    System.out.println("lb:" + lb + ", ub" + ub);
+                    System.out.println("lb:" + lb + ", ub:" + ub +", card:" + columnIntData.cardinality);
                 }
             }
             joinValueBound.add(new Pair<>(lb, ub));
@@ -64,8 +66,11 @@ public class StaticLFTJCollections {
             if (staticLFTJMap.contains(order)) {
                 return staticLFTJMap.get(order);
             } else {
+//                long startMillis = System.currentTimeMillis();
                 StaticLFTJ staticLFTJ = new StaticLFTJ(query, executionContext, order.order, joinValueBound);
                 staticLFTJMap.put(order, staticLFTJ);
+//                long endMillis = System.currentTimeMillis();
+//                System.out.println("duration for StaticLFTJ:" + (endMillis - startMillis));
                 return staticLFTJ;
             }
         }

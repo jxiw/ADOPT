@@ -52,11 +52,13 @@ public class JoinConfig {
 	/**
 	 *
 	 */
-	public static final int NTHREAD = 32;
+	public static int NTHREAD = 32;
 
 	public static final double MIN_REWARD = 1e-15;
 
 	public static final boolean DISTINCT_START = false;
 
 	public static final boolean DISTINCT_END = false;
+
+	public static int[] order;
 }

@@ -11,6 +11,7 @@ import query.ColumnRef;
 import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 class ListKey {
 
@@ -69,6 +70,7 @@ public class Distinct {
         int card = columnsData.get(0).cardinality;
 //        Map<Integer, List<Integer>> idxToUniqueIdx = new HashMap<Integer, List<Integer>>();
 //        Map<Integer, Integer> hashCodeToIdx = new HashMap<Integer, Integer>();
+        long startMillis = System.currentTimeMillis();
         // distinct table idx to real idx
         Map<Integer, List<Integer>> idxToUniqueIdx = new HashMap<Integer, List<Integer>>();
         Map<List<Integer>, Integer> valueToIdx = new HashMap<List<Integer>, Integer>();
@@ -76,19 +78,6 @@ public class Distinct {
         List<Integer> rowList = new ArrayList<>();
         for (int i = 0; i < card; i++) {
             int finalI = i;
-//            List<Integer> hashCodeForRowIter = columnsData.stream().map(columnData -> columnData.hashForRow(finalI)).collect(Collectors.toList());
-//            int hashCodeForRowI = hashCodeForRowIter.hashCode();
-//            if (hashCodeToIdx.containsKey(hashCodeForRowI)) {
-//                int uniqueIndex = hashCodeToIdx.get(hashCodeForRowI);
-//                idxToUniqueIdx.get(uniqueIndex).add(i);
-//            } else {
-//                hashCodeToIdx.put(hashCodeForRowI, uniqueNum);
-//                List<Integer> realIndices = new ArrayList<>();
-//                realIndices.add(i);
-//                idxToUniqueIdx.put(uniqueNum, realIndices);
-//                rowList.add(i);
-//                uniqueNum++;
-//            }
             List<Integer> hashCodeForRowIter = columnsData.stream().map(columnData -> columnData.hashForRow(finalI)).collect(Collectors.toList());
             if (valueToIdx.containsKey(hashCodeForRowIter)) {
                 int uniqueIndex = valueToIdx.get(hashCodeForRowIter);
@@ -102,6 +91,8 @@ public class Distinct {
                 uniqueNum++;
             }
         }
+        long endMillis = System.currentTimeMillis();
+        System.out.println("distinct time:" + (endMillis - startMillis));
         System.out.println("old card:" + card);
         System.out.println("new card:" + uniqueNum);
         // copy columns

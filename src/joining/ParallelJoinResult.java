@@ -1,11 +1,14 @@
 package joining;
 
-import joining.result.JoinResult;
-
 public class ParallelJoinResult {
-    JoinResult result;
 
-    public ParallelJoinResult(JoinResult result) {
+    public long result;
+
+    public ParallelJoinResult() {
+        this.result = 0;
+    }
+
+    public ParallelJoinResult(long result) {
         this.result = result;
     }
 }

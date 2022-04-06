@@ -11,9 +11,8 @@ import catalog.CatalogManager;
 import config.LoggingConfig;
 import config.NamingConfig;
 import config.JoinConfig;
-import joining.join.wcoj.Hypercube;
-import joining.join.wcoj.HypercubeManager;
-import joining.join.wcoj.LFTJiter;
+import joining.join.MultiWayJoin;
+import joining.join.wcoj.*;
 import joining.result.JoinResult;
 import operators.Distinct;
 import operators.Materialize;
@@ -50,7 +49,6 @@ public class JoinProcessor {
                                Context context) throws Exception {
 
         // Initialize statistics
-        long startMillis = System.currentTimeMillis();
         // distinct if enable
         // decomposition
         log("Creating unique join keys ...");
@@ -73,25 +71,29 @@ public class JoinProcessor {
             });
         }
 
+
+
         // join phrase
+        long mergeMillis = 0;
         long joinStartMillis = System.currentTimeMillis();
         // Initialize UCT join order search tree
         StaticLFTJCollections.init(query, context);
         HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.NTHREAD);
-        JoinResult result = new JoinResult(query.nrJoined);
-        System.out.println("start cube number:" + HypercubeManager.hypercubes.size());
 
-        List<Future<ParallelJoinResult>> evaluateResults = new ArrayList<>();
+        long resultTuple = 0;
+//        JoinResult result = new JoinResult(query.nrJoined);
+        List<ParallelJoinTask> tasks = new ArrayList<>();
+        System.out.println("start join");
+        System.out.println("start cube number:" + HypercubeManager.hypercubes.size());
         for (int i = 0; i < JoinConfig.NTHREAD; i++) {
-            evaluateResults.add(executorService.submit(new ParallelJoinTask(query)));
+            tasks.add(new ParallelJoinTask(query));
         }
 
+        List<Future<ParallelJoinResult>> evaluateResults = executorService.invokeAll(tasks);
+        long joinEndMillis = System.currentTimeMillis();
         for (Future<ParallelJoinResult> futureResult : evaluateResults) {
-//            System.out.println("merge prev start:" + System.currentTimeMillis());
             ParallelJoinResult joinResult = futureResult.get();
-//            System.out.println("merge start:" + System.currentTimeMillis());
-            result.merge(joinResult.result);
-//            System.out.println("merge end:" + System.currentTimeMillis());
+            resultTuple += joinResult.result;
         }
 
 //        executorService.shutdown();
@@ -101,55 +103,26 @@ public class JoinProcessor {
 //            e.printStackTrace();
 //        }
 
-        System.out.println("hypercubes:" + HypercubeManager.hypercubes.size());
-        long joinEndMillis = System.currentTimeMillis();
+//        System.out.println("hypercubes:" + HypercubeManager.hypercubes.size());
+
+        System.out.println("merge result time:" + mergeMillis);
         System.out.println("join time:" + (joinEndMillis - joinStartMillis));
+//        System.out.println("part 1:" + StaticLFTJ.part1);
+//        System.out.println("part 2:" + StaticLFTJ.part2);
+//        System.out.println("init compiler time:" + MultiWayJoin.superTime2);
+//        System.out.println("sort time:" + LFTJiter.sortTime);
+//        System.out.println("init array time:" + LFTJiter.lftTime6);
+//        System.out.println("uniquify join value:" + (joinStartMillis - startMillis));
+//        System.out.println("LFTJiter 1:" + LFTJiter.lftTime1);
+//        System.out.println("LFTJiter 2:" + LFTJiter.lftTime2);
+//        System.out.println("LFTJiter 3:" + LFTJiter.lftTime3);
+//        System.out.println("LFTJiter 4:" + LFTJiter.lftTime4);
 
         LFTJiter.clearCache();
 
-        String targetRelName = NamingConfig.JOINED_NAME;
-
-        if (JoinConfig.DISTINCT_END) {
-            List<int[]> tuples = result.getTuples();
-            List<int[]> realTuples = new ArrayList<>();
-            for (int[] tuple : tuples) {
-                List<List<Integer>> realIndices = new ArrayList<>();
-                for (int aliasCtr = 0; aliasCtr < query.nrJoined; ++aliasCtr) {
-                    String distinctTableName = context.aliasToDistinct.get(query.aliases[aliasCtr]);
-                    realIndices.add(Distinct.tableNamesToUniqueIndexes.get(distinctTableName).get(tuple[aliasCtr]));
-                }
-                List<List<Integer>> realIndicesFlatten = CartesianProduct.constructCombinations(realIndices);
-                realIndicesFlatten.forEach(realIndex -> realTuples.add(
-                        realIndex.stream().mapToInt(Integer::intValue).toArray()));
-            }
-
-            int nrTuples = realTuples.size();
-            log("Materializing join result with " + nrTuples + " tuples ...");
-            Materialize.execute(realTuples, query.aliasToIndex,
-                    query.colsForPostProcessing,
-                    context.columnMapping, targetRelName);
-        } else {
-            // Materialize result table
-            List<int[]> tuples = result.getTuples();
-            int nrTuples = tuples.size();
-            System.out.println("Materializing join result with " + nrTuples + " tuples ...");
-            Materialize.execute(tuples, query.aliasToIndex,
-                    query.colsForPostProcessing,
-                    context.columnMapping, targetRelName);
-        }
-
-        // Update processing context
-        context.columnMapping.clear();
-        for (ColumnRef postCol : query.colsForPostProcessing) {
-            String newColName = postCol.aliasName + "." + postCol.columnName;
-            ColumnRef newRef = new ColumnRef(targetRelName, newColName);
-            context.columnMapping.put(postCol, newRef);
-        }
-        // Store number of join result tuples
-        JoinStats.skinnerJoinCard = CatalogManager.
-                getCardinality(NamingConfig.JOINED_NAME);
-        // Measure execution time for join phase
-        JoinStats.joinMillis = System.currentTimeMillis() - startMillis;
+        System.out.println("------------");
+        System.out.println(resultTuple);
+        System.out.println("------------");
     }
 
     /**

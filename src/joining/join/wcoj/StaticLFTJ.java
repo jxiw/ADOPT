@@ -27,10 +27,9 @@ import joining.result.JoinResult;
 import preprocessing.Context;
 import query.ColumnRef;
 import query.QueryInfo;
-import statistics.JoinStats;
 import util.Pair;
 
-public class StaticLFTJ extends MultiWayJoin {
+public class StaticLFTJ {
     /**
      * Contains at i-th position iterator over
      * i-th element in query from clause.
@@ -55,6 +54,8 @@ public class StaticLFTJ extends MultiWayJoin {
      */
     boolean finished = false;
 
+    final int nrJoined;
+
     final int[] attributeOrder;
 
     List<Pair<Integer, Integer>> attributeValueBound;
@@ -68,10 +69,12 @@ public class StaticLFTJ extends MultiWayJoin {
      */
     public StaticLFTJ(QueryInfo query, Context executionContext, int[] order, List<Pair<Integer, Integer>> attributeValueBound) throws Exception {
         // Initialize query and context variables
-        super(query, executionContext);
+//        super(query, executionContext);
         attributeOrder = order;
         varOrder = Arrays.stream(order).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList());
         nrVars = query.equiJoinClasses.size();
+        nrJoined = query.nrJoined;
+//        long startMillis1 = System.currentTimeMillis();
         // Initialize iterators
         Map<String, LFTJiter> aliasToIter = new HashMap<>();
         HashMap<String, Integer> aliasToNumber = new HashMap<>();
@@ -83,7 +86,9 @@ public class StaticLFTJ extends MultiWayJoin {
             aliasToIter.put(alias, iter);
             aliasToNumber.put(alias, aliasCtr);
             idToIter[aliasCtr] = iter;
-        };
+        }
+
+//        long startMillis2 = System.currentTimeMillis();
         // Group iterators by variable
         itersNumberByVar = new ArrayList<>();
         for (Set<ColumnRef> var : varOrder) {
@@ -95,6 +100,13 @@ public class StaticLFTJ extends MultiWayJoin {
             itersNumberByVar.add(curNumberIters);
         }
 
+
+//
+//        part1 += (startMillis2 - startMillis1);
+//        part2 += (startMillis3 - startMillis2);
+//
+//        System.out.println("static lftj 1:" + part1);
+//        System.out.println("static lftj 2:" + part2);
 
 //        long stime4 = System.currentTimeMillis();
 
@@ -164,6 +176,9 @@ public class StaticLFTJ extends MultiWayJoin {
 //        }
 
         this.attributeValueBound = Arrays.stream(order).mapToObj(attributeValueBound::get).collect(Collectors.toList());
+//        long startMillis3 = System.currentTimeMillis();
+//        part1 += (startMillis2 - startMillis1);
+//        part2 += (startMillis3 - startMillis2);
     }
 
 //    /**
@@ -177,7 +192,6 @@ public class StaticLFTJ extends MultiWayJoin {
 //
 //    }
 
-    @Override
     public boolean isFinished() {
         return finished;
     }

@@ -45,14 +45,16 @@ public abstract class MultiWayJoin {
     /**
      * Maps non-equi join predicates to compiled evaluators.
      */
-    protected final Map<Expression, KnaryBoolEval> predToEval;
+//    protected final Map<Expression, KnaryBoolEval> predToEval;
     /**
      * Collects result tuples and contains
      * finally a complete result.
      */
-    public static JoinResult result;
+//    public static JoinResult result;
 
-    static long superTime = 0;
+//    static long superTime1 = 0;
+
+//    public static long superTime2 = 0;
     /**
      * This constructor only serves for testing purposes.
      * It initializes most field to null pointers.
@@ -65,8 +67,8 @@ public abstract class MultiWayJoin {
     	this.nrJoined = query.nrJoined;
     	this.preSummary = null;
     	this.cardinalities = null;
-    	this.result = null;
-    	predToEval = null;
+//    	this.result = null;
+//    	predToEval = null;
     }
     /**
      * Initializes join for given query, execution context,
@@ -97,38 +99,40 @@ public abstract class MultiWayJoin {
         this.preSummary = preSummary;
         // Retrieve table cardinalities
         this.cardinalities = new int[nrJoined];
-        for (Entry<String,Integer> entry : 
-        	query.aliasToIndex.entrySet()) {
-        	String alias = entry.getKey();
-        	String table = preSummary.aliasToFiltered.get(alias);
-            if (JoinConfig.DISTINCT_START) {
-                table = preSummary.aliasToDistinct.get(alias);
-            }
-        	int index = entry.getValue();
-        	int cardinality = CatalogManager.getCardinality(table);
-        	cardinalities[index] = cardinality;
-        }
+//        for (Entry<String,Integer> entry :
+//        	query.aliasToIndex.entrySet()) {
+//        	String alias = entry.getKey();
+//        	String table = preSummary.aliasToFiltered.get(alias);
+//            if (JoinConfig.DISTINCT_START) {
+//                table = preSummary.aliasToDistinct.get(alias);
+//            }
+//        	int index = entry.getValue();
+//        	int cardinality = CatalogManager.getCardinality(table);
+//        	cardinalities[index] = cardinality;
+//        }
 //        long stime2 = System.currentTimeMillis();
-        this.result = joinResult;
+//        this.result = joinResult;
         // Compile predicates
-        predToEval = new HashMap<>();
-        for (ExpressionInfo predInfo : query.wherePredicates) {
-    		// Log predicate compilation if enabled
-    		if (LoggingConfig.MAX_JOIN_LOGS>0) {
-    			System.out.println("Compiling predicate " + predInfo + " ...");
-    		}
-    		// Compile predicate and store in lookup table
-        	Expression pred = predInfo.finalExpression;
-        	ExpressionCompiler compiler = new ExpressionCompiler(predInfo, 
-        			preSummary.columnMapping, query.aliasToIndex, null,
-        			EvaluatorType.KARY_BOOLEAN);
-        	predInfo.finalExpression.accept(compiler);
-        	KnaryBoolEval boolEval = (KnaryBoolEval)compiler.getBoolEval();
-        	predToEval.put(pred, boolEval);        		
-        }
+//        predToEval = new HashMap<>();
+//        for (ExpressionInfo predInfo : query.wherePredicates) {
+//    		// Log predicate compilation if enabled
+//    		if (LoggingConfig.MAX_JOIN_LOGS>0) {
+//    			System.out.println("Compiling predicate " + predInfo + " ...");
+//    		}
+//    		// Compile predicate and store in lookup table
+//        	Expression pred = predInfo.finalExpression;
+//        	ExpressionCompiler compiler = new ExpressionCompiler(predInfo,
+//        			preSummary.columnMapping, query.aliasToIndex, null,
+//        			EvaluatorType.KARY_BOOLEAN);
+//        	predInfo.finalExpression.accept(compiler);
+//        	KnaryBoolEval boolEval = (KnaryBoolEval)compiler.getBoolEval();
+//        	predToEval.put(pred, boolEval);
+//        }
 //        long stime3 = System.currentTimeMillis();
-//        System.out.println("superTime 1"+ (stime2 - stime1));
-//        System.out.println("superTime 2"+ (stime3 - stime2));
+//        superTime1 += (stime2 - stime1);
+//        superTime2 += (stime3 - stime2);
+//        System.out.println("superTime 1:"+ superTime1);
+//        System.out.println("superTime 2:"+ superTime2);
     }
     /**
      * Returns true iff a complete join result was generated.
