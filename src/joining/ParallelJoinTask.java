@@ -24,17 +24,22 @@ public class ParallelJoinTask implements Callable<ParallelJoinResult> {
 
     private ParallelLFTJ parallelLFTJ;
 
-    public ParallelJoinTask(QueryInfo query) {
+    private UctNodeLFTJ root;
+
+    static int roundCtr = 0;
+
+    public ParallelJoinTask(QueryInfo query, UctNodeLFTJ uctNodeLFTJ) {
 //        this.joinOp = joinOp;
         this.query = query;
 //        this.joinResult = new ArrayList<>();
         this.parallelLFTJ = new ParallelLFTJ();
+        this.root = uctNodeLFTJ;
     }
 
     @Override
     public ParallelJoinResult call() throws Exception {
-        UctNodeLFTJ root = new UctNodeLFTJ(0, query, true, this.parallelLFTJ);
-        long roundCtr = 0;
+//        UctNodeLFTJ root = new UctNodeLFTJ(0, query, true, this.parallelLFTJ);
+//        long roundCtr = 0;
         // Initialize counters and variables
         int[] attributeOrder = new int[query.nrAttribute];
         // Get default action selection policy
@@ -42,8 +47,22 @@ public class ParallelJoinTask implements Callable<ParallelJoinResult> {
         long startMillis = System.currentTimeMillis();
 //        System.out.println("start in system:" + startMillis);
         while (!this.parallelLFTJ.isFinish) {
-            ++roundCtr;
-            double reward = root.sample(roundCtr, attributeOrder, policy);
+            // sample attribute order
+            synchronized(root) {
+                ++roundCtr;
+                root.sample(roundCtr, attributeOrder, policy);
+//                System.out.println("join order:" + Arrays.toString(attributeOrder));
+            }
+            double reward = parallelLFTJ.execute(attributeOrder);
+            synchronized (root) {
+//                System.out.println("join order:" + Arrays.toString(attributeOrder));
+//                System.out.println("reward:" + reward);
+                root.updateReward(reward, attributeOrder, 0);
+//                int[] optimalOrder = new int[query.nrAttribute];
+//                Arrays.fill(optimalOrder, -1);
+//                root.getOptimalOrder(optimalOrder);
+//                System.out.println("current optimal join order:" + Arrays.toString(optimalOrder));
+            }
 
 //            boolean isWorking = false;
 //            synchronized (HypercubeManager.isWorking) {

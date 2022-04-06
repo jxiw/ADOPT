@@ -4,11 +4,14 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import config.LoggingConfig;
 import config.NamingConfig;
 import config.JoinConfig;
 import joining.join.wcoj.*;
+import joining.uct.UctNodeLFTJ;
 import operators.Distinct;
 import preprocessing.Context;
 import query.ColumnRef;
@@ -63,6 +66,7 @@ public class JoinProcessor {
             });
         }
 
+        System.out.println(IntStream.range(0, query.nrAttribute).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList()));
 
         // join phrase
         long mergeMillis = 0;
@@ -73,12 +77,13 @@ public class JoinProcessor {
 //        JoinResult result = new JoinResult(query.nrJoined);
 //        MergedList<int[]> result = new MergedList<>();
         long resultTuple = 0;
+        UctNodeLFTJ root = new UctNodeLFTJ(0, query, true);
 
         List<ParallelJoinTask> tasks = new ArrayList<>();
         System.out.println("start join");
         System.out.println("start cube number:" + HypercubeManager.hypercubes.size());
         for (int i = 0; i < JoinConfig.NTHREAD; i++) {
-            tasks.add(new ParallelJoinTask(query));
+            tasks.add(new ParallelJoinTask(query, root));
         }
 
         List<Future<ParallelJoinResult>> evaluateResults = executorService.invokeAll(tasks);
@@ -128,6 +133,7 @@ public class JoinProcessor {
         StaticLFTJ.part2 = 0;
 
         LFTJiter.clearCache();
+        ParallelJoinTask.roundCtr = 0;
 
         System.out.println("------------");
         System.out.println(resultTuple);

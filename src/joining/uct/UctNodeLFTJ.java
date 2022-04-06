@@ -81,7 +81,7 @@ public class UctNodeLFTJ {
     /**
      * Evaluates a given join order and accumulates results.
      */
-    final ParallelLFTJ joinOp;
+//    final ParallelLFTJ joinOp;
     /**
      * Indicates whether the search space is restricted to
      * join orders that avoid Cartesian products. This
@@ -105,10 +105,9 @@ public class UctNodeLFTJ {
      * @param roundCtr     current round number
      * @param query        the query which is optimized
      * @param useHeuristic whether to avoid Cartesian products
-     * @param joinOp       multi-way join operator allowing fast join order switching
      */
     public UctNodeLFTJ(long roundCtr, QueryInfo query,
-                       boolean useHeuristic, ParallelLFTJ joinOp) {
+                       boolean useHeuristic) {
         // Count node generation
 //        ++JoinStats.nrUctNodes;
         this.query = query;
@@ -130,7 +129,7 @@ public class UctNodeLFTJ {
             unjoinedAttributes.add(attributeCtr);
             nextAttributes[attributeCtr] = attributeCtr;
         }
-        this.joinOp = joinOp;
+//        this.joinOp = joinOp;
         this.useHeuristic = useHeuristic;
         recommendedActions = new HashSet<Integer>();
         for (int action = 0; action < nrActions; ++action) {
@@ -169,7 +168,7 @@ public class UctNodeLFTJ {
             accumulatedReward[actionCtr] = 0;
             nextAttributes[actionCtr] = unjoinedAttributes.get(actionCtr);
         }
-        this.joinOp = parent.joinOp;
+//        this.joinOp = parent.joinOp;
         // Calculate recommended actions if heuristic is activated
         this.useHeuristic = parent.useHeuristic;
         if (useHeuristic) {
@@ -184,6 +183,7 @@ public class UctNodeLFTJ {
                     recommendedActions.add(actionCtr);
                 } // over predicates
             } // over actions
+//            System.out.println("recommendedActions:" + recommendedActions);
             if (recommendedActions.isEmpty()) {
                 // add all actions to recommended actions
                 for (int actionCtr = 0; actionCtr < nrActions; ++actionCtr) {
@@ -219,7 +219,6 @@ public class UctNodeLFTJ {
             int action = priorityActions.get(actionIndex);
             // Remove from untried actions and return
             priorityActions.remove(actionIndex);
-            // System.out.println("Untried action: " + action);
             return action;
         } else {
             /* When using the default selection policy (UCB1):
@@ -241,6 +240,8 @@ public class UctNodeLFTJ {
                     throw new RuntimeException("there are no recommended exception and we are trying to use heuristic");
                 }
                 if (useHeuristic && !recommendedActions.contains(action))
+                    continue;
+                if (nrTries[action] == 0)
                     continue;
                 double meanReward = accumulatedReward[action] / nrTries[action];
                 double exploration = Math.sqrt(Math.log(nrVisits) / nrTries[action]);
@@ -267,13 +268,14 @@ public class UctNodeLFTJ {
                         }
                         break;
                 }
-                //double UB = meanReward + 1E-6 * exploration;
-                //double UB = meanReward + 1E-4 * exploration;
-                //double UB = meanReward + 1E-1 * exploration;
                 if (quality > bestQuality) {
                     bestAction = action;
                     bestQuality = quality;
                 }
+            }
+            if (bestAction == -1) {
+                List<Integer> recommendedActionsList = new ArrayList<>(recommendedActions);
+                bestAction = recommendedActionsList.get(random.nextInt(recommendedActions.size()));
             }
             // For epsilon greedy, return random action with
             // probability epsilon.
@@ -306,7 +308,7 @@ public class UctNodeLFTJ {
      * @param joinOrder partially completed join order
      * @return obtained reward
      */
-    double playout(int[] joinOrder) throws Exception {
+    void playout(int[] joinOrder) throws Exception {
         // Last selected attribute
         int lastAttribute = joinOrder[treeLevel];
         // Should we avoid Cartesian product joins?
@@ -321,8 +323,9 @@ public class UctNodeLFTJ {
             for (int posCtr = treeLevel + 1; posCtr < nrAttributes; ++posCtr) {
                 boolean foundAttribute = false;
                 for (int attribute : unjoinedAttributesShuffled) {
+//                    System.out.println("attribute:" + attribute + ", newlyJoined:" + newlyJoined + ", connect:" + query.connectedAttribute(newlyJoined, attribute));
                     if (!newlyJoined.contains(attribute) &&
-                            query.connected(newlyJoined, attribute)) {
+                            query.connectedAttribute(newlyJoined, attribute)) {
                         joinOrder[posCtr] = attribute;
                         newlyJoined.add(attribute);
                         foundAttribute = true;
@@ -353,7 +356,7 @@ public class UctNodeLFTJ {
             }
         }
         // Evaluate completed join order and return reward
-        return joinOp.execute(joinOrder);
+//        return joinOp.execute(joinOrder);
     }
 
     /**
@@ -364,30 +367,44 @@ public class UctNodeLFTJ {
      * @param policy    policy used to select actions
      * @return achieved reward
      */
-    public double sample(long roundCtr, int[] joinOrder,
-                         SelectionPolicy policy) throws Exception {
+    public void sample(long roundCtr, int[] joinOrder,
+                       SelectionPolicy policy) throws Exception {
         // Check if this is a (non-extendible) leaf node
         if (nrActions == 0) {
             // leaf node - evaluate join order and return reward
-            return joinOp.execute(joinOrder);
+//            return joinOp.execute(joinOrder);
         } else {
             // inner node - select next action and expand tree if necessary
             int action = selectAction(policy);
             int attribute = nextAttributes[action];
             joinOrder[treeLevel] = attribute;
             // grow tree if possible
-            boolean canExpand = createdIn != roundCtr;
+            boolean canExpand = (createdIn != roundCtr);
             if (childNodes[action] == null && canExpand) {
                 childNodes[action] = new UctNodeLFTJ(roundCtr, this, attribute);
             }
             // evaluate via recursive invocation or via playout
             UctNodeLFTJ child = childNodes[action];
-            double reward = (child != null) ?
-                    child.sample(roundCtr, joinOrder, policy) :
-                    playout(joinOrder);
+            if (child != null)
+                child.sample(roundCtr, joinOrder, policy);
+            else
+                playout(joinOrder);
             // update UCT statistics and return reward
-            updateStatistics(action, reward);
-            return reward;
+//            updateStatistics(action, reward);
+//            return reward;
+        }
+    }
+
+    public void updateReward(double reward, int[] joinOrder, int curDepth) {
+        int attribute = joinOrder[curDepth];
+        for (int action = 0; action < nrActions; action++) {
+            if (nextAttributes[action] == attribute) {
+                updateStatistics(action, reward);
+                if (childNodes[action] != null && curDepth < joinOrder.length - 1) {
+                    childNodes[action].updateReward(reward, joinOrder, curDepth + 1);
+                }
+                break;
+            }
         }
     }
 
@@ -403,9 +420,12 @@ public class UctNodeLFTJ {
                     bestQuality = meanReward;
                 }
             }
-            order[treeLevel] = nextAttributes[bestAction];
-            if (childNodes[bestAction] != null) {
-                childNodes[bestAction].getOptimalOrder(order);
+            // if number of visits is 0
+            if (bestAction >=0 && nrTries[bestAction] > 0) {
+                order[treeLevel] = nextAttributes[bestAction];
+                if (childNodes[bestAction] != null) {
+                    childNodes[bestAction].getOptimalOrder(order);
+                }
             }
         }
     }
