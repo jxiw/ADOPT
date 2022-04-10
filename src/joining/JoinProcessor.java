@@ -74,55 +74,32 @@ public class JoinProcessor {
         // Initialize UCT join order search tree
         StaticLFTJCollections.init(query, context);
         HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.NTHREAD);
-//        JoinResult result = new JoinResult(query.nrJoined);
-//        MergedList<int[]> result = new MergedList<>();
         long resultTuple = 0;
-        UctNodeLFTJ root = new UctNodeLFTJ(0, query, true);
 
         List<ParallelJoinTask> tasks = new ArrayList<>();
         System.out.println("start join");
         System.out.println("start cube number:" + HypercubeManager.hypercubes.size());
         for (int i = 0; i < JoinConfig.NTHREAD; i++) {
-            tasks.add(new ParallelJoinTask(query, root));
+            tasks.add(new ParallelJoinTask(query));
         }
 
         List<Future<ParallelJoinResult>> evaluateResults = executorService.invokeAll(tasks);
         long joinEndMillis = System.currentTimeMillis();
         for (Future<ParallelJoinResult> futureResult : evaluateResults) {
-//            System.out.println("merge prev start:" + System.currentTimeMillis());
             ParallelJoinResult joinResult = futureResult.get();
-//            System.out.println("merge start:" + System.currentTimeMillis());
-//            long startMergeMillis = System.currentTimeMillis();
-//            result.add(joinResult.result);
-//            long endMergeMillis = System.currentTimeMillis();
-//            mergeMillis += (endMergeMillis - startMergeMillis);
-//            System.out.println("merge end:" + System.currentTimeMillis());
             resultTuple += joinResult.result;
         }
-
-//        executorService.shutdown();
-//        try {
-//            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
-//        System.out.println("hypercubes:" + HypercubeManager.hypercubes.size());
 
         System.out.println("merge result time:" + mergeMillis);
         System.out.println("join time:" + (joinEndMillis - joinStartMillis));
         System.out.println("part 1:" + StaticLFTJ.part1);
         System.out.println("part 2:" + StaticLFTJ.part2);
-//        System.out.println("init compiler time:" + MultiWayJoin.superTime2);
         System.out.println("sort time:" + LFTJiter.sortTime);
-//        System.out.println("init array time:" + LFTJiter.lftTime6);
         System.out.println("uniquify join value:" + (joinStartMillis - startMillis));
         System.out.println("LFTJiter 1:" + LFTJiter.lftTime1);
         System.out.println("LFTJiter 2:" + LFTJiter.lftTime2);
         System.out.println("LFTJiter 3:" + LFTJiter.lftTime3);
         System.out.println("LFTJiter 4:" + LFTJiter.lftTime4);
-//        System.out.println("ts:" + HypercubeManager.ts);
-//        System.out.println("seekTime:" + LFTJoin.seekTime);
 
         LFTJiter.sortTime = 0;
         LFTJiter.lftTime1 = 0;
