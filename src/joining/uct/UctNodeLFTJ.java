@@ -441,9 +441,12 @@ public class UctNodeLFTJ {
                     bestAction = actionCtr;
                 }
             }
-            order[treeLevel] = nextAttributes[bestAction];
-            if (childNodes[bestAction] != null) {
-                childNodes[bestAction].getOptimalOrder(order);
+            // if number of visits is 0
+            if (bestAction >=0 && nrTries[bestAction] > 0) {
+                order[treeLevel] = nextAttributes[bestAction];
+                if (childNodes[bestAction] != null) {
+                    childNodes[bestAction].getOptimalOrder(order);
+                }
             }
         }
     }

@@ -26,6 +26,8 @@ public class ParallelLFTJ {
 
     public long initLFTJTime = 0;
 
+    public long taskInitTime = 0;
+
     public boolean isFinish = false;
 
     public long resultTuple = 0;
@@ -87,6 +89,7 @@ public class ParallelLFTJ {
                 waitTime += startExecMillis - startWaitMillis;
                 executionTime += endMillis - startExecMillis;
                 initLFTJTime += initEndMillis - initStartMillis;
+                taskInitTime += startWaitMillis - initEndMillis;
                 return reward;
             }
 

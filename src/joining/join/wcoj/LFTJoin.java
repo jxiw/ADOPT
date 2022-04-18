@@ -30,8 +30,6 @@ public class LFTJoin {
 
     public long seekTime;
 
-    int cachePos = 0;
-
     public LFTJoin(LFTJiter lftJiter) {
         int nrLevels = lftJiter.nrLevels;
         this.curTuples = new int[nrLevels];
@@ -39,7 +37,6 @@ public class LFTJoin {
         this.lftJiter = lftJiter;
         this.card = lftJiter.card;
         this.seekTime = 0;
-        this.cachePos = 0;
     }
 
     /**
@@ -96,7 +93,6 @@ public class LFTJoin {
         long startMillis = System.currentTimeMillis();
         // Current tuple position is lower bound
         int lb = curTuples[curTrieLevel];
-//        System.out.println("thread id:" +  + Thread.currentThread().getId() + ", curTrieLevel:" + curTrieLevel + ",seekKey:" + seekKey + ",lb:" + lb + "ub:" + ub);
         int cost = 0;
         // Until search bounds collapse
         while (lb < ub) {
@@ -126,9 +122,6 @@ public class LFTJoin {
         } else if (keyAt(ub) < seekKey) {
             return new int[]{-1, 2};
         }
-//        if (curTrieLevel == 0) {
-//            lb = cachePos;
-//        }
         int cost = 2;
         while ((lb + pos) <= ub && keyAt(lb + pos) < seekKey) {
             pos = pos * stepSize;
@@ -148,9 +141,6 @@ public class LFTJoin {
         }
         long endMillis = System.currentTimeMillis();
         seekTime += (endMillis - startMillis);
-//        if (curTrieLevel == 0 && start > cachePos) {
-//            cachePos = start;
-//        }
         return new int[]{start, cost};
     }
 

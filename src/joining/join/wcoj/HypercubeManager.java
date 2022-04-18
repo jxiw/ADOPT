@@ -131,6 +131,7 @@ public class HypercubeManager {
 
     public static Hypercube allocateHypercube() throws InterruptedException {
         Hypercube cube = hypercubes.take();
+//        System.out.println("number of cubes:" + hypercubes.size());
 //        long threadId = Thread.currentThread().getId();
 //        System.out.println("threadId 1:" + threadId);
 //        isWorking.put(threadId, true);
