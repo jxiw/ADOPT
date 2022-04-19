@@ -14,13 +14,7 @@ import java.util.concurrent.Callable;
 
 public class ParallelJoinTask implements Callable<ParallelJoinResult> {
 
-//    final DynamicLFTJ joinOp;
-
     final QueryInfo query;
-
-//    public JoinResult joinResult;
-
-//    public List<int[]> joinResult;
 
     private ParallelLFTJ parallelLFTJ;
 
@@ -29,42 +23,29 @@ public class ParallelJoinTask implements Callable<ParallelJoinResult> {
     static int roundCtr = 0;
 
     public ParallelJoinTask(QueryInfo query, UctNodeLFTJ uctNodeLFTJ) {
-//        this.joinOp = joinOp;
         this.query = query;
-//        this.joinResult = new ArrayList<>();
         this.parallelLFTJ = new ParallelLFTJ();
         this.root = uctNodeLFTJ;
     }
 
     @Override
     public ParallelJoinResult call() throws Exception {
-//        UctNodeLFTJ root = new UctNodeLFTJ(0, query, true, this.parallelLFTJ);
-//        long roundCtr = 0;
         // Initialize counters and variables
         int[] attributeOrder = new int[query.nrAttribute];
         // Get default action selection policy
         SelectionPolicy policy = JoinConfig.DEFAULT_SELECTION;
-        long totalSampleMillis = 0;
-        long totalUpdateMillis = 0;
+//        long totalSampleMillis = 0;
+//        long totalUpdateMillis = 0;
         long totalExecMillis = 0;
-        long testMillis = 0;
-        long testPrevMillis = 0;
+//        long testMillis = 0;
+//        long testPrevMillis = 0;
         long startMillis = System.currentTimeMillis();
-//        System.out.println("start in system:" + startMillis);
-//        while (!this.parallelLFTJ.isFinish) {
-        while (true) {
-            long testPreMillis = System.nanoTime();
-            if (this.parallelLFTJ.isFinish) {
-                break;
-            }
-            long testPostMillis = System.nanoTime();
-            testPrevMillis += (testPostMillis - testPreMillis);
+        while (!this.parallelLFTJ.isFinish) {
             // sample attribute order
-            long startSampleMillis = System.nanoTime();
+//            long startSampleMillis = System.nanoTime();
             synchronized(root) {
                 ++roundCtr;
                 root.sample(roundCtr, attributeOrder, policy);
-//                System.out.println("join order:" + Arrays.toString(attributeOrder));
             }
             long endSampleMillis = System.nanoTime();
             double reward = parallelLFTJ.execute(attributeOrder);
@@ -73,17 +54,17 @@ public class ParallelJoinTask implements Callable<ParallelJoinResult> {
 //                System.out.println("join order:" + Arrays.toString(attributeOrder));
 //                System.out.println("reward:" + reward);
                 root.updateReward(reward, attributeOrder, 0);
-                int[] optimalOrder = new int[query.nrAttribute];
-                Arrays.fill(optimalOrder, -1);
-                root.getOptimalOrder(optimalOrder);
+//                int[] optimalOrder = new int[query.nrAttribute];
+//                Arrays.fill(optimalOrder, -1);
+//                root.getOptimalOrder(optimalOrder);
 //                System.out.println("current optimal join order:" + Arrays.toString(optimalOrder));
-                Arrays.fill(optimalOrder, -1);
-                root.getMostFreqOrder(optimalOrder);
+//                Arrays.fill(optimalOrder, -1);
+//                root.getMostFreqOrder(optimalOrder);
 //                System.out.println("current most frequent join order:" + Arrays.toString(optimalOrder));
             }
-            long endUpdateMillis = System.nanoTime();
 
-            long testStartMillis = System.nanoTime();
+//            long endUpdateMillis = System.nanoTime();
+//            long testStartMillis = System.nanoTime();
             if (HypercubeManager.nrCube.get() == 0 && HypercubeManager.isFinished()) {
                 // notify other thread to terminate
                 for (int i = 0; i < JoinConfig.NTHREAD ; i++) {
@@ -91,24 +72,25 @@ public class ParallelJoinTask implements Callable<ParallelJoinResult> {
                 }
                 break;
             }
-            long testEndMillis = System.nanoTime();
+//            long testEndMillis = System.nanoTime();
 
-            testMillis += (testEndMillis - testStartMillis);
-            totalSampleMillis += (endSampleMillis - startSampleMillis);
-            totalUpdateMillis += (endUpdateMillis - startUpdateMillis);
+//            testMillis += (testEndMillis - testStartMillis);
+//            totalSampleMillis += (endSampleMillis - startSampleMillis);
+//            totalUpdateMillis += (endUpdateMillis - startUpdateMillis);
             totalExecMillis += (startUpdateMillis - endSampleMillis);
 
-            System.out.println("total sample duration:" + totalSampleMillis * 1e-6);
-            System.out.println("total update duration:" + totalUpdateMillis * 1e-6);
-            System.out.println("init time in ms:" + parallelLFTJ.initLFTJTime * 1e-6);
-            System.out.println("wait time in ms:" + parallelLFTJ.waitTime * 1e-6);
-            System.out.println("execution time in ms:" + parallelLFTJ.executionTime * 1e-6);
-            System.out.println("lftj exec time in ms:" + totalExecMillis * 1e-6);
-            System.out.println("task init time in ms:" + parallelLFTJ.taskInitTime * 1e-6);
-            System.out.println("time duration prev test in ms:" + testPrevMillis * 1e-6);
-            System.out.println("test millis:" + testMillis * 1e-6);
-            System.out.println("time until now in ms:" + (System.currentTimeMillis() - startMillis));
+//            System.out.println("total sample duration:" + totalSampleMillis * 1e-6);
+//            System.out.println("total update duration:" + totalUpdateMillis * 1e-6);
+//            System.out.println("init time in ms:" + parallelLFTJ.initLFTJTime * 1e-6);
+//            System.out.println("wait time in ms:" + parallelLFTJ.waitTime * 1e-6);
+//            System.out.println("execution time in ms:" + parallelLFTJ.executionTime * 1e-6);
+//            System.out.println("lftj exec time in ms:" + totalExecMillis * 1e-6);
+//            System.out.println("task init time in ms:" + parallelLFTJ.taskInitTime * 1e-6);
+//            System.out.println("time duration prev test in ms:" + testPrevMillis * 1e-6);
+//            System.out.println("test millis:" + testMillis * 1e-6);
+//            System.out.println("time until now in ms:" + (System.currentTimeMillis() - startMillis));
         }
+
         long endMillis = System.currentTimeMillis();
         int[] optimalOrder = new int[query.nrAttribute];
         int[] bestFreqOrder = new int[query.nrAttribute];

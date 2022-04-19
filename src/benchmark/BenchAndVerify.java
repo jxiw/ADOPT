@@ -14,6 +14,7 @@ import config.GeneralConfig;
 import config.StartupConfig;
 import diskio.PathUtil;
 import indexing.Indexer;
+import joining.JoinProcessorOld;
 import joining.JoinProcessor;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import preprocessing.Context;

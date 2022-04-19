@@ -178,6 +178,7 @@ public class HypercubeManager {
 //        isWorking.put(threadId, false);
 //        System.out.println("threadId 2----:" + threadId);
         nrCube.decrementAndGet();
+//        System.out.println("number of cube:" + nrCube);
     }
 
     public static boolean isFinished() {

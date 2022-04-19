@@ -16,10 +16,6 @@ public class ParallelLFTJ {
 
     public final HashMap<AttributeOrder, HyperCubeEvaluationTask> orderToLFTJ;
 
-//    private final JoinResult joinResult;
-
-//    private final List<int[]> joinResult;
-
     public long executionTime = 0;
 
     public long waitTime = 0;
@@ -34,7 +30,6 @@ public class ParallelLFTJ {
 
     public ParallelLFTJ() {
         this.orderToLFTJ = new HashMap<>();
-//        this.joinResult = result;
         this.executionTime = 0;
         this.waitTime = 0;
         this.isFinish = false;
@@ -42,9 +37,6 @@ public class ParallelLFTJ {
     }
 
     public double execute(int[] order) {
-//        if (Thread.currentThread().getId() % JoinConfig.NTHREAD == 0) {
-//            System.out.println("order:" + Arrays.toString(order));
-//        }
         AttributeOrder attributeOrder = new AttributeOrder(order);
         try {
             if (orderToLFTJ.containsKey(attributeOrder)) {

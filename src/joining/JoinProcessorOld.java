@@ -11,14 +11,18 @@ import config.LoggingConfig;
 import config.NamingConfig;
 import config.JoinConfig;
 import joining.join.wcoj.*;
-import joining.uct.ParallelUctNodeLFTJ;
 import joining.uct.UctNodeLFTJ;
 import operators.Distinct;
 import preprocessing.Context;
 import query.ColumnRef;
 import query.QueryInfo;
 
-public class JoinProcessor {
+/**
+ * Controls the join phase.
+ *
+ * @author immanueltrummer
+ */
+public class JoinProcessorOld {
     /**
      * The number of join-related log entries
      * generated for the current query.
@@ -71,13 +75,13 @@ public class JoinProcessor {
         StaticLFTJCollections.init(query, context);
         HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.NTHREAD);
         long resultTuple = 0;
-        ParallelUctNodeLFTJ root = new ParallelUctNodeLFTJ(0, query, true, JoinConfig.NTHREAD);
+        UctNodeLFTJ root = new UctNodeLFTJ(0, query, true);
 
-        List<AsyncParallelJoinTask> tasks = new ArrayList<>();
+        List<ParallelJoinTask> tasks = new ArrayList<>();
         System.out.println("start join");
         System.out.println("start cube number:" + HypercubeManager.hypercubes.size());
         for (int i = 0; i < JoinConfig.NTHREAD; i++) {
-            tasks.add(new AsyncParallelJoinTask(query, root, i));
+            tasks.add(new ParallelJoinTask(query, root));
         }
 
         List<Future<ParallelJoinResult>> evaluateResults = executorService.invokeAll(tasks);

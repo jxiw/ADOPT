@@ -16,7 +16,6 @@ import net.sf.jsqlparser.statement.select.PlainSelect;
 import postprocessing.PostProcessor;
 import preprocessing.Context;
 import preprocessing.Preprocessor;
-import query.ColumnRef;
 import query.QueryInfo;
 import query.SQLexception;
 import unnesting.UnnestingVisitor;
