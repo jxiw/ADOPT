@@ -69,7 +69,7 @@ public class JoinProcessor {
         long joinStartMillis = System.currentTimeMillis();
         // Initialize UCT join order search tree
         StaticLFTJCollections.init(query, context);
-        HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.NTHREAD);
+        HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.INITCUBE);
         long resultTuple = 0;
         ParallelUctNodeLFTJ root = new ParallelUctNodeLFTJ(0, query, true, JoinConfig.NTHREAD);
 

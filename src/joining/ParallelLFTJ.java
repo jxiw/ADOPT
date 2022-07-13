@@ -3,10 +3,8 @@ package joining;
 import config.JoinConfig;
 import joining.join.wcoj.*;
 import joining.plan.AttributeOrder;
-import joining.result.JoinResult;
 import util.Pair;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -64,6 +62,8 @@ public class ParallelLFTJ {
                 StaticLFTJ staticLFTJ = StaticLFTJCollections.generateLFTJ(attributeOrder);
                 long initEndMillis = System.currentTimeMillis();
                 List<Pair<Integer, Integer>> attributeValueBound = Arrays.stream(order).mapToObj(StaticLFTJCollections.joinValueBound::get).collect(Collectors.toList());
+//                HashMap<Integer, Pair<Set<Integer>, Set<Integer>>> cacheInfo = (HashMap<Integer, Pair<Set<Integer>, Set<Integer>>>) JoinCache.hashMetaData.get(attributeOrder).clone();
+//                HyperCubeEvaluationTask hyperCubeTask = new HyperCubeEvaluationTask(staticLFTJ.idToIter, staticLFTJ.itersNumberByVar, attributeValueBound, cacheInfo);
                 HyperCubeEvaluationTask hyperCubeTask = new HyperCubeEvaluationTask(staticLFTJ.idToIter, staticLFTJ.itersNumberByVar, attributeValueBound);
                 orderToLFTJ.put(attributeOrder, hyperCubeTask);
                 long startWaitMillis = System.currentTimeMillis();
