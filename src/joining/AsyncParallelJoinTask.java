@@ -11,6 +11,7 @@ import query.QueryInfo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -22,13 +23,16 @@ public class AsyncParallelJoinTask implements Callable<ParallelJoinResult> {
 
     private ParallelUctNodeLFTJ root;
 
+    public List<int[]> joinResult;
+
     static AtomicInteger roundCtr = new AtomicInteger(0);
 
     final int threadId;
 
     public AsyncParallelJoinTask(QueryInfo query, ParallelUctNodeLFTJ uctNodeLFTJ, int threadId) {
         this.query = query;
-        this.parallelLFTJ = new ParallelLFTJ();
+        this.joinResult = new ArrayList<>();
+        this.parallelLFTJ = new ParallelLFTJ(this.joinResult);
         this.root = uctNodeLFTJ;
         this.threadId = threadId;
     }
@@ -41,10 +45,8 @@ public class AsyncParallelJoinTask implements Callable<ParallelJoinResult> {
         SelectionPolicy policy = JoinConfig.DEFAULT_SELECTION;
         long totalExecMillis = 0;
         long startMillis = System.currentTimeMillis();
-//        long roundCtr = 0;
         while (!this.parallelLFTJ.isFinish) {
             // sample attribute order
-//            ++roundCtr;
             long beforeSampleMillis = System.nanoTime();
             if (threadId == 0) {
                 int roundCtrInt = roundCtr.incrementAndGet();
@@ -60,7 +62,6 @@ public class AsyncParallelJoinTask implements Callable<ParallelJoinResult> {
                         break;
                     }
                 }
-//                System.out.println("optimalOrder:" + Arrays.toString(optimalOrder));
                 if (existOptimalOrder) {
                     parallelLFTJ.execute(optimalOrder);
                 } else {
@@ -69,14 +70,6 @@ public class AsyncParallelJoinTask implements Callable<ParallelJoinResult> {
                 }
             }
             long afterSampleMillis = System.nanoTime();
-            // get optimal order
-//            int[] optimalOrder = new int[query.nrAttribute];
-//            Arrays.fill(optimalOrder, -1);
-//            root.getOptimalOrder(optimalOrder);
-//            System.out.println("current optimal join order:" + Arrays.toString(optimalOrder));
-//            Arrays.fill(optimalOrder, -1);
-//            root.getMostFreqOrder(optimalOrder);
-//            System.out.println("current most frequent join order:" + Arrays.toString(optimalOrder));
             if (HypercubeManager.nrCube.get() == 0 && HypercubeManager.isFinished()) {
                 // notify other thread to terminate
                 for (int i = 0; i < JoinConfig.NTHREAD; i++) {
@@ -105,7 +98,7 @@ public class AsyncParallelJoinTask implements Callable<ParallelJoinResult> {
             }
             return ts;
         }).sum());
-        return new ParallelJoinResult(parallelLFTJ.resultTuple);
+        return new ParallelJoinResult(this.joinResult);
     }
 
 }

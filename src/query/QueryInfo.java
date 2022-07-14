@@ -1,23 +1,21 @@
 package query;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import catalog.CatalogManager;
 import catalog.info.ColumnInfo;
 import catalog.info.TableInfo;
+import config.JoinConfig;
 import config.LoggingConfig;
 import config.NamingConfig;
 import expressions.ExpressionInfo;
 import expressions.aggregates.AggInfo;
 import expressions.typing.ExpressionScope;
+import joining.join.wcoj.ArrayUtilities;
+import joining.plan.AttributeOrder;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.expression.LongValue;
@@ -37,6 +35,7 @@ import query.from.FromUtil;
 import query.select.SelectUtil;
 
 import org.apache.commons.lang3.StringUtils;
+import util.Pair;
 
 /**
  * Contains information on the query to execute.
@@ -846,5 +845,83 @@ public class QueryInfo {
         log("Limit:\t" + limit);
         equiJoinAttribute.addAll(equiJoinClasses);
         nrAttribute = equiJoinAttribute.size();
+//
+//        if (JoinConfig.CACHE_ENABLE) {
+//            JoinCache.hashMetaData = new HashMap<>();
+//            // cache information of all orders
+//            for (int[] order : ArrayUtilities.permutations(nrAttribute)) {
+//                if (this.isValidAttributeOrder(order)) {
+////                    System.out.println("order:" + Arrays.toString(order));
+//                    HashMap<Integer, Pair<Set<Integer>, Set<Integer>>> cacheInfoCurrentOrder = new HashMap<>();
+//                    // for each validate order
+//                    List<Set<ColumnRef>> varOrder = Arrays.stream(order).boxed().map(i -> this.equiJoinAttribute.get(i)).collect(Collectors.toList());
+//                    // for cache
+//                    // gather table in each attribute
+//                    Map<String, Set<Integer>> joinTableToAttributeIdx = new HashMap<>();
+//                    for (int aliasCtr = 0; aliasCtr < this.nrAttribute; ++aliasCtr) {
+//                        for (ColumnRef columnRef : varOrder.get(aliasCtr)) {
+//                            joinTableToAttributeIdx.putIfAbsent(columnRef.aliasName, new HashSet<>());
+//                            joinTableToAttributeIdx.get(columnRef.aliasName).add(aliasCtr);
+//                        }
+//                    }
+//
+//                    // construct dependency set
+//                    Map<Integer, Set<Integer>> dependencySet = new HashMap<>();
+//                    for (int aliasCtr = this.nrAttribute - 1; aliasCtr > 0; --aliasCtr) {
+//                        Set<Integer> dependency = new HashSet<>();
+//                        for (ColumnRef columnRef : varOrder.get(aliasCtr)) {
+//                            Set<Integer> attributeIdx = joinTableToAttributeIdx.get(columnRef.aliasName);
+//                            dependency.addAll(attributeIdx);
+//                        }
+//                        if (aliasCtr < this.nrAttribute - 1) {
+//                            dependency.addAll(dependencySet.get(aliasCtr + 1));
+//                        }
+//                        // remove key in front of this key
+//                        for (int i = this.nrAttribute - 1; i >= aliasCtr; --i) {
+//                            dependency.remove(i);
+//                        }
+//                        dependencySet.put(aliasCtr, dependency);
+//                    }
+//
+//                    // collect which attribute to cache
+//                    for (int aliasCtr = 1; aliasCtr < this.nrAttribute; aliasCtr++) {
+//                        // dependency
+//                        Set<Integer> dependency = dependencySet.get(aliasCtr);
+//                        if (dependency.size() < aliasCtr) {
+//                            // validate cache key and value
+//                            Set<Integer> attributeLater = new HashSet<>();
+//                            for (int i = aliasCtr; i < nrAttribute; i++) {
+//                                attributeLater.add(i);
+//                            }
+//
+//                            // map the local order to the global order
+//                            // dependency: example, key: 1,3, value: 2, 4
+//                            Set<Integer> globalKey = dependency.stream().map(key -> order[key]).collect(Collectors.toSet());
+//                            Set<Integer> globalValue = attributeLater.stream().map(key -> order[key]).collect(Collectors.toSet());
+//
+//                            cacheInfoCurrentOrder.put(aliasCtr - 1, new Pair(globalKey, globalValue));
+//
+////                            System.out.println("ctr:" + aliasCtr + ", key:" + globalKey + ", value:" + globalValue);
+////                            System.out.println("key+++++");
+////                            for (int k : globalKey) {
+////                                System.out.println(this.equiJoinAttribute.get(k));
+////                            }
+////
+////                            System.out.println("value+++++");
+////                            for (int v : globalValue) {
+////                                System.out.println(this.equiJoinAttribute.get(v));
+////                            }
+////                            System.out.println("");
+//
+//                        }
+//                    }
+//
+//                    JoinCache.hashMetaData.put(new AttributeOrder(order), cacheInfoCurrentOrder);
+//                }
+//            }
+//            JoinCache.cacheResult = new ConcurrentHashMap<>();
+//            // finish cache information of all orders
+//            System.out.println("JoinCache.hashMetaData:" + JoinCache.hashMetaData);
+//        }
     }
 }

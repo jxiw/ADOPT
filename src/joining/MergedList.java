@@ -1,4 +1,4 @@
-package joining.join.wcoj;
+package joining;
 
 import java.util.*;
 

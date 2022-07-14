@@ -90,7 +90,7 @@ public class NamingConfig {
 	/**
 	 * Name of the table containing final query result.
 	 */
-	public static final String FINAL_RESULT_NAME = "result.";
+	public static final String FINAL_RESULT_NAME = "tmp";
 	/**
 	 * Name of the table containing unique join key.
 	 */

@@ -12,11 +12,12 @@ import config.NamingConfig;
 import config.JoinConfig;
 import joining.join.wcoj.*;
 import joining.uct.ParallelUctNodeLFTJ;
-import joining.uct.UctNodeLFTJ;
 import operators.Distinct;
+import operators.Materialize;
 import preprocessing.Context;
 import query.ColumnRef;
 import query.QueryInfo;
+import util.CartesianProduct;
 
 public class JoinProcessor {
     /**
@@ -68,11 +69,15 @@ public class JoinProcessor {
         long mergeMillis = 0;
         long joinStartMillis = System.currentTimeMillis();
         // Initialize UCT join order search tree
-        StaticLFTJCollections.init(query, context);
-        HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.NTHREAD);
-        long resultTuple = 0;
+        boolean notContainEmpty = StaticLFTJCollections.init(query, context);
+        if (!notContainEmpty) {
+            return;
+        }
+        HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.INITCUBE);
+
         ParallelUctNodeLFTJ root = new ParallelUctNodeLFTJ(0, query, true, JoinConfig.NTHREAD);
 
+        MergedList<int[]> result = new MergedList<>();
         List<AsyncParallelJoinTask> tasks = new ArrayList<>();
         System.out.println("start join");
         System.out.println("start cube number:" + HypercubeManager.hypercubes.size());
@@ -84,7 +89,12 @@ public class JoinProcessor {
         long joinEndMillis = System.currentTimeMillis();
         for (Future<ParallelJoinResult> futureResult : evaluateResults) {
             ParallelJoinResult joinResult = futureResult.get();
-            resultTuple += joinResult.result;
+            long startMergeMillis = System.currentTimeMillis();
+            if (joinResult.result.size() > 0) {
+                result.add(joinResult.result);
+            }
+            long endMergeMillis = System.currentTimeMillis();
+            mergeMillis += (endMergeMillis - startMergeMillis);
         }
 
         System.out.println("merge result time:" + mergeMillis);
@@ -109,9 +119,58 @@ public class JoinProcessor {
         LFTJiter.clearCache();
         ParallelJoinTask.roundCtr = 0;
 
-        System.out.println("------------");
-        System.out.println(resultTuple);
-        System.out.println("------------");
+        String targetRelName = NamingConfig.JOINED_NAME;
+
+        if (JoinConfig.DISTINCT_END) {
+            long startDistinctMills = System.currentTimeMillis();
+//            List<int[]> realTuples = result.parallelStream().flatMap(tuple -> {
+//                List<List<Integer>> realIndices = new ArrayList<>();
+//                for (int aliasCtr = 0; aliasCtr < query.nrJoined; ++aliasCtr) {
+//                    // for each table
+//                    String distinctTableName = context.aliasToDistinct.get(query.aliases[aliasCtr]);
+//                    realIndices.add(Distinct.tableNamesToUniqueIndexes.get(distinctTableName).get(tuple[aliasCtr]));
+//                }
+//                List<List<Integer>> realIndicesFlatten = CartesianProduct.constructCombinations(realIndices);
+//                return realIndicesFlatten.stream().map(realIndex -> realIndex.stream().mapToInt(Integer::intValue).toArray());
+//            }).collect(Collectors.toList());
+
+            List<int[]> realTuples = new ArrayList<>();
+            for (int[] tuple : result) {
+                List<List<Integer>> realIndices = new ArrayList<>();
+                for (int aliasCtr = 0; aliasCtr < query.nrJoined; ++aliasCtr) {
+                    String distinctTableName = context.aliasToDistinct.get(query.aliases[aliasCtr]);
+                    realIndices.add(Distinct.tableNamesToUniqueIndexes.get(distinctTableName).get(tuple[aliasCtr]));
+                }
+                List<List<Integer>> realIndicesFlatten = CartesianProduct.constructCombinations(realIndices);
+                realIndicesFlatten.forEach(realIndex -> realTuples.add(
+                        realIndex.stream().mapToInt(Integer::intValue).toArray()));
+            }
+
+            long endDistinctMills = System.currentTimeMillis();
+            System.out.println("distinct operator time:" + (endDistinctMills - startDistinctMills));
+
+            int nrTuples = realTuples.size();
+            System.out.println("Materializing join result with " + nrTuples + " tuples ...");
+            Materialize.execute(realTuples, query.aliasToIndex,
+                    query.colsForPostProcessing,
+                    context.columnMapping, targetRelName);
+        } else {
+            // Materialize result table
+            int nrTuples = result.size();
+            System.out.println("Materializing join result with " + nrTuples + " tuples ...");
+            Materialize.execute(result, query.aliasToIndex,
+                    query.colsForPostProcessing,
+                    context.columnMapping, targetRelName);
+        }
+
+        // Update processing context
+        context.columnMapping.clear();
+        for (ColumnRef postCol : query.colsForPostProcessing) {
+            String newColName = postCol.aliasName + "." + postCol.columnName;
+            ColumnRef newRef = new ColumnRef(targetRelName, newColName);
+            context.columnMapping.put(postCol, newRef);
+        }
+
     }
 
     /**

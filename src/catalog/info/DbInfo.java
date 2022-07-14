@@ -47,11 +47,11 @@ public class DbInfo implements Serializable {
 	 */
 	public void addTable(TableInfo table) throws Exception {
 		// Make sure that no table of same name exists
-		if (nameToTable.containsKey(table.name)) {
-			throw new Exception("Error - table " + 
-					table.name + " already exists!");
-		}
-		// Insert table
+//		if (nameToTable.containsKey(table.name)) {
+//			throw new Exception("Error - table " +
+//					table.name + " already exists!");
+//		}
+		// Insert table, we override the existing table
 		nameToTable.put(table.name, table);
 	}
 	/**

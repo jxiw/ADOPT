@@ -3,9 +3,7 @@ package benchmark;
 import java.io.File;
 import java.io.PrintWriter;
 import java.nio.file.Files;
-import java.util.Collections;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import catalog.CatalogManager;
 import config.NamingConfig;
@@ -37,6 +35,42 @@ public class BenchUtil {
 	 * @return			ordered mapping from file names to queries
 	 * @throws Exception
 	 */
+	public static Map<String, List<PlainSelect>> readAllSubqueries(
+			String dirPath) throws Exception {
+		Map<String, List<PlainSelect>> nameToQuery =
+				/*
+				new TreeMap<String, PlainSelect[]>(
+						Collections.reverseOrder());
+				*/
+				new TreeMap<String, List<PlainSelect>>();
+		File dir = new File(dirPath);
+		for (File file : dir.listFiles()) {
+			if (file.getName().endsWith(".sql")) {
+				String[] sqls = new String(Files.readAllBytes(file.toPath())).trim().split(";");
+				List<PlainSelect> selectClauses = new ArrayList<>();
+				for (String sql : sqls) {
+					if (sql.toLowerCase().contains("select")) {
+						Statement sqlStatement = CCJSqlParserUtil.parse(sql);
+						Select select = (Select) sqlStatement;
+						PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
+						selectClauses.add(plainSelect);
+					}
+				}
+				nameToQuery.put(file.getName(), selectClauses);
+			}
+		}
+		return nameToQuery;
+	}
+
+	/**
+	 * Parses queries in all '.sql' files that are found
+	 * in given directory and returns mapping from file
+	 * names to queries.
+	 *
+	 * @param dirPath	path to directory to read queries from
+	 * @return			ordered mapping from file names to queries
+	 * @throws Exception
+	 */
 	public static Map<String, PlainSelect> readAllQueries(
 			String dirPath) throws Exception {
 		Map<String, PlainSelect> nameToQuery =
@@ -53,11 +87,12 @@ public class BenchUtil {
 				Statement sqlStatement = CCJSqlParserUtil.parse(sql);
 				Select select = (Select)sqlStatement;
 				PlainSelect plainSelect = (PlainSelect)select.getSelectBody();
-				nameToQuery.put(file.getName(), plainSelect);				
+				nameToQuery.put(file.getName(), plainSelect);
 			}
 		}
 		return nameToQuery;
 	}
+
 	/**
 	 * Writes header row of benchmark result file.
 	 * 
