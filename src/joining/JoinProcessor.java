@@ -12,7 +12,6 @@ import config.NamingConfig;
 import config.JoinConfig;
 import joining.join.wcoj.*;
 import joining.uct.ParallelUctNodeLFTJ;
-import joining.uct.UctNodeLFTJ;
 import operators.Distinct;
 import preprocessing.Context;
 import query.ColumnRef;

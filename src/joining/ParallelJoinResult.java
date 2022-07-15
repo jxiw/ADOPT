@@ -2,7 +2,6 @@ package joining;
 
 
 public class ParallelJoinResult {
-//    List<int[]> result;
 
     public long result;
 
@@ -10,7 +9,4 @@ public class ParallelJoinResult {
         this.result = result;
     }
 
-    //    public ParallelJoinResult(List<int[]> result) {
-//        this.result = result;
-//    }
 }

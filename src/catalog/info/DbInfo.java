@@ -12,7 +12,7 @@ import diskio.PathUtil;
 /**
  * Meta-data about a database.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class DbInfo implements Serializable {

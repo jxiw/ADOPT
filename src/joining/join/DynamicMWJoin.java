@@ -8,9 +8,7 @@ import query.QueryInfo;
  * A multi-way join operator that executes joins in a
  * sequence of small time slices. The difference to
  * {@link joining.join.MultiWayJoin} is that join orders
- * can be changed in each invocation. 
- * 
- * @author immanueltrummer
+ * can be changed in each invocation.
  *
  */
 public abstract class DynamicMWJoin extends MultiWayJoin {

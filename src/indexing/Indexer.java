@@ -11,7 +11,7 @@ import query.ColumnRef;
 /**
  * Features utility functions for creating indexes.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class Indexer {

@@ -73,7 +73,6 @@ public class ParallelJoinTask implements Callable<ParallelJoinResult> {
                 break;
             }
 //            long testEndMillis = System.nanoTime();
-
 //            testMillis += (testEndMillis - testStartMillis);
 //            totalSampleMillis += (endSampleMillis - startSampleMillis);
 //            totalUpdateMillis += (endUpdateMillis - startUpdateMillis);

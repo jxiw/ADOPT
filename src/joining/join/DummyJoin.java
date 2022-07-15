@@ -8,8 +8,6 @@ import query.QueryInfo;
 /**
  * This class is used just for testing purposes
  * and returns random reward for given join orders.
- * 
- * @author immanueltrummer
  *
  */
 public class DummyJoin extends DynamicMWJoin {

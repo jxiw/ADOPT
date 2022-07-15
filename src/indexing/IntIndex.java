@@ -11,7 +11,7 @@ import data.IntData;
 /**
  * Indexes integer values (not necessarily unique).
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class IntIndex extends Index {

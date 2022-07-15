@@ -26,7 +26,7 @@ import types.TypeUtil;
  * Evaluates a given expression on each row of a source table and
  * stores results in newly created column.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class MapRows {

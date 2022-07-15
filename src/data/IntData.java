@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Represents content of integer column.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class IntData extends ColumnData implements Serializable {

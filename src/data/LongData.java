@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Represents content of long column.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class LongData extends ColumnData implements Serializable {

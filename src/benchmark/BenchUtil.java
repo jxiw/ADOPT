@@ -19,9 +19,6 @@ import statistics.PreStats;
 
 /**
  * Several auxiliary methods for benchmarking SkinnerDB.
- * 
- * @author immanueltrummer
- *
  */
 public class BenchUtil {
 	/**
@@ -96,18 +93,6 @@ public class BenchUtil {
 		benchOut.print(totalMillis + delimiter);
 		benchOut.print(PreStats.preMillis + delimiter);
 		benchOut.print(PostStats.postMillis + delimiter);
-//		benchOut.print(JoinStats.nrTuples + delimiter);
-//		benchOut.print(JoinStats.nrIterations + delimiter);
-//		benchOut.print(JoinStats.nrIndexLookups + delimiter);
-//		benchOut.print(JoinStats.nrIndexEntries + delimiter);
-//		benchOut.print(JoinStats.nrUniqueIndexLookups + delimiter);
-//		benchOut.print(JoinStats.nrUctNodes + delimiter);
-//		benchOut.print(JoinStats.nrPlansTried + delimiter);
-//		benchOut.print(skinnerJoinCard + delimiter);
-//		benchOut.print(JoinStats.nrSamples + delimiter);
-//		benchOut.print(JoinStats.avgReward + delimiter);
-//		benchOut.print(JoinStats.maxReward + delimiter);
-//		benchOut.println(JoinStats.totalWork);
 		benchOut.flush();
 	}
 }

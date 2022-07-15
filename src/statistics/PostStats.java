@@ -6,7 +6,7 @@ package statistics;
  * the input query is translated into a sequence
  * of queries during unnesting.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class PostStats {

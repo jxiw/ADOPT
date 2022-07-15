@@ -79,7 +79,7 @@ import net.sf.jsqlparser.expression.BinaryExpression;
  * This class serves as super class for all rewriting classes
  * which only substitute a subset of node types.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class CopyVisitor extends SkinnerVisitor {

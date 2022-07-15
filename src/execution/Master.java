@@ -23,7 +23,7 @@ import unnesting.UnnestingVisitor;
 /**
  * Controls high-level execution process.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class Master {

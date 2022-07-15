@@ -32,7 +32,7 @@ import query.SQLexception;
 /**
  * Runs Skinner command line console.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class SkinnerCmd {

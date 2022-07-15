@@ -11,7 +11,7 @@ import query.ColumnRef;
  * mapping from query fragments to previously generated
  * intermediate results).
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class Context {

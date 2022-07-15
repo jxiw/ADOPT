@@ -19,7 +19,7 @@ import query.ColumnRef;
 /**
  * Filters a table by applying a unary predicate.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class Filter {

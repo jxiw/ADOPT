@@ -7,7 +7,7 @@ import types.SQLtype;
 /**
  * Meta-data about one table column.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class ColumnInfo implements Serializable {

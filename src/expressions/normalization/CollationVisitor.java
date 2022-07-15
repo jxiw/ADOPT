@@ -7,7 +7,7 @@ import net.sf.jsqlparser.expression.StringValue;
  * to query. This is important for comparing Skinner results
  * against Postgres results for debugging. 
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class CollationVisitor extends CopyVisitor {
