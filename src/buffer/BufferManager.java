@@ -145,7 +145,7 @@ public class BufferManager {
 			// Generate debugging output
 			log("*** Column " + columnRef.toString() + " sample ***");
 			int cardinality = colToData.get(columnRef).getCardinality();
-			System.out.println("cardinality:" + cardinality);
+//			System.out.println("cardinality:" + cardinality);
 //			int sampleSize = Math.min(10, cardinality);
 //			for (int i=0; i<sampleSize; ++i) {
 //				switch (column.type) {

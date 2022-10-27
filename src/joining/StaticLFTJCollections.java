@@ -57,7 +57,7 @@ public class StaticLFTJCollections {
                     }
                     lb = Math.max(lb, ArrayUtil.getLowerBound(columnIntData.data));
                     ub = Math.min(ub, ArrayUtil.getUpperBound(columnIntData.data));
-                    System.out.println("lb:" + lb + ", ub:" + ub +", card:" + columnIntData.cardinality);
+//                    System.out.println("lb:" + lb + ", ub:" + ub +", card:" + columnIntData.cardinality);
                 }
             }
             joinValueBound.add(new Pair<>(lb, ub));

@@ -54,7 +54,7 @@ public class JoinConfig {
 	 */
 	public static int NTHREAD = 32;
 
-	public static int INITCUBE = 48;
+	public static int INITCUBE = 100;
 
 	public static final boolean DISTINCT_START = true;
 

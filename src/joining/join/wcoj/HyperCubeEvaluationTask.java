@@ -2,6 +2,7 @@ package joining.join.wcoj;
 
 //import joining.JoinCache;
 
+import util.CartesianProduct;
 import util.Pair;
 
 import java.util.*;
@@ -125,6 +126,24 @@ public class HyperCubeEvaluationTask {
         joinResult.add(resultTuple);
     }
 
+    void addResultTuples() {
+        // Update reward-related statistics
+        // Generate result tuple
+        // Iterate over all joined tables
+        List<List<Integer>> resultTuples = new ArrayList<>();
+        for (int aliasCtr = 0; aliasCtr < nrJoined; ++aliasCtr) {
+            LFTJoin iter = joins[aliasCtr];
+            resultTuples.add(iter.rids());
+        }
+        List<List<Integer>> finalResults = CartesianProduct.constructCombinations(resultTuples);
+        List<int[]> results = new ArrayList<>();
+        for (List<Integer> finalResult : finalResults) {
+            results.add(finalResult.stream().mapToInt(Integer::intValue).toArray());
+        }
+        // Add new result tuple
+        joinResult.addAll(results);
+    }
+
     public double execute(int budget, int[] attributeOrder, Hypercube selectCube) {
 
         List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
@@ -184,7 +203,7 @@ public class HyperCubeEvaluationTask {
                 // go to next level
                 // Have we completed a result tuple?
                 if (curVariableID >= nrVars) {
-                    addResultTuple();
+                    addResultTuples();
                     backtrack();
                     continue;
                 }

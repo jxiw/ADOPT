@@ -6,7 +6,10 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.opencsv.CSVReader;
 
@@ -203,6 +206,87 @@ public class LoadCSV {
 			}
 		}
 	}
+
+	static List<ColumnData> sortData(TableInfo table, List<ColumnData> data, int cardinality) {
+		// get primary key indices
+		System.out.println("Sort " + cardinality + " rows");
+		List<Integer> pkIndices = new ArrayList<>();
+		for (int i = 0; i < table.columnNames.size(); i++) {
+			String columnName = table.columnNames.get(i);
+			if(table.nameToCol.get(columnName).isPrimary) {
+				pkIndices.add(i);
+			}
+		}
+		List<ColumnData> primaryKeyData = pkIndices.stream().map(data::get).collect(Collectors.toList());
+		int[] tupleOrder = IntStream.range(0, cardinality).boxed().parallel().sorted(new Comparator<Integer>() {
+			@Override
+			public int compare(Integer row1, Integer row2) {
+				for (ColumnData colData : primaryKeyData) {
+					int cmp = colData.compareRows(row1, row2);
+					if (cmp == 2) {
+						boolean row1null = colData.isNull.get(row1);
+						boolean row2null = colData.isNull.get(row2);
+						if (row1null && !row2null) {
+							return -1;
+						} else if (!row1null && row2null) {
+							return 1;
+						}
+					} else if (cmp != 0) {
+						return cmp;
+					}
+				}
+				return 0;
+			}
+		}).mapToInt(i -> i).toArray();
+		// rearrange according to tuple order
+		List<ColumnData> rearrangeData = new ArrayList<>();
+		for (ColumnData columnData : data) {
+			if (columnData instanceof IntData) {
+				IntData rearrangeColumnData = new IntData(cardinality);
+				for (int j = 0; j < cardinality; j++) {
+					rearrangeColumnData.data[j] = ((IntData) columnData).data[tupleOrder[j]];
+				}
+				rearrangeData.add(rearrangeColumnData);
+			} else if (columnData instanceof LongData) {
+				LongData rearrangeColumnData = new LongData(cardinality);
+				for (int j = 0; j < cardinality; j++) {
+					rearrangeColumnData.data[j] = ((LongData) columnData).data[tupleOrder[j]];
+				}
+				rearrangeData.add(rearrangeColumnData);
+			} else if (columnData instanceof DoubleData) {
+				DoubleData rearrangeColumnData = new DoubleData(cardinality);
+				for (int j = 0; j < cardinality; j++) {
+					rearrangeColumnData.data[j] = ((DoubleData) columnData).data[tupleOrder[j]];
+				}
+				rearrangeData.add(rearrangeColumnData);
+			} else if (columnData instanceof StringData) {
+				StringData rearrangeColumnData = new StringData(cardinality);
+				for (int j = 0; j < cardinality; j++) {
+					rearrangeColumnData.data[j] = ((StringData) columnData).data[tupleOrder[j]];
+				}
+				rearrangeData.add(rearrangeColumnData);
+			}
+		}
+		// check correct
+		List<ColumnData> primaryKeyRearrangeData = pkIndices.stream().map(rearrangeData::get).collect(Collectors.toList());
+		for (int j = 0; j < cardinality - 1; j++) {
+			int compare = 0;
+			int row1 = j;
+			int row2 = j + 1;
+			for (ColumnData colData : primaryKeyRearrangeData) {
+				int cmp = colData.compareRows(row1, row2);
+				if (cmp != 0) {
+					compare = cmp;
+					break;
+				}
+			}
+			if (compare > 0) {
+				System.out.println("error");
+			}
+		}
+		return rearrangeData;
+	}
+
 	/**
 	 * Overrides table content on hard disk for given table
 	 * with the contents extracted from CSV file.
@@ -223,6 +307,7 @@ public class LoadCSV {
 		List<ColumnData> data = initData(table, cardinality);
 		// Parse data from CSV file
 		parseData(csvPath, table, data, separator, nullRepresentation);
+		data = sortData(table, data, cardinality);
 		// Store column data to hard disk
 		storeData(table, data);
 		System.out.println("Stored table on disk");
