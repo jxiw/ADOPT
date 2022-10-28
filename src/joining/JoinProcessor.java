@@ -4,27 +4,20 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import config.LoggingConfig;
-import config.NamingConfig;
+import buffer.BufferManager;
+import catalog.CatalogManager;
 import config.JoinConfig;
+import expressions.aggregates.AggInfo;
+import expressions.aggregates.SQLaggFunction;
 import joining.join.wcoj.*;
 import joining.uct.ParallelUctNodeLFTJ;
-import operators.Distinct;
-import operators.Materialize;
 import preprocessing.Context;
 import query.ColumnRef;
 import query.QueryInfo;
-import util.CartesianProduct;
+import types.SQLtype;
 
 public class JoinProcessor {
-    /**
-     * The number of join-related log entries
-     * generated for the current query.
-     */
-    static int nrLogEntries = 0;
 
     public static final ExecutorService executorService = Executors.newFixedThreadPool(JoinConfig.NTHREAD);
 
@@ -40,28 +33,28 @@ public class JoinProcessor {
                                Context context) throws Exception {
 
         // Initialize statistics
-        long startMillis = System.currentTimeMillis();
+//        long startMillis = System.currentTimeMillis();
         // distinct if enable
         // decomposition
-        log("Creating unique join keys ...");
-        if (JoinConfig.DISTINCT_START) {
-            query.aliasToTable.keySet().parallelStream().forEach(alias -> {
-                try {
-                    List<String> joinRequiredCols = new ArrayList<String>();
-                    for (ColumnRef joinRequiredCol : query.colsForJoins) {
-                        if (joinRequiredCol.aliasName.equals(alias)) {
-                            joinRequiredCols.add(joinRequiredCol.columnName);
-                        }
-                    }
-                    String distinctName = NamingConfig.DISTINCT_PRE + alias;
-                    Distinct.execute(context.aliasToFiltered.get(alias), joinRequiredCols, distinctName);
-                    context.aliasToDistinct.put(alias, distinctName);
-                } catch (Exception e) {
-                    System.err.println("Error distincting " + alias);
-                    e.printStackTrace();
-                }
-            });
-        }
+//        log("Creating unique join keys ...");
+//        if (JoinConfig.DISTINCT_START) {
+//            query.aliasToTable.keySet().parallelStream().forEach(alias -> {
+//                try {
+//                    List<String> joinRequiredCols = new ArrayList<String>();
+//                    for (ColumnRef joinRequiredCol : query.colsForJoins) {
+//                        if (joinRequiredCol.aliasName.equals(alias)) {
+//                            joinRequiredCols.add(joinRequiredCol.columnName);
+//                        }
+//                    }
+//                    String distinctName = NamingConfig.DISTINCT_PRE + alias;
+//                    Distinct.execute(context.aliasToFiltered.get(alias), joinRequiredCols, distinctName);
+//                    context.aliasToDistinct.put(alias, distinctName);
+//                } catch (Exception e) {
+//                    System.err.println("Error distincting " + alias);
+//                    e.printStackTrace();
+//                }
+//            });
+//        }
 
 //        System.out.println(IntStream.range(0, query.nrAttribute).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList()));
 
@@ -72,23 +65,54 @@ public class JoinProcessor {
         StaticLFTJCollections.init(query, context);
         HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.INITCUBE);
 
+        int aggregateNum = query.aggregates.size();
+        AggregateData[] aggregateDatas = new AggregateData[aggregateNum];
+        SQLtype[] sqLtypes = new SQLtype[aggregateNum];
+        Map<Integer, List<Integer>> aggregateInfo = new HashMap<>();
+//        BufferManager.colToData.forEach((key, value) -> System.out.println(key + ":" + value));
+//        System.out.println("query.aliases:" + Arrays.toString(query.aliases));
+        int i = 0;
+        for (AggInfo aggregate : query.aggregates) {
+            AggregateData aggregateData = new AggregateData();
+            aggregateData.isMin = (aggregate.aggFunction == SQLaggFunction.MIN);
+            ColumnRef columnRef = aggregate.aggInput.columnsMentioned.iterator().next();
+            ColumnRef filterColumnRef = new ColumnRef(context.aliasToFiltered.get(columnRef.aliasName), columnRef.columnName);
+            aggregateData.columnData = BufferManager.getData(filterColumnRef);
+            aggregateData.tid = aggregate.aggInput.aliasIdxMentioned.iterator().next();
+            aggregateDatas[i] = aggregateData;
+            aggregateInfo.putIfAbsent(aggregateData.tid, new ArrayList<>());
+            aggregateInfo.get(aggregateData.tid).add(i);
+            sqLtypes[i] = CatalogManager.getColumn(filterColumnRef).type;
+            i++;
+        }
+
+//        System.out.println("sqLtypes:" + Arrays.toString(sqLtypes));
+//        aggregateInfo.forEach((key, value) -> System.out.println(key + ":" + value));
+
         ParallelUctNodeLFTJ root = new ParallelUctNodeLFTJ(0, query, true, JoinConfig.NTHREAD);
 
-        MergedList<int[]> result = new MergedList<>();
         List<AsyncParallelJoinTask> tasks = new ArrayList<>();
         System.out.println("start join");
         System.out.println("start cube number:" + HypercubeManager.hypercubes.size());
-        for (int i = 0; i < JoinConfig.NTHREAD; i++) {
-            tasks.add(new AsyncParallelJoinTask(query, root, i));
+        for (i = 0; i < JoinConfig.NTHREAD; i++) {
+            tasks.add(new AsyncParallelJoinTask(query.nrAttribute, root, i, aggregateDatas, aggregateInfo));
         }
 
         List<Future<ParallelJoinResult>> evaluateResults = executorService.invokeAll(tasks);
         long joinEndMillis = System.currentTimeMillis();
+        int[] queryResult = new int[aggregateDatas.length];
+        Arrays.fill(queryResult, -1);
         for (Future<ParallelJoinResult> futureResult : evaluateResults) {
             ParallelJoinResult joinResult = futureResult.get();
             long startMergeMillis = System.currentTimeMillis();
-            if (joinResult.result.size() > 0) {
-                result.add(joinResult.result);
+            for (int j = 0; j < queryResult.length; j++) {
+                if (queryResult[j] != -1 && joinResult.result[j] != -1) {
+                    if ((joinResult.result[j] < queryResult[j] && aggregateDatas[j].isMin)
+                            || (joinResult.result[j] > queryResult[j] && !aggregateDatas[j].isMin))
+                        queryResult[j] = joinResult.result[j];
+                } else if (joinResult.result[j] != -1) {
+                    queryResult[j] = joinResult.result[j];
+                }
             }
             long endMergeMillis = System.currentTimeMillis();
             mergeMillis += (endMergeMillis - startMergeMillis);
@@ -96,95 +120,29 @@ public class JoinProcessor {
 
         System.out.println("merge result time:" + mergeMillis);
         System.out.println("join time:" + (joinEndMillis - joinStartMillis));
-        System.out.println("part 1:" + StaticLFTJ.part1);
-        System.out.println("part 2:" + StaticLFTJ.part2);
-        System.out.println("sort time:" + LFTJiter.sortTime);
-        System.out.println("uniquify join value:" + (joinStartMillis - startMillis));
-        System.out.println("LFTJiter 1:" + LFTJiter.lftTime1);
-        System.out.println("LFTJiter 2:" + LFTJiter.lftTime2);
-        System.out.println("LFTJiter 3:" + LFTJiter.lftTime3);
-
-        LFTJiter.sortTime = 0;
-        LFTJiter.lftTime1 = 0;
-        LFTJiter.lftTime2 = 0;
-        LFTJiter.lftTime3 = 0;
-        StaticLFTJ.part1 = 0;
-        StaticLFTJ.part2 = 0;
 
         LFTJiter.clearCache();
-        ParallelJoinTask.roundCtr = 0;
 
-        String targetRelName = NamingConfig.JOINED_NAME;
-
-        if (JoinConfig.DISTINCT_END) {
-            long startDistinctMills = System.currentTimeMillis();
-            List<int[]> realTuples = new ArrayList<>();
-            if (result.size() > 0) {
-                realTuples = result.parallelStream().flatMap(tuple -> {
-                    List<List<Integer>> realIndices = new ArrayList<>();
-                    for (int aliasCtr = 0; aliasCtr < query.nrJoined; ++aliasCtr) {
-                        // for each table
-                        String distinctTableName = context.aliasToDistinct.get(query.aliases[aliasCtr]);
-                        realIndices.add(Distinct.tableNamesToUniqueIndexes.get(distinctTableName).get(tuple[aliasCtr]));
+        // print final result
+        String[] outputs = new String[aggregateNum];
+        for (int j = 0; j < aggregateNum; j++) {
+            SQLtype type = sqLtypes[j];
+            if (queryResult[j] != -1) {
+                switch (type) {
+                    case INT:
+                    case DOUBLE: {
+                        outputs[j] = String.valueOf(queryResult[j]);
+                        break;
                     }
-                    List<List<Integer>> realIndicesFlatten = CartesianProduct.constructCombinations(realIndices);
-                    return realIndicesFlatten.stream().map(realIndex -> realIndex.stream().mapToInt(Integer::intValue).toArray());
-                }).collect(Collectors.toList());
-            }
-
-//            List<int[]> realTuples = new ArrayList<>();
-//            for (int[] tuple : result) {
-//                List<List<Integer>> realIndices = new ArrayList<>();
-//                for (int aliasCtr = 0; aliasCtr < query.nrJoined; ++aliasCtr) {
-//                    String distinctTableName = context.aliasToDistinct.get(query.aliases[aliasCtr]);
-//                    realIndices.add(Distinct.tableNamesToUniqueIndexes.get(distinctTableName).get(tuple[aliasCtr]));
-//                }
-//                List<List<Integer>> realIndicesFlatten = CartesianProduct.constructCombinations(realIndices);
-//                realIndicesFlatten.forEach(realIndex -> realTuples.add(
-//                        realIndex.stream().mapToInt(Integer::intValue).toArray()));
-//            }
-
-            long endDistinctMills = System.currentTimeMillis();
-            System.out.println("distinct operator time:" + (endDistinctMills - startDistinctMills));
-
-            int nrTuples = realTuples.size();
-            System.out.println("Materializing join result with " + nrTuples + " tuples ...");
-            Materialize.execute(realTuples, query.aliasToIndex,
-                    query.colsForPostProcessing,
-                    context.columnMapping, targetRelName);
-        } else {
-            // Materialize result table
-            int nrTuples = result.size();
-            System.out.println("Materializing join result with " + nrTuples + " tuples ...");
-            if (result.size() > 0) {
-                Materialize.execute(result, query.aliasToIndex,
-                        query.colsForPostProcessing,
-                        context.columnMapping, targetRelName);
-            } else {
-                Materialize.execute(new ArrayList<>(), query.aliasToIndex, query.colsForPostProcessing, context.columnMapping, targetRelName);
+                    case STRING_CODE: {
+                        outputs[j] = BufferManager.dictionary.getString(queryResult[j]);
+                        break;
+                    }
+                }
             }
         }
-
-        // Update processing context
-        context.columnMapping.clear();
-        for (ColumnRef postCol : query.colsForPostProcessing) {
-            String newColName = postCol.aliasName + "." + postCol.columnName;
-            ColumnRef newRef = new ColumnRef(targetRelName, newColName);
-            context.columnMapping.put(postCol, newRef);
-        }
-
-    }
-
-    /**
-     * Print out log entry if the maximal number of log
-     * entries has not been reached yet.
-     *
-     * @param logEntry log entry to print
-     */
-    static void log(String logEntry) {
-        if (nrLogEntries < LoggingConfig.MAX_JOIN_LOGS) {
-            ++nrLogEntries;
-            System.out.println(logEntry);
-        }
+        System.out.println("------------------------");
+        System.out.println(String.join("\t", outputs));
+        System.out.println("------------------------");
     }
 }

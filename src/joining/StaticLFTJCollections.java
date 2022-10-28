@@ -27,7 +27,7 @@ public class StaticLFTJCollections {
 
     static List<Pair<Integer, Integer>> joinValueBound;
 
-    static long initTime = 0;
+//    static long initTime = 0;
 
     public static boolean init(QueryInfo query, Context executionContext) throws Exception {
         StaticLFTJCollections.query = query;
@@ -49,7 +49,6 @@ public class StaticLFTJCollections {
                 String column = attribute.columnName;
                 ColumnRef baseRef = new ColumnRef(table, column);
                 ColumnData columnData = BufferManager.getData(baseRef);
-                System.out.println(columnData.getClass().getName());
                 if (columnData instanceof IntData) {
                     IntData columnIntData = (IntData) columnData;
                     if (columnIntData.data == null || columnIntData.data.length == 0) {

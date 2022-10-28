@@ -1,11 +1,10 @@
 package joining;
 
-import java.util.List;
 
 public class ParallelJoinResult {
-    List<int[]> result;
+    int[] result;
 
-    public ParallelJoinResult(List<int[]> result) {
+    public ParallelJoinResult(int[] result) {
         this.result = result;
     }
 }

@@ -81,12 +81,12 @@ public class BenchAndVerify {
 //		Connection connection = DriverManager.getConnection(url, props);
 //		java.sql.Statement pgStatement = connection.createStatement();
         // Open benchmark result file
-        PrintWriter benchOut = new PrintWriter("bench.txt");
+//        PrintWriter benchOut = new PrintWriter("bench.txt");
 //		PrintStream pgOut = new PrintStream("pgResults.txt");
-        PrintStream skinnerOut = new PrintStream("skinnerResults.txt");
-        PrintStream console = System.out;
+//        PrintStream skinnerOut = new PrintStream("skinnerResults.txt");
+//        PrintStream console = System.out;
         // Measure pre-processing time for each query
-        BenchUtil.writeBenchHeader(benchOut);
+//        BenchUtil.writeBenchHeader(benchOut);
         for (Entry<String, PlainSelect> entry : nameToQuery.entrySet()) {
             System.out.println(entry.getKey());
             System.out.println(entry.getValue().toString());
@@ -100,15 +100,15 @@ public class BenchAndVerify {
             JoinProcessor.process(query, preSummary);
             long joinEndMillis = System.currentTimeMillis();
             System.out.println("joinMillis:" + (joinEndMillis - joinStartMillis));
-            long postStartMillis = System.currentTimeMillis();
-            PostProcessor.process(query, preSummary,
-                    NamingConfig.FINAL_RESULT_NAME, true);
-            long postMillis = System.currentTimeMillis() - postStartMillis;
+//            long postStartMillis = System.currentTimeMillis();
+//            PostProcessor.process(query, preSummary,
+//                    NamingConfig.FINAL_RESULT_NAME, true);
+//            long postMillis = System.currentTimeMillis() - postStartMillis;
             long totalMillis = System.currentTimeMillis() - startMillis;
-            System.out.println("postMillis:" + postMillis);
+//            System.out.println("postMillis:" + postMillis);
             System.out.println("totalMillis:" + totalMillis);
-            String resultRel = NamingConfig.FINAL_RESULT_NAME;
-            RelationPrinter.print(resultRel);
+//            String resultRel = NamingConfig.FINAL_RESULT_NAME;
+//            RelationPrinter.print(resultRel);
             // Check consistency with Postgres results: unary preds
 //			for (ExpressionInfo expr : query.unaryPredicates) {
 //				// Unary predicates must refer to one table
@@ -235,9 +235,9 @@ public class BenchAndVerify {
             CatalogManager.removeTempTables();
         }
 //		connection.close();
-        benchOut.close();
+//      benchOut.close();
 //		pgOut.close();
-        skinnerOut.close();
+//      skinnerOut.close();
         JoinProcessor.executorService.shutdown();
     }
 

@@ -1,8 +1,7 @@
 package joining.join.wcoj;
 
-//import joining.JoinCache;
-
-import util.CartesianProduct;
+import data.IntData;
+import joining.AggregateData;
 import util.Pair;
 
 import java.util.*;
@@ -42,6 +41,10 @@ public class HyperCubeEvaluationTask {
      */
     final List<List<LFTJoin>> joinsByVar;
 
+    final AggregateData[] aggregateDatas;
+
+    final Map<Integer, List<Integer>> aggregateInfo;
+
     /**
      * Whether we backtracked in the last iteration
      * of the main loop (requires certain actions
@@ -49,7 +52,7 @@ public class HyperCubeEvaluationTask {
      */
     boolean backtracked = false;
 
-    private final List<int[]> joinResult;
+    final int[] joinResult;
 
     /**
      * Advance to next variable in join order.
@@ -66,7 +69,7 @@ public class HyperCubeEvaluationTask {
         backtracked = true;
     }
 
-    public HyperCubeEvaluationTask(LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar, List<int[]> joinResult, List<Pair<Integer, Integer>> attributeValueBound) {
+    public HyperCubeEvaluationTask(LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar, List<Pair<Integer, Integer>> attributeValueBound, AggregateData[] aggregateDatas, Map<Integer, List<Integer>> aggregateInfo) {
         // for every table in from clause
         this.nrJoined = idToIter.length;
         this.joins = new LFTJoin[nrJoined];
@@ -89,7 +92,11 @@ public class HyperCubeEvaluationTask {
             joinsByVar.add(joinByVar);
         }
         this.attributeValueBound = attributeValueBound;
-        this.joinResult = joinResult;
+        // Init aggregation columns
+        this.aggregateDatas = aggregateDatas;
+        this.aggregateInfo = aggregateInfo;
+        this.joinResult = new int[this.aggregateDatas.length];
+        Arrays.fill(this.joinResult, -1);
     }
 
     double rewardFirstValueScale(List<Integer> attributesValueStart, List<Integer> attributesValueEnd, List<Integer> hypercubeValueEnd) {
@@ -109,48 +116,37 @@ public class HyperCubeEvaluationTask {
         return ((double) nrProcessTuple) / ((double) budget);
     }
 
-    /**
-     * Add join result tuple based on current
-     * iterator positions.
-     */
-    void addResultTuple() {
-        // Update reward-related statistics
-        // Generate result tuple
-        int[] resultTuple = new int[nrJoined];
-        // Iterate over all joined tables
-        for (int aliasCtr = 0; aliasCtr < nrJoined; ++aliasCtr) {
-            LFTJoin iter = joins[aliasCtr];
-            resultTuple[aliasCtr] = iter.rid();
-        }
-        // Add new result tuple
-        joinResult.add(resultTuple);
-    }
-
-    void addResultTuples() {
+    void getAggregateResult() {
         // Update reward-related statistics
         // Generate result tuple
         // Iterate over all joined tables
-        List<List<Integer>> resultTuples = new ArrayList<>();
         for (int aliasCtr = 0; aliasCtr < nrJoined; ++aliasCtr) {
             LFTJoin iter = joins[aliasCtr];
-            resultTuples.add(iter.rids());
+            List<Integer> rids = iter.rids();
+            if (aggregateInfo.containsKey(aliasCtr)) {
+                for(int aggregateColumnCtr : aggregateInfo.get(aliasCtr)) {
+                    IntData columnData = (IntData) this.aggregateDatas[aggregateColumnCtr].columnData;
+                    for (int row : rids) {
+                        int value = columnData.data[row];
+                        if (joinResult[aggregateColumnCtr] != -1) {
+                            if ((value < joinResult[aggregateColumnCtr] && aggregateDatas[aggregateColumnCtr].isMin) || (value > joinResult[aggregateColumnCtr] && !aggregateDatas[aggregateColumnCtr].isMin))
+                                this.joinResult[aggregateColumnCtr] = value;
+                        } else {
+                            this.joinResult[aggregateColumnCtr] = value;
+                        }
+                    }
+                }
+            }
         }
-        List<List<Integer>> finalResults = CartesianProduct.constructCombinations(resultTuples);
-        List<int[]> results = new ArrayList<>();
-        for (List<Integer> finalResult : finalResults) {
-            results.add(finalResult.stream().mapToInt(Integer::intValue).toArray());
-        }
-        // Add new result tuple
-        joinResult.addAll(results);
     }
 
-    public double execute(int budget, int[] attributeOrder, Hypercube selectCube) {
+    public Pair<Double, int[]> execute(int budget, int[] attributeOrder, Hypercube selectCube) {
 
         List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
 
         List<Integer> cubeStartValues = exploreDomain.stream().map(Pair::getFirst).collect(Collectors.toList());
         List<Integer> cubeEndValues = exploreDomain.stream().map(Pair::getSecond).collect(Collectors.toList());
-        int estimateBudget = budget;
+//        int estimateBudget = budget;
 
         List<Integer>[] startTuplePosition = new ArrayList[nrVars];
 
@@ -203,7 +199,7 @@ public class HyperCubeEvaluationTask {
                 // go to next level
                 // Have we completed a result tuple?
                 if (curVariableID >= nrVars) {
-                    addResultTuples();
+                    getAggregateResult();
                     backtrack();
                     continue;
                 }
@@ -288,27 +284,25 @@ public class HyperCubeEvaluationTask {
                     }
 
                     // final position of tuple
-                    List<Integer>[] endTuplePosition = new ArrayList[nrVars];
-                    List<Integer>[] cardInfo = new ArrayList[nrVars];
-                    Map<LFTJoin, Integer> tableTrieLevel = new HashMap<>();
-                    for (int i = 0; i < nrVars; i++) {
-                        List<LFTJoin> curJoins = joinsByVar.get(i);
-                        ArrayList<Integer> tuplePosition = new ArrayList<>();
-                        ArrayList<Integer> tupleCardEach = new ArrayList<>();
-                        for (LFTJoin curJoin : curJoins) {
-                            int trieLevel = tableTrieLevel.getOrDefault(curJoin, 0);
-                            tuplePosition.add(curJoin.curTuples[trieLevel]);
-                            tupleCardEach.add(curJoin.curUBs[trieLevel]);
-                            tableTrieLevel.put(curJoin, trieLevel + 1);
-                        }
-                        endTuplePosition[i] = tuplePosition;
-                        cardInfo[i] = tupleCardEach;
-                    }
+//                    List<Integer>[] endTuplePosition = new ArrayList[nrVars];
+//                    List<Integer>[] cardInfo = new ArrayList[nrVars];
+//                    Map<LFTJoin, Integer> tableTrieLevel = new HashMap<>();
+//                    for (int i = 0; i < nrVars; i++) {
+//                        List<LFTJoin> curJoins = joinsByVar.get(i);
+//                        ArrayList<Integer> tuplePosition = new ArrayList<>();
+//                        ArrayList<Integer> tupleCardEach = new ArrayList<>();
+//                        for (LFTJoin curJoin : curJoins) {
+//                            int trieLevel = tableTrieLevel.getOrDefault(curJoin, 0);
+//                            tuplePosition.add(curJoin.curTuples[trieLevel]);
+//                            tupleCardEach.add(curJoin.curUBs[trieLevel]);
+//                            tableTrieLevel.put(curJoin, trieLevel + 1);
+//                        }
+//                        endTuplePosition[i] = tuplePosition;
+//                        cardInfo[i] = tupleCardEach;
+//                    }
 
                     HypercubeManager.updateInterval(selectCube, endValues, attributeOrder);
-
-                    double reward = Math.max(rewardFirstValueScale(cubeStartValues, endValues, cubeEndValues), 0);
-                    return reward;
+                    return new Pair<>(Math.max(rewardFirstValueScale(cubeStartValues, endValues, cubeEndValues), 0), this.joinResult);
                 }
 
                 // Get current key
@@ -343,27 +337,26 @@ public class HyperCubeEvaluationTask {
 
         //  finish query
         HypercubeManager.finishHyperCube();
-        double budgetScale = (estimateBudget) / (double) (estimateBudget - budget);
+//        double budgetScale = (estimateBudget) / (double) (estimateBudget - budget);
 
         // final position of tuple
-        List<Integer>[] endTuplePosition = new ArrayList[nrVars];
-        List<Integer>[] cardInfo = new ArrayList[nrVars];
-        Map<LFTJoin, Integer> tableTrieLevel = new HashMap<>();
-        for (int i = 0; i < nrVars; i++) {
-            List<LFTJoin> curJoins = joinsByVar.get(i);
-            ArrayList<Integer> tuplePosition = new ArrayList<>();
-            ArrayList<Integer> tupleCardEach = new ArrayList<>();
-            for (LFTJoin curJoin : curJoins) {
-                int trieLevel = tableTrieLevel.getOrDefault(curJoin, 0);
-                tuplePosition.add(curJoin.curTuples[trieLevel]);
-                tupleCardEach.add(curJoin.curUBs[trieLevel]);
-                tableTrieLevel.put(curJoin, trieLevel + 1);
-            }
-            endTuplePosition[i] = tuplePosition;
-            cardInfo[i] = tupleCardEach;
-        }
+//        List<Integer>[] endTuplePosition = new ArrayList[nrVars];
+//        List<Integer>[] cardInfo = new ArrayList[nrVars];
+//        Map<LFTJoin, Integer> tableTrieLevel = new HashMap<>();
+//        for (int i = 0; i < nrVars; i++) {
+//            List<LFTJoin> curJoins = joinsByVar.get(i);
+//            ArrayList<Integer> tuplePosition = new ArrayList<>();
+//            ArrayList<Integer> tupleCardEach = new ArrayList<>();
+//            for (LFTJoin curJoin : curJoins) {
+//                int trieLevel = tableTrieLevel.getOrDefault(curJoin, 0);
+//                tuplePosition.add(curJoin.curTuples[trieLevel]);
+//                tupleCardEach.add(curJoin.curUBs[trieLevel]);
+//                tableTrieLevel.put(curJoin, trieLevel + 1);
+//            }
+//            endTuplePosition[i] = tuplePosition;
+//            cardInfo[i] = tupleCardEach;
+//        }
 
-        double reward = Math.max(rewardFirstValueScale(cubeStartValues, cubeEndValues, cubeEndValues), 0);
-        return reward;
+        return new Pair<>(Math.max(rewardFirstValueScale(cubeStartValues, cubeEndValues, cubeEndValues), 0), this.joinResult);
     }
 }

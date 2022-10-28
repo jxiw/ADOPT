@@ -44,10 +44,6 @@ public class StaticLFTJ {
 
     List<Pair<Integer, Integer>> attributeValueBound;
 
-    public static long part1 = 0;
-//
-    public static long part2 = 0;
-
     /**
      * Initialize join for given query.
      *
@@ -62,21 +58,21 @@ public class StaticLFTJ {
         varOrder = Arrays.stream(order).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList());
         nrVars = query.equiJoinClasses.size();
         nrJoined = query.nrJoined;
-        long startMillis1 = System.currentTimeMillis();
+//        long startMillis1 = System.currentTimeMillis();
         // Initialize iterators
-        Map<String, LFTJiter> aliasToIter = new HashMap<>();
+//        Map<String, LFTJiter> aliasToIter = new HashMap<>();
         HashMap<String, Integer> aliasToNumber = new HashMap<>();
         idToIter = new LFTJiter[nrJoined];
         for (int aliasCtr = 0; aliasCtr < nrJoined; ++aliasCtr) {
             String alias = query.aliases[aliasCtr];
             LFTJiter iter = new LFTJiter(query,
                     executionContext, aliasCtr, varOrder);
-            aliasToIter.put(alias, iter);
+//            aliasToIter.put(alias, iter);
             aliasToNumber.put(alias, aliasCtr);
             idToIter[aliasCtr] = iter;
         }
 
-        long startMillis2 = System.currentTimeMillis();
+//        long startMillis2 = System.currentTimeMillis();
         // Group iterators by variable
         itersNumberByVar = new ArrayList<>();
         for (Set<ColumnRef> var : varOrder) {
@@ -88,97 +84,9 @@ public class StaticLFTJ {
             itersNumberByVar.add(curNumberIters);
         }
 
-
-//
-//        part1 += (startMillis2 - startMillis1);
-//        part2 += (startMillis3 - startMillis2);
-//
-//        System.out.println("static lftj 1:" + part1);
-//        System.out.println("static lftj 2:" + part2);
-
-//        long stime4 = System.currentTimeMillis();
-
-//        if (isCache) {
-//
-//            // for cache
-//            // gather table in each attribute
-//            joinTableToAttributeIdx = new HashMap<>();
-////            cacheAttributes = new HashMap<Set<Integer>, Set<Integer>>();
-//            for (int aliasCtr = 0; aliasCtr < nrVars; ++aliasCtr) {
-//                for (ColumnRef columnRef : varOrder.get(aliasCtr)) {
-//                    joinTableToAttributeIdx.putIfAbsent(columnRef.aliasName, new HashSet<>());
-//                    joinTableToAttributeIdx.get(columnRef.aliasName).add(aliasCtr);
-//                }
-//            }
-//
-//            // construct dependency set
-//            Map<Integer, Set<Integer>> dependencySet = new HashMap<>();
-//            for (int aliasCtr = nrVars - 1; aliasCtr > 0; --aliasCtr) {
-//                Set<Integer> dependency = new HashSet<>();
-//                for (ColumnRef columnRef : varOrder.get(aliasCtr)) {
-//                    Set<Integer> attributeIdx = joinTableToAttributeIdx.get(columnRef.aliasName);
-//                    dependency.addAll(attributeIdx);
-//                }
-//                if (aliasCtr < nrVars - 1) {
-//                    dependency.addAll(dependencySet.get(aliasCtr + 1));
-//                }
-//                // remove key in front of this key
-//                for (int i = nrVars - 1; i >= aliasCtr; --i) {
-//                    dependency.remove(i);
-//                }
-//                dependencySet.put(aliasCtr, dependency);
-//            }
-//
-//            // collect which attribute to cache
-//            for (int aliasCtr = 1; aliasCtr < nrVars; aliasCtr++) {
-//                // dependency
-//                Set<Integer> dependency = dependencySet.get(aliasCtr);
-//                if (dependency.size() < aliasCtr) {
-//                    // validate cache key and value
-//                    Set<Integer> attributeLater = new HashSet<>();
-//                    for (int i = aliasCtr; i < nrVars; i++) {
-//                        attributeLater.add(i);
-//                    }
-//
-//                    // map the local order to the global order
-//                    // dependency: example, key: 1,3, value: 2, 4
-//                    Set<Integer> globalKey = dependency.stream().map(key -> order[key]).collect(Collectors.toSet());
-//                    Set<Integer> globalValue = attributeLater.stream().map(key -> order[key]).collect(Collectors.toSet());
-//
-////                    System.out.println("key+++++");
-//                    for (int k : globalKey) {
-//                        System.out.println(query.equiJoinAttribute.get(k));
-//                    }
-////                    System.out.println("value+++++");
-//                    for (int v : globalValue) {
-//                        System.out.println(query.equiJoinAttribute.get(v));
-//                    }
-////                    System.out.println("+++++");
-////                    cacheAttributes.put(globalKey, attributeLater);
-//
-//                }
-//            }
-//
-//            // finish cache
-////            System.out.println("joinTableToAttributeIdx:" + joinTableToAttributeIdx);
-//        }
-
         this.attributeValueBound = Arrays.stream(order).mapToObj(attributeValueBound::get).collect(Collectors.toList());
-        long startMillis3 = System.currentTimeMillis();
-        part1 += (startMillis2 - startMillis1);
-        part2 += (startMillis3 - startMillis2);
+//        long startMillis3 = System.currentTimeMillis();
     }
-
-//    /**
-//     * Resumes join operation for a fixed number of steps.
-//     *
-//     * @param budget how many iterations are allowed
-//     */
-//    double resumeJoin(long budget) throws Exception {
-//        // check available budget
-//
-//
-//    }
 
     public boolean isFinished() {
         return finished;
