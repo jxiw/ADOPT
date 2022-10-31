@@ -79,26 +79,56 @@ public class Indexer {
 		long startMillis = System.currentTimeMillis();
 		Map<String, String> tableToAlias = new HashMap<>();
 		tableToAlias.put("cast_info", "ci");
-		int card = CatalogManager.getCardinality("cast_info");
+		tableToAlias.put("movie_info", "mi");
+		tableToAlias.put("title", "t");
+		tableToAlias.put("name", "n");
+		tableToAlias.put("movie_info_idx", "mi_idx");
+		int ci_card = CatalogManager.getCardinality("cast_info");
 		ColumnRef columnRef1 = new ColumnRef("cast_info", "person_id");
 		ColumnRef columnRef2 = new ColumnRef("cast_info", "movie_id");
 		ColumnRef columnRef3 = new ColumnRef("cast_info", "person_role_id");
 		ColumnRef columnRef4 = new ColumnRef("cast_info", "role_id");
-		// build following sorted indices
-		buildSortIndices(Arrays.asList(columnRef1, columnRef2), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef2, columnRef1), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef1, columnRef2, columnRef4), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef1, columnRef4, columnRef2), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef2, columnRef1, columnRef4), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef2, columnRef4, columnRef1), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef4, columnRef1, columnRef2), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef4, columnRef2, columnRef1), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef1, columnRef2, columnRef3), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef1, columnRef3, columnRef2), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef2, columnRef1, columnRef3), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef2, columnRef3, columnRef1), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef3, columnRef1, columnRef2), card, tableToAlias);
-		buildSortIndices(Arrays.asList(columnRef3, columnRef2, columnRef1), card, tableToAlias);
+		// build following sorted indices on cast_info
+		buildSortIndices(Arrays.asList(columnRef1, columnRef2), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef2, columnRef1), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef1, columnRef2, columnRef4), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef1, columnRef4, columnRef2), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef2, columnRef1, columnRef4), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef2, columnRef4, columnRef1), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef4, columnRef1, columnRef2), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef4, columnRef2, columnRef1), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef1, columnRef2, columnRef3), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef1, columnRef3, columnRef2), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef2, columnRef1, columnRef3), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef2, columnRef3, columnRef1), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef3, columnRef1, columnRef2), ci_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef3, columnRef2, columnRef1), ci_card, tableToAlias);
+		// build following sorted indices on movie_info
+		ColumnRef columnRef5 = new ColumnRef("movie_info", "movie_id");
+		ColumnRef columnRef6 = new ColumnRef("movie_info", "info_type_id");
+		int mi_card = CatalogManager.getCardinality("movie_info");
+		buildSortIndices(Arrays.asList(columnRef5, columnRef6), mi_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef6, columnRef5), mi_card, tableToAlias);
+		// build following sorted indices on title
+		int t_card = CatalogManager.getCardinality("title");
+		ColumnRef columnRef7 = new ColumnRef("title", "id");
+		buildSortIndices(Collections.singletonList(columnRef7), t_card, tableToAlias);
+		// build following sorted indices on name
+		int n_card = CatalogManager.getCardinality("name");
+		ColumnRef columnRef8 = new ColumnRef("name", "id");
+		buildSortIndices(Collections.singletonList(columnRef8), n_card, tableToAlias);
+		int mii_card = CatalogManager.getCardinality("movie_info_idx");
+		ColumnRef columnRef9 = new ColumnRef("movie_info_idx", "movie_id");
+		ColumnRef columnRef10 = new ColumnRef("movie_info_idx", "info_type_id");
+		buildSortIndices(Arrays.asList(columnRef9, columnRef10), mii_card, tableToAlias);
+		buildSortIndices(Arrays.asList(columnRef10, columnRef9), mii_card, tableToAlias);
+		// t1, t2, n1
+//		LFTJiter.baseOrderCache.put(Collections.singletonList(new ColumnRef("t1", "id")),
+//				LFTJiter.baseOrderCache.get(new ColumnRef("t", "id")));
+//		LFTJiter.baseOrderCache.put(Collections.singletonList(new ColumnRef("t2", "id")),
+//				LFTJiter.baseOrderCache.get(new ColumnRef("t", "id")));
+//		LFTJiter.baseOrderCache.put(Collections.singletonList(new ColumnRef("n1", "id")),
+//				LFTJiter.baseOrderCache.get(new ColumnRef("n", "id")));
 		long totalMillis = System.currentTimeMillis() - startMillis;
 		System.out.println("Indexing took " + totalMillis + " ms.");
 	}

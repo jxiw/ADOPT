@@ -1,7 +1,5 @@
 package benchmark;
 
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.util.Map;
 
 import config.JoinConfig;
@@ -55,9 +53,11 @@ public class BenchAndVerify {
         int budget = Integer.parseInt(args[2]);
         int nThread = Integer.parseInt(args[3]);
         double lr = Double.parseDouble(args[4]);
+        int nCube = Integer.parseInt(args[5]);
         JoinConfig.NTHREAD = nThread;
         JoinConfig.BUDGET_PER_EPISODE = budget;
         JoinConfig.EXPLORATION_WEIGHT = lr;
+        JoinConfig.INITCUBE = nCube;
 //		String PgDB = args[2];
 //		String PgUser = args[3];
 //		String PgPassword = args.length==5?args[4]:"";

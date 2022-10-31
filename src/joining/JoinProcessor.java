@@ -59,7 +59,6 @@ public class JoinProcessor {
 //        System.out.println(IntStream.range(0, query.nrAttribute).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList()));
 
         // join phrase
-        long mergeMillis = 0;
         long joinStartMillis = System.currentTimeMillis();
         // Initialize UCT join order search tree
         StaticLFTJCollections.init(query, context);
@@ -91,6 +90,8 @@ public class JoinProcessor {
 
         ParallelUctNodeLFTJ root = new ParallelUctNodeLFTJ(0, query, true, JoinConfig.NTHREAD);
 
+        System.out.println("init time:" + (System.currentTimeMillis() - joinStartMillis));
+
         List<AsyncParallelJoinTask> tasks = new ArrayList<>();
         System.out.println("start join");
         System.out.println("start cube number:" + HypercubeManager.hypercubes.size());
@@ -102,6 +103,7 @@ public class JoinProcessor {
         long joinEndMillis = System.currentTimeMillis();
         int[] queryResult = new int[aggregateDatas.length];
         Arrays.fill(queryResult, -1);
+        long mergeMillis = 0;
         for (Future<ParallelJoinResult> futureResult : evaluateResults) {
             ParallelJoinResult joinResult = futureResult.get();
             long startMergeMillis = System.currentTimeMillis();
@@ -119,9 +121,20 @@ public class JoinProcessor {
         }
 
         System.out.println("merge result time:" + mergeMillis);
+        System.out.println("LFTJiter 1:" + LFTJiter.lftTime1);
+        System.out.println("LFTJiter 2:" + LFTJiter.lftTime2);
+        System.out.println("LFTJiter 3:" + LFTJiter.lftTime3);
         System.out.println("join time:" + (joinEndMillis - joinStartMillis));
 
+        System.out.println("StaticLFTJ 1:" + StaticLFTJ.part1);
+        System.out.println("StaticLFTJ 2:" + StaticLFTJ.part2);
+
         LFTJiter.clearCache();
+        LFTJiter.lftTime1 = 0;
+        LFTJiter.lftTime2 = 0;
+        LFTJiter.lftTime3 = 0;
+        StaticLFTJ.part1 = 0;
+        StaticLFTJ.part2 = 0;
 
         // print final result
         String[] outputs = new String[aggregateNum];
