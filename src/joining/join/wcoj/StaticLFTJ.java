@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,9 +43,9 @@ public class StaticLFTJ {
 
     List<Pair<Integer, Integer>> attributeValueBound;
 
-    public static long part1 = 0;
-
-    public static long part2 = 0;
+//    public static long part1 = 0;
+//
+//    public static long part2 = 0;
 
     /**
      * Initialize join for given query.
@@ -62,7 +61,7 @@ public class StaticLFTJ {
         varOrder = Arrays.stream(order).boxed().map(i -> query.equiJoinAttribute.get(i)).collect(Collectors.toList());
         nrVars = query.equiJoinClasses.size();
         nrJoined = query.nrJoined;
-        long startMillis1 = System.currentTimeMillis();
+//        long startMillis1 = System.currentTimeMillis();
         // Initialize iterators
 //        Map<String, LFTJiter> aliasToIter = new HashMap<>();
         HashMap<String, Integer> aliasToNumber = new HashMap<>();
@@ -76,7 +75,7 @@ public class StaticLFTJ {
             idToIter[aliasCtr] = iter;
         }
 
-        long startMillis2 = System.currentTimeMillis();
+//        long startMillis2 = System.currentTimeMillis();
         // Group iterators by variable
         itersNumberByVar = new ArrayList<>();
         for (Set<ColumnRef> var : varOrder) {
@@ -89,10 +88,10 @@ public class StaticLFTJ {
         }
 
         this.attributeValueBound = Arrays.stream(order).mapToObj(attributeValueBound::get).collect(Collectors.toList());
-        long startMillis3 = System.currentTimeMillis();
+//        long startMillis3 = System.currentTimeMillis();
 
-        part1 += (startMillis2 - startMillis1);
-        part2 += (startMillis3 - startMillis2);
+//        part1 += (startMillis2 - startMillis1);
+//        part2 += (startMillis3 - startMillis2);
     }
 
     public boolean isFinished() {

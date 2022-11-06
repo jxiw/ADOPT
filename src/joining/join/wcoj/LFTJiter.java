@@ -10,7 +10,6 @@ import java.util.stream.IntStream;
 
 import buffer.BufferManager;
 import catalog.CatalogManager;
-import config.JoinConfig;
 import data.ColumnData;
 import data.IntData;
 import preprocessing.Context;
@@ -60,11 +59,11 @@ public class LFTJiter {
 
 //    public static long sortTime = 0;
 
-    public static long lftTime1 = 0;
-
-    public static long lftTime2 = 0;
-
-    public static long lftTime3 = 0;
+//    public static long lftTime1 = 0;
+//
+//    public static long lftTime2 = 0;
+//
+//    public static long lftTime3 = 0;
 
     /**
      * Initializes iterator for given query and
@@ -78,14 +77,11 @@ public class LFTJiter {
     public LFTJiter(QueryInfo query, Context context, int aliasID,
                     List<Set<ColumnRef>> globalVarOrder) throws Exception {
         // Get information on target table
-        long stime1 = System.currentTimeMillis();
+//        long stime1 = System.currentTimeMillis();
         String alias = query.aliases[aliasID];
         String table = context.aliasToFiltered.get(alias);
-        if (JoinConfig.DISTINCT_START) {
-            table = context.aliasToDistinct.get(alias);
-        }
         card = CatalogManager.getCardinality(table);
-        long stime2 = System.currentTimeMillis();
+//        long stime2 = System.currentTimeMillis();
         // Extract columns used for sorting
         List<ColumnRef> localColumns = new ArrayList<>();
         trieCols = new ArrayList<>();
@@ -103,17 +99,14 @@ public class LFTJiter {
         // Initialize position array
         nrLevels = trieCols.size();
 
-        long stime3 = System.currentTimeMillis();
+//        long stime3 = System.currentTimeMillis();
 
         // Retrieve cached tuple order or sort
         getTupleOrder(query,
                 context, aliasID, localColumns);
 
-        long stime4 = System.currentTimeMillis();
+//        long stime4 = System.currentTimeMillis();
         // Reset internal state
-        lftTime1 += (stime2 - stime1);
-        lftTime2 += (stime3 - stime2);
-        lftTime3 += (stime4 - stime3);
     }
 
     /**
@@ -139,7 +132,7 @@ public class LFTJiter {
                 tupleOrder = queryOrderCache.get(localColumns);
             } else {
                 // Initialize tuple order
-//                long part3Millis = System.currentTimeMillis();
+                long part3Millis = System.currentTimeMillis();
 
                 tupleOrder = IntStream.range(0, card).boxed().parallel().sorted(new Comparator<Integer>() {
                     @Override
@@ -154,11 +147,11 @@ public class LFTJiter {
                     }
                 }).mapToInt(i -> i).toArray();
 
-//                long endCreateTime = System.currentTimeMillis();
-//                long sortTime =(endCreateTime -part3Millis);
+                long endCreateTime = System.currentTimeMillis();
+                long sortTime =(endCreateTime -part3Millis);
 //
 //                System.out.println("tableName:" + executionContext.aliasToFiltered.get(alias) + ", colNames:" + localColumns);
-//                System.out.println("sort time now:" + sortTime);
+                System.out.println("sort time:" + sortTime);
 
                 // Distinguish by cache
                 if(notFiltered) {

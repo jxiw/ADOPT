@@ -12,10 +12,10 @@ import query.QueryInfo;
 import util.ArrayUtil;
 import util.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static config.NamingConfig.FILTERED_PRE;
 
 public class StaticLFTJCollections {
 
@@ -27,7 +27,8 @@ public class StaticLFTJCollections {
 
     static List<Pair<Integer, Integer>> joinValueBound;
 
-//    static long initTime = 0;
+    public static Map<ColumnRef, int[]> joinValueBoundCache =
+            new HashMap<>();
 
     public static boolean init(QueryInfo query, Context executionContext) throws Exception {
         StaticLFTJCollections.query = query;
@@ -43,21 +44,31 @@ public class StaticLFTJCollections {
                 // Retrieve corresponding data
                 String alias = attribute.aliasName;
                 String table = executionContext.aliasToFiltered.get(alias);
-                if (JoinConfig.DISTINCT_START) {
-                    table = executionContext.aliasToDistinct.get(alias);
-                }
                 String column = attribute.columnName;
                 ColumnRef baseRef = new ColumnRef(table, column);
-                ColumnData columnData = BufferManager.getData(baseRef);
-                if (columnData instanceof IntData) {
-                    IntData columnIntData = (IntData) columnData;
-                    if (columnIntData.data == null || columnIntData.data.length == 0) {
-                        return false;
+                long start = System.currentTimeMillis();
+                if (joinValueBoundCache.containsKey(baseRef)) {
+                    int[] bound = joinValueBoundCache.get(baseRef);
+                    lb = Math.max(lb, bound[0]);
+                    ub = Math.max(ub, bound[1]);
+                } else {
+                    ColumnData columnData = BufferManager.getData(baseRef);
+                    if (columnData instanceof IntData) {
+                        IntData columnIntData = (IntData) columnData;
+                        if (columnIntData.data == null || columnIntData.data.length == 0) {
+                            return false;
+                        }
+                        int ilb = ArrayUtil.getLowerBound(columnIntData.data);
+                        int iub = ArrayUtil.getUpperBound(columnIntData.data);
+                        lb = Math.max(lb, ilb);
+                        ub = Math.min(ub, iub);
+//                        if (!table.contains(FILTERED_PRE)) {
+//                            joinValueBoundCache.put(baseRef, new Pair<>(ilb, iub));
+//                        }
                     }
-                    lb = Math.max(lb, ArrayUtil.getLowerBound(columnIntData.data));
-                    ub = Math.min(ub, ArrayUtil.getUpperBound(columnIntData.data));
-//                    System.out.println("lb:" + lb + ", ub:" + ub +", card:" + columnIntData.cardinality);
                 }
+                System.out.println("baseRef:" + baseRef);
+                System.out.println("min max duration:" + (System.currentTimeMillis() - start));
             }
             joinValueBound.add(new Pair<>(lb, ub));
         }

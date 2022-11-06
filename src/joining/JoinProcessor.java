@@ -63,13 +63,11 @@ public class JoinProcessor {
         // Initialize UCT join order search tree
         StaticLFTJCollections.init(query, context);
         HypercubeManager.init(StaticLFTJCollections.joinValueBound, JoinConfig.INITCUBE);
-
         int aggregateNum = query.aggregates.size();
         AggregateData[] aggregateDatas = new AggregateData[aggregateNum];
         SQLtype[] sqLtypes = new SQLtype[aggregateNum];
         Map<Integer, List<Integer>> aggregateInfo = new HashMap<>();
-//        BufferManager.colToData.forEach((key, value) -> System.out.println(key + ":" + value));
-//        System.out.println("query.aliases:" + Arrays.toString(query.aliases));
+
         int i = 0;
         for (AggInfo aggregate : query.aggregates) {
             AggregateData aggregateData = new AggregateData();
@@ -85,11 +83,7 @@ public class JoinProcessor {
             i++;
         }
 
-//        System.out.println("sqLtypes:" + Arrays.toString(sqLtypes));
-//        aggregateInfo.forEach((key, value) -> System.out.println(key + ":" + value));
-
         ParallelUctNodeLFTJ root = new ParallelUctNodeLFTJ(0, query, true, JoinConfig.NTHREAD);
-
         System.out.println("init time:" + (System.currentTimeMillis() - joinStartMillis));
 
         List<AsyncParallelJoinTask> tasks = new ArrayList<>();
@@ -121,20 +115,17 @@ public class JoinProcessor {
         }
 
         System.out.println("merge result time:" + mergeMillis);
-        System.out.println("LFTJiter 1:" + LFTJiter.lftTime1);
-        System.out.println("LFTJiter 2:" + LFTJiter.lftTime2);
-        System.out.println("LFTJiter 3:" + LFTJiter.lftTime3);
+//        System.out.println("LFTJiter 1:" + LFTJiter.lftTime1);
+//        System.out.println("LFTJiter 2:" + LFTJiter.lftTime2);
+//        System.out.println("LFTJiter 3:" + LFTJiter.lftTime3);
         System.out.println("join time:" + (joinEndMillis - joinStartMillis));
 
-        System.out.println("StaticLFTJ 1:" + StaticLFTJ.part1);
-        System.out.println("StaticLFTJ 2:" + StaticLFTJ.part2);
+//        System.out.println("StaticLFTJ 1:" + StaticLFTJ.part1);
+//        System.out.println("StaticLFTJ 2:" + StaticLFTJ.part2);
 
         LFTJiter.clearCache();
-        LFTJiter.lftTime1 = 0;
-        LFTJiter.lftTime2 = 0;
-        LFTJiter.lftTime3 = 0;
-        StaticLFTJ.part1 = 0;
-        StaticLFTJ.part2 = 0;
+//        StaticLFTJ.part1 = 0;
+//        StaticLFTJ.part2 = 0;
 
         // print final result
         String[] outputs = new String[aggregateNum];

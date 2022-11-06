@@ -69,7 +69,7 @@ public class LFTJoin {
 
     public int seek(int seekKey) {
         // Search next tuple in current range
-        int[] nextInfo =  seekInRangeExp(seekKey, curUBs[curTrieLevel]);
+        int[] nextInfo =  seekInRangeBinary(seekKey, curUBs[curTrieLevel]);
         int next = nextInfo[0];
         // Did we find a tuple?
         if (next < 0) {
@@ -158,7 +158,7 @@ public class LFTJoin {
                 nextUB = Math.min(curUBs[i], nextUB);
             }
             int curKey = key();
-            int[] nextInfo = seekInRangeExp(curKey + 1, nextUB);
+            int[] nextInfo = seekInRangeBinary(curKey + 1, nextUB);
             int nextPos = nextInfo[0];
             cost += nextInfo[1];
             if (nextPos >= 0) {
