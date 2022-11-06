@@ -144,16 +144,16 @@ public class Indexer {
         getMinMax(new ColumnRef("aka_name", "person_id"));
         getMinMax(new ColumnRef("keyword", "id"));
         getMinMax(new ColumnRef("aka_title", "movie_id"));
-        getMinMax(new ColumnRef("complete_cast", "movie_id"));
-        getMinMax(new ColumnRef("complete_cast", "status_id"));
-        getMinMax(new ColumnRef("complete_cast", "subject_id"));
-        getMinMax(new ColumnRef("person_info", "info_type_id"));
-        getMinMax(new ColumnRef("person_info", "person_id"));
-        getMinMax(new ColumnRef("company_name", "id"));
-        getMinMax(new ColumnRef("company_type", "id"));
-        getMinMax(new ColumnRef("company_type", "id"));
-        getMinMax(new ColumnRef("movie_link", "movie_id"));
-        getMinMax(new ColumnRef("movie_link", "linked_movie_id"));
+//        getMinMax(new ColumnRef("complete_cast", "movie_id"));
+//        getMinMax(new ColumnRef("complete_cast", "status_id"));
+//        getMinMax(new ColumnRef("complete_cast", "subject_id"));
+//        getMinMax(new ColumnRef("person_info", "info_type_id"));
+//        getMinMax(new ColumnRef("person_info", "person_id"));
+//        getMinMax(new ColumnRef("company_name", "id"));
+//        getMinMax(new ColumnRef("company_type", "id"));
+//        getMinMax(new ColumnRef("company_type", "id"));
+//        getMinMax(new ColumnRef("movie_link", "movie_id"));
+//        getMinMax(new ColumnRef("movie_link", "linked_movie_id"));
 
         // t1, t2, n1
 //		LFTJiter.baseOrderCache.put(Collections.singletonList(new ColumnRef("t1", "id")),
