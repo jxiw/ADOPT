@@ -1,0 +1,1 @@
+select count(*) from edge e1, edge e2, edge e3, edge e4 where e1.tid=e2.sid and e2.tid=e3.sid and e3.tid = e4.sid and e4.tid = e1.sid and e1.sid < e1.tid and e2.sid < e2.tid and e3.sid < e3.tid;

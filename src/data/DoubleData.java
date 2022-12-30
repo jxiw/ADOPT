@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Represents content of numeric column.
  * 
- * @author immanueltrummer
+ *
  *
  */
 public class DoubleData extends ColumnData implements Serializable {

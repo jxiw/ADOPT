@@ -87,26 +87,26 @@ public class HyperCubeEvaluationTask {
         this.attributeValueBound = attributeValueBound;
     }
 
-//    double rewardFirstTupleScale(List<Integer>[] startTuplePosition, List<Integer>[] endTuplePosition, List<Integer>[] cardInfo, List<Integer> hypercubeValueStart, List<Integer> hypercubeValueEnd) {
-//        double scaledReward = 0;
-//        List<Integer> tupleStart = startTuplePosition[0];
-//        List<Integer> tupleEnd = endTuplePosition[0];
-//        List<Integer> tupleCard = cardInfo[0];
-//        if (tupleStart != null && tupleEnd != null && tupleCard != null) {
-//            for (int j = 0; j < tupleStart.size(); j++) {
-//                double progressTuple = tupleEnd.get(j) - tupleStart.get(j);
-//                scaledReward += progressTuple / (tupleCard.get(j) + 1);
-//            }
-//            scaledReward = scaledReward / tupleStart.size();
-//        }
-//        // scale with hypercube volume
-//        for (int i = 1; i < hypercubeValueEnd.size(); i++) {
-//            double hypercubeRange = hypercubeValueEnd.get(i) - hypercubeValueStart.get(i) + 1;
-//            double dimRange = attributeValueBound.get(i).getSecond() - attributeValueBound.get(i).getFirst() + 1;
-//            scaledReward = scaledReward * (hypercubeRange / dimRange);
-//        }
-//        return scaledReward;
-//    }
+    double rewardFirstTupleScale(List<Integer>[] startTuplePosition, List<Integer>[] endTuplePosition, List<Integer>[] cardInfo, List<Integer> hypercubeValueStart, List<Integer> hypercubeValueEnd) {
+        double scaledReward = 0;
+        List<Integer> tupleStart = startTuplePosition[0];
+        List<Integer> tupleEnd = endTuplePosition[0];
+        List<Integer> tupleCard = cardInfo[0];
+        if (tupleStart != null && tupleEnd != null && tupleCard != null) {
+            for (int j = 0; j < tupleStart.size(); j++) {
+                double progressTuple = tupleEnd.get(j) - tupleStart.get(j);
+                scaledReward += progressTuple / (tupleCard.get(j) + 1);
+            }
+            scaledReward = scaledReward / tupleStart.size();
+        }
+        // scale with hypercube volume
+        for (int i = 1; i < hypercubeValueEnd.size(); i++) {
+            double hypercubeRange = hypercubeValueEnd.get(i) - hypercubeValueStart.get(i) + 1;
+            double dimRange = attributeValueBound.get(i).getSecond() - attributeValueBound.get(i).getFirst() + 1;
+            scaledReward = scaledReward * (hypercubeRange / dimRange);
+        }
+        return scaledReward;
+    }
 
     double rewardFirstValueScale(List<Integer> attributesValueStart, List<Integer> attributesValueEnd, List<Integer> hypercubeValueEnd) {
         double startInDim0 = attributesValueStart.get(0);
@@ -144,12 +144,6 @@ public class HyperCubeEvaluationTask {
         curVariableID = 0;
         // set the start position of LFTJ
         backtracked = false;
-        // step two: move iterator to start of unexplored part
-        // case 1: [10], [10], [1, 100]
-        // case 2: [1, 100], [10], [10]
-
-        // step three, start the join
-        // Initialize reward-related statistics
 
         // Until we finish processing (break)
         // finish the current hypercube
@@ -166,7 +160,7 @@ public class HyperCubeEvaluationTask {
                 backtracked = false;
                 LFTJoin minIter = joinFrame.curIters.get(joinFrame.p);
                 minIter.seek(joinFrame.maxKey + 1);
-//                budget -= minIter.seek(joinFrame.maxKey + 1);
+                // budget -= minIter.seek(joinFrame.maxKey + 1);
                 // Check for early termination
                 // if iterator reach to the end of select hypercube
                 if (minIter.atEnd() || minIter.key() > exploreDomain.get(curVariableID).getSecond()) {
@@ -304,7 +298,6 @@ public class HyperCubeEvaluationTask {
                     // for position curVariableID, [5, 9 ...], [5, 8, max, max]
                     // todo
                     endValues.add(joinFrames.get(curVariableID).maxKey - 1);
-//                        endValues.add(joinFrames.get(curVariableID).maxKey);
                     for (int i = curVariableID + 1; i < nrVars; i++) {
                         endValues.add(exploreDomain.get(i).getSecond());
                     }
@@ -331,7 +324,7 @@ public class HyperCubeEvaluationTask {
 
 //                    double budgetScale = (estimateBudget) / (double) (estimateBudget - budget);
                     double reward = Math.max(rewardFirstValueScale(cubeStartValues, endValues, cubeEndValues), 0);
-//                    double reward = Math.max(CrewardFirstTupleScale(startTuplePosition, endTuplePosition, tupleCard, cubeStartValues, cubeEndValues), 0);
+//                    double reward = Math.max(rewardFirstTupleScale(startTuplePosition, endTuplePosition, tupleCard, cubeStartValues, cubeEndValues), 0);
 //                    double reward = rewardNrTuple((estimateBudget - budget), resultTuple);
 
 //                    System.out.println("1 join order:" + Arrays.toString(attributeOrder) +
@@ -359,7 +352,6 @@ public class HyperCubeEvaluationTask {
                     break;
                 } else {
                     // min key not equal max key
-//                    minIter.seek(joinFrame.maxKey);
                     budget -= minIter.seek(joinFrame.maxKey);
                     if (minIter.atEnd() || minIter.key() > endKey) {
                         // Go one level up in each trie

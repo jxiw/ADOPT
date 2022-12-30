@@ -6,7 +6,7 @@ package statistics;
  * if the input query is translted into a
  * query sequence during unnesting.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class PreStats {

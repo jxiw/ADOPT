@@ -12,7 +12,7 @@ import catalog.info.TableInfo;
 /**
  * Maps database elements to paths on disk.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class PathUtil {

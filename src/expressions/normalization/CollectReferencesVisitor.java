@@ -14,7 +14,7 @@ import net.sf.jsqlparser.schema.Table;
  * Collects all tables and columns referenced in a given expression.
  * Also collects LIKE expression and aggregates.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class CollectReferencesVisitor extends PlainVisitor {

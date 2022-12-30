@@ -20,8 +20,6 @@ import query.QueryInfo;
  * A multi-way join operator that executes joins in small
  * episodes. Collects result tuples over different episodes
  * and contains finally a complete join result.
- * 
- * @author immanueltrummer
  *
  */
 public abstract class MultiWayJoin {

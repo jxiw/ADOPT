@@ -75,7 +75,7 @@ import query.QueryInfo;
  * evaluated using indices alone. This class
  * must be kept in sync with IndexFilter.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class IndexTest implements ExpressionVisitor {

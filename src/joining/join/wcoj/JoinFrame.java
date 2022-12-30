@@ -7,8 +7,6 @@ import java.util.List;
  * variable in a join order that is relevant to
  * resume LFT join.
  *
- * @author immanueltrummer
- *
  */
 public class JoinFrame {
 	/**

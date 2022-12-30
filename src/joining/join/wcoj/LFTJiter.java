@@ -34,7 +34,6 @@ public class LFTJiter {
      * they appear in the global variable
      * order.
      */
-//    Integer[] tupleOrder;
     int[] tupleOrder;
 
     /**
@@ -42,37 +41,6 @@ public class LFTJiter {
      * of attributes the trie indexes).
      */
     final int nrLevels;
-    /**
-     * We are at this level of the trie.
-     */
-//    int curTrieLevel;
-    /**
-     * Maximally admissible tuple index
-     * at current level (value in prior
-     * trie levels changes for later
-     * tuples).
-     */
-//    final int[] curUBs;
-    /**
-     * Contains for each trie level the current position
-     * (expressed as tuple index in tuple sort order).
-     */
-//    final int[] curTuples;
-
-//    /**
-//     * Caches tuple orderings for tables after applying
-//     * query-specific unary predicates. Such orderings
-//     * can be reused across different join orders
-//     * for the same query.
-//     */
-//    static Map<List<ColumnRef>, Integer[]> queryOrderCache =
-//            new HashMap<>();
-//    /**
-//     * Caches tuple orderings for base tables that can
-//     * be reused across different queries.
-//     */
-//    static Map<List<ColumnRef>, Integer[]> baseOrderCache =
-//            new HashMap<>();
 
     /**
      * Caches tuple orderings for tables after applying
@@ -98,14 +66,6 @@ public class LFTJiter {
     public static long lftTime3 = 0;
 
     public static long lftTime4 = 0;
-
-//    public static long lftTime5 = 0;
-
-//    static long lftTime5 = 0;
-
-//    public static long lftTime6 = 0;
-
-//    static long lftTime7 = 0;
 
     /**
      * Initializes iterator for given query and
@@ -145,7 +105,6 @@ public class LFTJiter {
         nrLevels = trieCols.size();
 
         long stime3 = System.currentTimeMillis();
-
 //        tupleOrder = IntStream.range(0, card).boxed().toArray(Integer[]::new);
 //        tupleOrder = IntStream.range(0, card).toArray();
 
@@ -220,27 +179,6 @@ public class LFTJiter {
 //                lftTime6 += part3Millis - part2Millis;
 //                System.out.println("lftTime6:" + lftTime6);
 
-                // Sort tuples by global variable order
-//                Arrays.parallelSort(tupleOrder, new Comparator<Integer>() {
-//                    public int compare(Integer row1, Integer row2) {
-//                        for (ColumnData colData : trieCols) {
-//                            int cmp = colData.compareRows(row1, row2);
-//                            if (cmp == 2) {
-//                                boolean row1null = colData.isNull.get(row1);
-//                                boolean row2null = colData.isNull.get(row2);
-//                                if (row1null && !row2null) {
-//                                    return -1;
-//                                } else if (!row1null && row2null) {
-//                                    return 1;
-//                                }
-//                            } else if (cmp != 0) {
-//                                return cmp;
-//                            }
-//                        }
-//                        return 0;
-//                    }
-//                });
-
                 tupleOrder = IntStream.range(0, card).boxed().parallel().sorted(new Comparator<Integer>() {
                     @Override
                     public int compare(Integer row1, Integer row2) {
@@ -262,47 +200,21 @@ public class LFTJiter {
                     }
                 }).mapToInt(i -> i).toArray();
 
-                    long endCreateTime = System.currentTimeMillis();
-                    sortTime +=(endCreateTime -part3Millis);
-//                System.out.println("sort time:" + sortTime);
+                long endCreateTime = System.currentTimeMillis();
+                sortTime += (endCreateTime - part3Millis);
 
-                    // build hash map, tuple order position to real position
-//			ArrayList<Integer> uniqueTupleOrder = new ArrayList<>();
-//			for (int i = 1; i < card; i++) {
-//				int tupleIdx1 = tupleOrder[i - 1];
-//				int tupleIdx2 = tupleOrder[i];
-//				boolean unique = trieCols.parallelStream().anyMatch(column -> column.data[tupleIdx1] != column.data[tupleIdx2]);
-//				if (unique) {
-//					uniqueTupleOrder.add(i - 1);
-//				} else {
-//					System.out.println("same as prevous" + tupleIdx2);
-//				}
-//			}
-//			uniqueTupleOrder.add(card - 1);
-//			System.out.println("unique tuple size:" + uniqueTupleOrder.size());
-//			System.out.println("tuple size:" + tupleOrder.length);
-
-//                long startM = System.currentTimeMillis();
-                    // Distinguish by cache
-                if(notFiltered)
-
-                    {
-                        baseOrderCache.put(localColumns, tupleOrder);
-                    } else
-
-                    {
-                        queryOrderCache.put(localColumns, tupleOrder);
-                    }
-//                long endM = System.currentTimeMillis();
-//                lftTime7 += (endM - startM);
-//                System.out.println("lftTime7:" + lftTime7);
-//                return tupleOrder;
+                // Distinguish by cache
+                if (notFiltered) {
+                    baseOrderCache.put(localColumns, tupleOrder);
+                } else {
+                    queryOrderCache.put(localColumns, tupleOrder);
                 }
             }
-
-        public static void clearCache () {
-            LFTJiter.queryOrderCache = new HashMap<>();
-            LFTJiter.baseOrderCache = new HashMap<>();
-        }
-
     }
+
+    public static void clearCache() {
+        LFTJiter.queryOrderCache = new HashMap<>();
+        LFTJiter.baseOrderCache = new HashMap<>();
+    }
+
+}

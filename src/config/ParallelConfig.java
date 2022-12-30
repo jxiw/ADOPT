@@ -5,7 +5,7 @@ package config;
  * the way in which processing is
  * parallelized.
  * 
- * @author immanueltrummer
+ *
  *
  */
 public class ParallelConfig {

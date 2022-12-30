@@ -4,7 +4,7 @@ package expressions.compilation;
  * Interface for evaluating long
  * expressions on single tables.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public interface UnaryLongEval {

@@ -12,8 +12,6 @@ import query.QueryInfo;
  * Uses index on join column to identify next
  * tuple to satisfy binary equality condition
  * on two integer columns.
- * 
- * @author immanueltrummer
  *
  */
 public class JoinIntWrapper extends JoinIndexWrapper {

@@ -25,7 +25,7 @@ import query.QueryInfo;
  * indices. The index filter should only be applied
  * to expressions that pass the IndexTest.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class IndexFilter extends PlainVisitor {

@@ -5,7 +5,7 @@ import java.util.Arrays;
 ///**
 // * Represents one tuple of the join result.
 // *
-// * @author immanueltrummer
+// * 
 // *
 // */
 //public class ResultTuple {

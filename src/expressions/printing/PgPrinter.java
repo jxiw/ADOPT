@@ -13,7 +13,7 @@ import types.SQLtype;
  * for Postgres. This is used to test consistency between
  * SkinnerDB and Postgres.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class PgPrinter extends ExpressionDeParser {

@@ -9,8 +9,6 @@ import java.util.List;
 
 /**
  * Represents data contained in one table column.
- * 
- * @author immanueltrummer
  *
  */
 public abstract class ColumnData implements Serializable {

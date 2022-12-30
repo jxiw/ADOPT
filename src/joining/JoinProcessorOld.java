@@ -20,7 +20,7 @@ import query.QueryInfo;
 /**
  * Controls the join phase.
  *
- * @author immanueltrummer
+ * 
  */
 public class JoinProcessorOld {
     /**

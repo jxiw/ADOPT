@@ -23,7 +23,7 @@ import types.SQLtype;
 /**
  * Stores information on one expression (e.g., a predicate).
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class ExpressionInfo {

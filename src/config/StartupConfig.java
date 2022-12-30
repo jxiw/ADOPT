@@ -3,7 +3,7 @@ package config;
 /**
  * Configures behavior of SkinnerDB during startup.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class StartupConfig {
