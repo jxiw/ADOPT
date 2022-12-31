@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * Represents content of string column.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class StringData extends ColumnData implements Serializable {

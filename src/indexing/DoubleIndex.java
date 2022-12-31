@@ -11,7 +11,7 @@ import data.DoubleData;
 /**
  * Indexes double values (not necessarily unique).
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class DoubleIndex extends Index {

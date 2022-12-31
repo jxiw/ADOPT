@@ -3,7 +3,7 @@ package operators;
 /**
  * Represents a range of row indices.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class RowRange {

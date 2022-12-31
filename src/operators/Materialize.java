@@ -19,7 +19,7 @@ import query.ColumnRef;
  * Materializes parts of a table, defined by
  * a subset of columns and a subset of rows.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class Materialize {

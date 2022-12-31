@@ -5,7 +5,7 @@ package statistics;
 // * refer to counts achieved during the last query
 // * evaluation.
 // *
-// * @author immanueltrummer
+// * 
 // *
 // */
 public class JoinStats {

@@ -40,7 +40,7 @@ import util.Pair;
 /**
  * Contains information on the query to execute.
  *
- * @author immanueltrummer
+ * 
  */
 public class QueryInfo {
     /**

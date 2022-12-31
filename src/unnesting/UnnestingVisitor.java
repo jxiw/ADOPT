@@ -46,7 +46,7 @@ import query.where.WhereUtil;
  * Decomposes a query that may contain nested (potentially
  * correlated) sub-queries into a sequence of simple queries.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class UnnestingVisitor extends CopyVisitor implements SelectVisitor {

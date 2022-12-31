@@ -24,7 +24,7 @@ import types.SQLtype;
 /**
  * Contains methods to print out relations.
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class RelationPrinter {

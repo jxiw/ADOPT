@@ -7,7 +7,7 @@ import data.IntData;
  * Methods for verifying generated indices
  * (useful for debugging).
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class IndexChecker {

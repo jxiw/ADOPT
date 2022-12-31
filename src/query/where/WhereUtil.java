@@ -8,8 +8,7 @@ import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 
 /**
  * Utility functions for analyzing the WHERE clause.
- * 
- * @author immanueltrummer
+ *
  *
  */
 public class WhereUtil {

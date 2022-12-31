@@ -11,8 +11,6 @@
 ///**
 // * Methods for checking LFTJ iterators.
 // *
-// * @author immanueltrummer
-// *
 // */
 //public class IterChecker {
 //	/**

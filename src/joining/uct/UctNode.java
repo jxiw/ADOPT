@@ -11,7 +11,7 @@ import config.JoinConfig;
 /**
  * Represents node in UCT search tree.
  *
- * @author immanueltrummer
+ * 
  */
 public class UctNode {
     /**

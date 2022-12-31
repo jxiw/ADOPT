@@ -11,7 +11,7 @@ import java.util.TreeSet;
 /**
  * Maps string values to codes (and back).
  * 
- * @author immanueltrummer
+ * 
  *
  */
 public class Dictionary implements Serializable {
