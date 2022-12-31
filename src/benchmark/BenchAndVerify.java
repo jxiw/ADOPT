@@ -11,12 +11,14 @@ import java.util.Map.Entry;
 import buffer.BufferManager;
 import catalog.CatalogManager;
 import config.GeneralConfig;
+import config.NamingConfig;
 import config.StartupConfig;
 import diskio.PathUtil;
 import indexing.Indexer;
 import joining.JoinProcessorOld;
 import joining.JoinProcessor;
 import net.sf.jsqlparser.statement.select.PlainSelect;
+import postprocessing.PostProcessor;
 import preprocessing.Context;
 import preprocessing.Preprocessor;
 import query.QueryInfo;
@@ -96,11 +98,11 @@ public class BenchAndVerify {
             System.out.println("preMillis:" + preMillis);
             JoinProcessor.process(query, preSummary);
             long joinEndMillis = System.currentTimeMillis();
-//			System.out.println("join time:" + (joinEndMillis - joinStartMillis));
-//            long postStartMillis = System.currentTimeMillis();
-//            PostProcessor.process(query, preSummary,
-//                    NamingConfig.FINAL_RESULT_NAME, true);
-//            long postMillis = System.currentTimeMillis() - postStartMillis;
+			System.out.println("join time:" + (joinEndMillis - joinStartMillis));
+            long postStartMillis = System.currentTimeMillis();
+            PostProcessor.process(query, preSummary,
+                    NamingConfig.FINAL_RESULT_NAME, true);
+            long postMillis = System.currentTimeMillis() - postStartMillis;
             long totalMillis = System.currentTimeMillis() - startMillis;
             System.out.println("totalMillis:" + totalMillis);
             // Check consistency with Postgres results: unary preds
