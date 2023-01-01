@@ -1,6 +1,6 @@
 # ADOPT: Adaptively Optimizing Attribute Orders for Worst-Case Optimal Join Algorithms via Reinforcement Learning
 
-ADOPT is a query engine that combines adaptive query processing with worst-case optimal join algorithms
+ADOPT is a query engine that combines adaptive query processing with worst-case optimal join algorithms. See technical report is [here](https://github.com/jxiw/ADOPT/blob/main/report/ADOPT.pdf)
 
 # Running the Graph Benchmark
 
