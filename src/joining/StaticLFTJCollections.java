@@ -66,11 +66,8 @@ public class StaticLFTJCollections {
             if (staticLFTJMap.contains(order)) {
                 return staticLFTJMap.get(order);
             } else {
-//                long startMillis = System.currentTimeMillis();
                 StaticLFTJ staticLFTJ = new StaticLFTJ(query, executionContext, order.order, joinValueBound);
                 staticLFTJMap.put(order, staticLFTJ);
-//                long endMillis = System.currentTimeMillis();
-//                System.out.println("duration for StaticLFTJ:" + (endMillis - startMillis));
                 return staticLFTJ;
             }
         }
