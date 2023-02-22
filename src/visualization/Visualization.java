@@ -66,7 +66,7 @@ public class Visualization {
 			// " text-background-mode: rounded-box;" +
 			// " text-background-color: rgb(35, 47, 62);" +
 			" fill-mode : dyn-plain;" + " size-mode: dyn-size;" + "}" + "" + "edge {" + "  arrow-shape: none;"
-			+ "  text-size: 1%;" + "} " + "" + "node.root {" + " size: 50px;" +
+			+ "  text-size: 1%;" + "} " + "" + "node.root {" + " size: 30px;" +
 			// " fill-color: white;" +
 			// " text-color: white;" +
 			// " text-style: bold;" +
