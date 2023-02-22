@@ -66,7 +66,14 @@ public class Visualization {
 			// " text-background-mode: rounded-box;" +
 			// " text-background-color: rgb(35, 47, 62);" +
 			" fill-mode : dyn-plain;" + " size-mode: dyn-size;" + "}" + "" + "edge {" + "  arrow-shape: none;"
-			+ "  text-size: 1%;" + "}";
+			+ "  text-size: 1%;" + "} " + "" + "node.root {" + " size: 50px;" +
+			// " fill-color: white;" +
+			// " text-color: white;" +
+			// " text-style: bold;" +
+			" text-alignment: above;" + " text-size: 25%;" +
+			// " text-background-mode: rounded-box;" +
+			// " text-background-color: rgb(35, 47, 62);" +
+			" fill-mode : dyn-plain;" + " size-mode: dyn-size;" + "}";
 
 	/**
 	 * Initializes the state/data structures of the query visualizer
@@ -115,6 +122,7 @@ public class Visualization {
 //        addNode("root").addAttribute("ui.label", "Code Reorder Search Tree");
 		Node root = addNode("root");
 		root.addAttribute("ui.label", "Parameter Tree");
+		root.addAttribute("ui.class", "root");
 		root.addAttribute("ui.basecolor", Color.GRAY);
 		root.addAttribute("ui.color", Color.GRAY);
 
