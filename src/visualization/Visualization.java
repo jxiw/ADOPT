@@ -55,8 +55,9 @@ public class Visualization {
 
 	private final String stylesheet = "" + "graph {" + " padding: 0%;" + "}" + "" + "sprite.counter {"
 			+ " fill-mode: none;" + " text-size: 10%;" + "} " + "" + "sprite.join { " + " shape: flow; "
-			+ " size: 0.04%;" + " z-index: 0; " + " sprite-orientation: from;" + " fill-color: gray;" + "} " + ""
-			+ "node {" + " size: 30px;" +
+			+ " size: 0.04%;" + " z-index: 0; " + " sprite-orientation: from;" + " fill-color: White;" + "} "
+			+ "sprite.visible { " + " shape: flow; " + " size: 0.04%;" + " z-index: 0; " + " sprite-orientation: from;"
+			+ " fill-color: LIGHTGRAY;" + "} " + "" + "node {" + " size: 30px;" +
 			// " fill-color: white;" +
 			// " text-color: white;" +
 			// " text-style: bold;" +
@@ -144,11 +145,6 @@ public class Visualization {
 	 * @param reward  the reward received
 	 */
 	public void update(java.util.List<Integer> actions, double reward) {
-		count++;
-
-		for (Node node : graph.getNodeSet()) {
-			changeNodeTransparency(node.getId());
-		}
 
 		incrementCounter();
 		for (Sprite sprite : spriteManager.sprites()) {
@@ -159,6 +155,12 @@ public class Visualization {
 
 		if (createNodesSpriteIfNotPresent(actions)) {
 			layout.compute();
+		}
+
+		count++;
+
+		for (Node node : graph.getNodeSet()) {
+			changeNodeTransparency(node.getId());
 		}
 
 		String currentJoinNode = "";
@@ -260,7 +262,8 @@ public class Visualization {
 
 					System.out.println("S#" + previous + "--" + currentJoinNode);
 					Sprite sprite = spriteManager.addSprite("S#" + previous + "--" + currentJoinNode);
-					sprite.addAttribute("ui.class", "counter");// join
+					sprite.addAttribute("ui.class", "join");// join
+					sprite.addAttribute("ui.color", new Color(255, 0, 0, 0));// join
 					sprite.addAttribute("progress");
 					sprite.attachToEdge(edge.getId());
 					sprite.setPosition(0);
@@ -338,6 +341,17 @@ public class Visualization {
 	 * @param node nodeId
 	 */
 	private void changeNodeTransparency(String node) {
+
+		String substring = node.substring(0, node.length() - 1).isEmpty() ? "root"
+				: node.substring(0, node.length() - 1);
+
+		Sprite joinSprite = spriteManager.getSprite("S#" + substring + "--" + node);
+
+		if (joinSprite != null) {
+
+			joinSprite.setAttribute("ui.class", "join");
+		}
+
 		Color baseColor = (Color) graph.getNode(node).getAttribute("ui.basecolor") == null ? Color.LIGHT_GRAY
 				: (Color) graph.getNode(node).getAttribute("ui.basecolor");
 		graph.getNode(node).setAttribute("ui.color", baseColor);
@@ -390,6 +404,13 @@ public class Visualization {
 
 		Sprite iterationSprite = spriteManager.getSprite("SM#" + currentJoinNode + "SA#" + currentJoinNode);
 		iterationSprite.setAttribute("ui.label", "Iteration: " + count);
+
+		String substring = currentJoinNode.substring(0, currentJoinNode.length() - 1).isEmpty() ? "root"
+				: currentJoinNode.substring(0, currentJoinNode.length() - 1);
+
+		Sprite joinSprite = spriteManager.getSprite("S#" + substring + "--" + currentJoinNode);
+
+		joinSprite.setAttribute("ui.class", "visible");
 	}
 
 	private void sleep(int ms) {
