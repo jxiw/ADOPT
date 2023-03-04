@@ -60,13 +60,17 @@ public class HelloFX extends Application {
 					counter++;
 					temp.setFill(color);
 					temp.setHeight(Chunk.CHUNK_HEIGHT - 2 * Chunk.BORDER_SIZE);
-					chunk.getHBox().getChildren().add(temp);
 					chunk.getHBox().getChildren().forEach((n) -> {
 						Rectangle rect = (Rectangle) n;
 
-						rect.setWidth((double) ((Chunk.CHUNK_WIDTH - 2. * Chunk.BORDER_SIZE)
-								/ (chunk.getHBox().getChildren().size())));
+						rect.setWidth(Math.floor((double) ((Chunk.CHUNK_WIDTH - 2. * Chunk.BORDER_SIZE)
+								/ (chunk.getHBox().getChildren().size() + 1))));
 					});
+					chunk.getHBox().getChildren().add(temp);
+					temp.setWidth(1);
+					temp.setWidth(
+							(Chunk.CHUNK_WIDTH - 2 * Chunk.BORDER_SIZE) - ((chunk.getHBox().getChildren().size() - 1)
+									* ((Rectangle) (chunk.getHBox().getChildren().get(0))).getWidth()));
 				}
 			}
 		};
