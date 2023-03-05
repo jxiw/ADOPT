@@ -83,18 +83,13 @@ public class Chunk extends HBox {
 		Color color = Color.LIGHTGRAY;
 		Thread thread = new Thread(threadNum, color);
 
-		getChildren().forEach((n) -> {
-			Thread temp = (Thread) n;
-			temp.getRectangle().setWidth(
-					Math.floor((double) ((CHUNK_WIDTH - 2. * BORDER_SIZE - 2 * THREAD_BORDER_SIZE * (size() + 1))
-							/ (size() + 1))));
-		});
-
 		getChildren().add(thread);
 
-		thread.setWidth(1);
-		thread.setWidth(CHUNK_WIDTH - 2 * BORDER_SIZE - 1 * THREAD_BORDER_SIZE * (size())
-				- ((size() - 1) * ((Thread) (get(0))).getRectangle().getWidth()));
+		getChildren().forEach((n) -> {
+			Thread temp = (Thread) n;
+			temp.getRectangle().setWidth(Math
+					.floor((double) ((CHUNK_WIDTH - 2. * BORDER_SIZE - 2 * THREAD_BORDER_SIZE * (size())) / (size()))));
+		});
 
 		for (int i = 0; i < getChildren().size(); i++) {
 			for (int j = getChildren().size() - 1; j > i; j--) {
@@ -109,6 +104,9 @@ public class Chunk extends HBox {
 				}
 			}
 		}
+
+		((Thread) getChildren().get(size() - 1)).getRectangle().setWidth(CHUNK_WIDTH - 2 * BORDER_SIZE
+				- 1 * THREAD_BORDER_SIZE * (size()) - ((size() - 1) * ((Thread) (get(0))).getRectangle().getWidth()));
 	}
 
 	/**

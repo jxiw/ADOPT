@@ -1,6 +1,8 @@
 package visualizationHyperCube;
 
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 /**
@@ -9,8 +11,10 @@ import javafx.stage.Stage;
  * @author Mitchell Gray
  *
  */
-public class AttributeBox extends VBox {
+public class AttributeBox extends Pane {
 	private VBox vbox;
+	private Text lowerBoundText;
+	private Text upperBoundText;
 	private final int lowerBound;
 	private final int upperBound;
 
@@ -24,8 +28,11 @@ public class AttributeBox extends VBox {
 	public AttributeBox(Stage stage, int lowerBound, int upperBound) {
 		this.lowerBound = lowerBound;
 		this.upperBound = upperBound;
-
 		vbox = new VBox();
+		lowerBoundText = new Text(Integer.toString(lowerBound));
+		upperBoundText = new Text(Integer.toString(upperBound));
+		getChildren().addAll(lowerBoundText, vbox, upperBoundText);
+
 	}
 
 	/**
@@ -39,7 +46,7 @@ public class AttributeBox extends VBox {
 	}
 
 	public void addChunk(Chunk chunk) {
-		getChildren().add(chunk);
+		vbox.getChildren().add(chunk);
 	}
 
 }
