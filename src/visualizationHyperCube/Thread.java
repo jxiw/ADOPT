@@ -5,6 +5,12 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
+/**
+ * One of the boxes inside of a chunk.
+ * 
+ * @author Mitchell Gray
+ *
+ */
 public class Thread extends Pane implements Comparable<Thread> {
 	private Rectangle rect;
 	private Label text;
