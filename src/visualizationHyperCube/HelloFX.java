@@ -86,6 +86,9 @@ public class HelloFX extends Application {
 		Color color = null;
 
 		switch (num % 27) {
+		case 0:
+			color = Color.LIGHTSEAGREEN;
+			break;
 		case 1:
 			color = Color.RED;
 			break;

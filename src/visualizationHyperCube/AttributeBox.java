@@ -6,6 +6,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+//TODO: Add functionality that lets clients add threads with a specified range of 2 ints.
 /**
  * Represents an aggregation of Chunks
  * 
