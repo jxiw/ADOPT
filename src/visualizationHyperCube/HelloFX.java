@@ -7,10 +7,17 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import scala.util.Random;
 
+/**
+ * Main JavaFX code
+ * 
+ * @author Mitchell Gray
+ *
+ */
 public class HelloFX extends Application {
 
-	private int counter = 0;
+	private int counter = 10;
 
 	@Override
 	public void start(Stage stage) throws IOException {
@@ -20,7 +27,7 @@ public class HelloFX extends Application {
 //		root.maxWidth(320);
 //		root.maxHeight(240);
 //		root.getChildren().add(node);
-		Scene scene = new Scene(root, 320, 240);
+		Scene scene = new Scene(root, 1280, 720);
 		stage.setTitle("Testing Title!");
 		stage.setScene(scene);
 		stage.show();
@@ -28,9 +35,10 @@ public class HelloFX extends Application {
 		AnimationTimer animationTimer = new AnimationTimer() {
 			@Override
 			public void handle(long now) {
-				if (now % 10000 == 0 && counter < 10) {
-					counter++;
-					chunk.add(counter);
+				Random ran = new Random();
+				if (now % 5000 == 0 && counter >= 0) {
+					counter--;
+					chunk.add(ran.nextInt(100));
 				}
 			}
 		};

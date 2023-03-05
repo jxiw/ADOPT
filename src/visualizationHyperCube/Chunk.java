@@ -11,7 +11,6 @@ import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 /**
@@ -23,7 +22,7 @@ import javafx.stage.Stage;
 public class Chunk extends HBox {
 	public static double BORDER_SIZE = 1.;
 	public static double CHUNK_HEIGHT = 10.;
-	public static double CHUNK_WIDTH = 102.;
+	public static double CHUNK_WIDTH = 420.;
 	public static double THREAD_BORDER_SIZE = 1.;
 	public static Color THREAD_BORDER_COLOR = Color.BLACK;
 
@@ -67,26 +66,41 @@ public class Chunk extends HBox {
 	public void add(int threadNum) {
 		threadMap.put(threadNum, size());
 
-		Rectangle temp = new Rectangle();
-		temp.setStroke(THREAD_BORDER_COLOR);
-		temp.setStrokeWidth(THREAD_BORDER_SIZE);
-
 		Color color = Color.RED;
-
-		temp.setFill(color);
-		temp.setHeight(CHUNK_HEIGHT - 2 * BORDER_SIZE);
+		Thread thread = new Thread(threadNum, color);
 
 		getChildren().forEach((n) -> {
-			Rectangle rect = (Rectangle) n;
-			rect.setWidth(Math.floor((double) ((CHUNK_WIDTH - 2. * BORDER_SIZE - 2 * THREAD_BORDER_SIZE * (size() + 1))
-					/ (size() + 1))));
+			Thread temp = (Thread) n;
+			temp.getRectangle().setWidth(
+					Math.floor((double) ((CHUNK_WIDTH - 2. * BORDER_SIZE - 2 * THREAD_BORDER_SIZE * (size() + 1))
+							/ (size() + 1))));
 		});
 
-		getChildren().add(temp);
+		getChildren().add(thread);
 
-		temp.setWidth(1);
-		temp.setWidth((CHUNK_WIDTH - 2 * BORDER_SIZE - 2 * THREAD_BORDER_SIZE * size())
-				- ((size() - 1) * ((Rectangle) (get(0))).getWidth()));
+		thread.setWidth(1);
+
+		thread.setWidth(CHUNK_WIDTH - 2 * BORDER_SIZE - 1 * THREAD_BORDER_SIZE * (size())
+				- ((size() - 1) * ((Thread) (get(0))).getRectangle().getWidth()));
+
+		for (int i = 0; i < getChildren().size(); i++) {
+
+			for (int j = getChildren().size() - 1; j > i; j--) {
+				if (((Thread) getChildren().get(i)).compareTo((Thread) getChildren().get(j)) > 0) {
+
+					Thread tmp = (Thread) getChildren().get(i);
+					Thread tmp2 = (Thread) getChildren().get(j);
+					getChildren().set(i, new Thread(-1, tmp.getColor()));
+					getChildren().set(j, new Thread(-1, tmp2.getColor()));
+
+					getChildren().set(i, tmp2);
+					getChildren().set(j, tmp);
+
+				}
+
+			}
+
+		}
 
 	}
 
