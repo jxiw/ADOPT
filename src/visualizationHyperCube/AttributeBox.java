@@ -38,4 +38,8 @@ public class AttributeBox extends VBox {
 		return (Chunk) vbox.getChildren().get(index);
 	}
 
+	public void addChunk(Chunk chunk) {
+		getChildren().add(chunk);
+	}
+
 }
