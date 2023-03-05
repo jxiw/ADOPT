@@ -1,7 +1,5 @@
 package visualizationHyperCube;
 
-import java.util.HashMap;
-
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -19,11 +17,6 @@ public class Thread extends Pane implements Comparable<Thread> {
 	private Label text;
 	private int threadNum;
 	private Color color;
-
-	/**
-	 * Maps the thread num to a color.
-	 */
-	public static HashMap<Integer, Color> threadColorMap;
 
 	/**
 	 * Constructor for Thread
