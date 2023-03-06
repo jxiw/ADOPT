@@ -7,6 +7,7 @@ import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Slider;
 import javafx.scene.input.KeyCode;
@@ -34,6 +35,9 @@ public class HelloFX extends Application {
 	private int counter = 15;
 	private int speed = 50;
 	private int tempSpeed = -1;
+
+	private boolean paused;
+
 	private ArrayList<Chunk> chunkList1;
 	private ArrayList<Chunk> chunkList2;
 	private ArrayList<Chunk> chunkList3;
@@ -57,6 +61,10 @@ public class HelloFX extends Application {
 		bottom.getChildren().addAll(bottomText, slide);
 		slide.valueProperty().addListener(new ChangeListener<Number>() {
 			public void changed(ObservableValue<? extends Number> ov, Number old_val, Number new_val) {
+				if (paused) {
+					return;
+				}
+
 				speed = new_val.intValue();
 				bottomText.setText("Speed: " + speed + "%");
 			}
@@ -74,7 +82,6 @@ public class HelloFX extends Application {
 
 		// Center Attribute Boxes
 		HBox boxHolder = new HBox();
-		boxHolder.spacingProperty().bind(stage.widthProperty().divide(9));
 		boxOne = new AttributeBox(stage, 0, 1000, 1);
 		boxTwo = new AttributeBox(stage, 0, 1000, 2);
 		boxThree = new AttributeBox(stage, 0, 1000, 3);
@@ -103,20 +110,25 @@ public class HelloFX extends Application {
 		// Setting up the root, scene, and stage
 		BorderPane root = new BorderPane();
 		root.setTop(textHolder);
-		root.setCenter(boxHolder);
+//		root.setCenter(boxHolder);
+		root.setLeft(boxOne);
+		root.setCenter(boxTwo);
+		boxOne.setAlignment(Pos.CENTER);
+		boxTwo.setAlignment(Pos.CENTER);
+		boxThree.setAlignment(Pos.CENTER);
+		root.setRight(boxThree);
 		root.setBottom(bottom);
 
 		Scene scene = new Scene(root, 1900, 1000);
 		scene.setOnKeyPressed((e) -> {
 			if (e.getCode() == KeyCode.SPACE && tempSpeed == -1) {
+				paused = true;
 				tempSpeed = speed;
 				slide.setValue(0);
 				bottomText.setText("Speed: 0%");
 				speed = 0;
-				System.out.println(tempSpeed);
-				System.out.println(speed);
 			} else if (e.getCode() == KeyCode.SPACE && tempSpeed != -1) {
-				System.out.println("made it");
+				paused = false;
 				slide.setValue(tempSpeed);
 				bottomText.setText("Speed: " + tempSpeed + "%");
 				speed = tempSpeed;

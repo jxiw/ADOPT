@@ -1,10 +1,12 @@
 package visualizationHyperCube;
 
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 
 //TODO: Add functionality that lets clients add threads with a specified range of 2 ints.
@@ -35,10 +37,11 @@ public class AttributeBox extends VBox {
 		this.lowerBound = lowerBound;
 		this.upperBound = upperBound;
 		vbox = new VBox();
+		vbox.setAlignment(Pos.CENTER);
 		attributeText = new Text("a" + Integer.toString(attributeNum));
 		attributeText.setFont(new Font(32));
 		attributeText.setFill(Color.RED);
-		attributeText.setTranslateX(Chunk.CHUNK_WIDTH / 2);
+		attributeText.setTextAlignment(TextAlignment.CENTER);
 		lowerBoundText = new Text("Lower Bound: " + Integer.toString(lowerBound));
 		upperBoundText = new Text("Upper Bound: " + Integer.toString(upperBound));
 		getChildren().addAll(attributeText, lowerBoundText, vbox, upperBoundText);
