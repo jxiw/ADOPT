@@ -94,7 +94,7 @@ public class HelloFX extends Application {
 		chunkList2 = new ArrayList<Chunk>();
 		chunkList3 = new ArrayList<Chunk>();
 
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 70; i++) {
 			chunkList1.add(new Chunk(stage, i * 100, i * 100 + 99));
 			chunkList2.add(new Chunk(stage, i * 100, i * 100 + 99));
 			chunkList3.add(new Chunk(stage, i * 100, i * 100 + 99));
@@ -254,30 +254,42 @@ public class HelloFX extends Application {
 	public void update() {
 		time += 0.01 * speed;
 
-		if (time >= 3) {
+		if (time >= 9) {
 			time = 0;
 
 			Random ran = new Random();
 
-			int lowerbound = 1;
-			int upperbound = 0;
+			int lowerbound1 = 1;
+			int upperbound1 = 0;
+			int lowerbound2 = 1;
+			int upperbound2 = 0;
+			int lowerbound3 = 1;
+			int upperbound3 = 0;
 			int threadNum = ran.nextInt(5);
 
-			while (lowerbound > upperbound) {
-				lowerbound = ran.nextInt(1001);
-				upperbound = ran.nextInt(1001);
+			while (lowerbound1 > upperbound1) {
+				lowerbound1 = ran.nextInt(9000);
+				upperbound1 = ran.nextInt(9000);
+			}
+			while (lowerbound2 > upperbound2) {
+				lowerbound2 = ran.nextInt(9000);
+				upperbound2 = ran.nextInt(9000);
+			}
+			while (lowerbound3 > upperbound3) {
+				lowerbound3 = ran.nextInt(9000);
+				upperbound3 = ran.nextInt(9000);
 			}
 
 //			System.out.println(threadNum + "," + lowerbound + "," + upperbound);
 
 			for (int i = 0; i < chunkList1.size(); i++) {
-				boxOne.addThread(threadNum, lowerbound, upperbound);
+				boxOne.addThread(threadNum, lowerbound1, upperbound1);
 			}
 			for (int i = 0; i < chunkList1.size(); i++) {
-				boxTwo.addThread(threadNum, lowerbound, upperbound);
+				boxTwo.addThread(threadNum, lowerbound2, upperbound2);
 			}
 			for (int i = 0; i < chunkList1.size(); i++) {
-				boxThree.addThread(threadNum, lowerbound, upperbound);
+				boxThree.addThread(threadNum, lowerbound3, upperbound3);
 			}
 
 		}
