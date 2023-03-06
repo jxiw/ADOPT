@@ -83,6 +83,10 @@ public class DataParser {
 				for (int i : returner) {
 					System.out.println(i);
 				}
+
+				if (returner[6] != 9 && returner[6] != 40 && returner[6] != 31 && returner[6] != 3) {
+					continue;
+				}
 				break;
 			}
 

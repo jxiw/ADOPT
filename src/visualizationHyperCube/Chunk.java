@@ -55,7 +55,7 @@ public class Chunk extends HBox {
 				new BorderWidths(BORDER_SIZE))));
 
 		this.setOnMouseEntered((e) -> {
-			HelloFX.chunkText.setText("Chunk Range: " + "(" + lowerRange + "-" + upperRange + ")" + " ");
+			HelloFX.chunkText.setText("Chunk Range: " + "(" + lowerRange + "," + upperRange + ")" + " ");
 		});
 		this.setOnMouseExited((e) -> {
 			HelloFX.chunkText.setText("Chunk Range: (None) ");
