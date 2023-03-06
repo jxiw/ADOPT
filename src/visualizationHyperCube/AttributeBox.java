@@ -1,5 +1,6 @@
 package visualizationHyperCube;
 
+import javafx.scene.Node;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -56,6 +57,30 @@ public class AttributeBox extends VBox {
 
 	public void addChunk(Chunk chunk) {
 		vbox.getChildren().add(chunk);
+	}
+
+	/**
+	 * Removes all threads with threadNum in all Chunks of the AttributeBox. Adds a
+	 * thread to all chunks that overlap in range.
+	 * 
+	 * @Precondition: lowerRange must be less than or equal to upperRange.
+	 * 
+	 * @param threadNum  The number of the thread.
+	 * @param lowerRange The lower access range of the thread.
+	 * @param upperRange The higher access range of the thread.
+	 */
+	public void addThread(int threadNum, int lowerRange, int upperRange) {
+		if (lowerRange > upperRange)
+			return;
+
+		for (Node chunk : vbox.getChildren()) {
+			Chunk temp = (Chunk) chunk;
+			temp.remove(threadNum);
+
+			if (lowerRange <= temp.upperRange() && temp.lowerRange() <= upperRange) {
+				temp.add(threadNum);
+			}
+		}
 	}
 
 }

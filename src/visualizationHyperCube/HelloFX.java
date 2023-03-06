@@ -5,9 +5,14 @@ import java.util.ArrayList;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.Scene;
+import javafx.scene.control.Slider;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -25,10 +30,39 @@ public class HelloFX extends Application {
 	public static Text threadText;
 	public static Text chunkText;
 
+	private double time = 0;
 	private int counter = 15;
+	private int speed = 50;
+	private int tempSpeed = -1;
+	private ArrayList<Chunk> chunkList1;
+	private ArrayList<Chunk> chunkList2;
+	private ArrayList<Chunk> chunkList3;
+	private AttributeBox boxOne;
+	private AttributeBox boxTwo;
+	private AttributeBox boxThree;
 
 	@Override
 	public void start(Stage stage) throws IOException {
+
+		// Speed Slider
+		VBox bottom = new VBox();
+		Slider slide = new Slider();
+		Text bottomText = new Text();
+		slide.setShowTickLabels(true);
+		slide.setShowTickMarks(true);
+		slide.setBlockIncrement(1);
+		slide.adjustValue(50);
+		bottomText.setText("Speed: " + speed + "%");
+		bottomText.setFont(new Font(32));
+		bottom.getChildren().addAll(bottomText, slide);
+		slide.valueProperty().addListener(new ChangeListener<Number>() {
+			public void changed(ObservableValue<? extends Number> ov, Number old_val, Number new_val) {
+				speed = new_val.intValue();
+				bottomText.setText("Speed: " + speed + "%");
+			}
+		});
+
+		// Upper Text
 		chunkText = new Text();
 		chunkText.setFont(new Font(36));
 		chunkText.setText("Chunk Range: (None) ");
@@ -38,39 +72,67 @@ public class HelloFX extends Application {
 		HBox textHolder = new HBox();
 		textHolder.getChildren().addAll(chunkText, threadText);
 
-		BorderPane root = new BorderPane();
-		Scene scene = new Scene(root, 1280, 720);
-		AttributeBox boxOne = new AttributeBox(stage, 0, 1000, 1);
-		ArrayList<Chunk> chunkList = new ArrayList<Chunk>();
+		// Center Attribute Boxes
+		HBox boxHolder = new HBox();
+		boxHolder.spacingProperty().bind(stage.widthProperty().divide(9));
+		boxOne = new AttributeBox(stage, 0, 1000, 1);
+		boxTwo = new AttributeBox(stage, 0, 1000, 2);
+		boxThree = new AttributeBox(stage, 0, 1000, 3);
+		boxHolder.getChildren().addAll(boxOne, boxTwo, boxThree);
+
+		chunkList1 = new ArrayList<Chunk>();
+		chunkList2 = new ArrayList<Chunk>();
+		chunkList3 = new ArrayList<Chunk>();
+
 		for (int i = 0; i < 10; i++) {
-			chunkList.add(new Chunk(stage, i * 100, i * 100 + 99));
+			chunkList1.add(new Chunk(stage, i * 100, i * 100 + 99));
+			chunkList2.add(new Chunk(stage, i * 100, i * 100 + 99));
+			chunkList3.add(new Chunk(stage, i * 100, i * 100 + 99));
 		}
 
-		chunkList.forEach((chunk) -> {
+		chunkList1.forEach((chunk) -> {
 			boxOne.addChunk(chunk);
 		});
+		chunkList2.forEach((chunk) -> {
+			boxTwo.addChunk(chunk);
+		});
+		chunkList3.forEach((chunk) -> {
+			boxThree.addChunk(chunk);
+		});
 
+		// Setting up the root, scene, and stage
+		BorderPane root = new BorderPane();
 		root.setTop(textHolder);
-		root.setCenter(boxOne);
+		root.setCenter(boxHolder);
+		root.setBottom(bottom);
 
+		Scene scene = new Scene(root, 1900, 1000);
+		scene.setOnKeyPressed((e) -> {
+			if (e.getCode() == KeyCode.SPACE && tempSpeed == -1) {
+				tempSpeed = speed;
+				slide.setValue(0);
+				bottomText.setText("Speed: 0%");
+				speed = 0;
+				System.out.println(tempSpeed);
+				System.out.println(speed);
+			} else if (e.getCode() == KeyCode.SPACE && tempSpeed != -1) {
+				System.out.println("made it");
+				slide.setValue(tempSpeed);
+				bottomText.setText("Speed: " + tempSpeed + "%");
+				speed = tempSpeed;
+				tempSpeed = -1;
+			}
+		});
 		stage.setTitle("ADOPT - Hypercube Visualization");
 		stage.setScene(scene);
 		stage.show();
 
+		// Update on tick
 		AnimationTimer animationTimer = new AnimationTimer() {
 			@Override
 			public void handle(long now) {
-				Random ran = new Random();
-				if (now % 5000 == 0 && counter >= 0) {
-					counter--;
-					for (int i = 0; i < chunkList.size(); i++) {
-						chunkList.get(i).add(ran.nextInt(15));
-					}
-				} else if (now % 500 == 0 && counter < 0) {
-					for (int i = 0; i < chunkList.size(); i++) {
-						chunkList.get(i).remove(ran.nextInt(15));
-					}
-				}
+				update();
+
 			}
 		};
 		animationTimer.start();
@@ -170,6 +232,39 @@ public class HelloFX extends Application {
 		}
 
 		return color;
+	}
+
+	public void update() {
+		time += 0.01 * speed;
+
+		if (time >= 3) {
+			time = 0;
+
+			Random ran = new Random();
+
+			int lowerbound = 1;
+			int upperbound = 0;
+			int threadNum = ran.nextInt(5);
+
+			while (lowerbound > upperbound) {
+				lowerbound = ran.nextInt(1001);
+				upperbound = ran.nextInt(1001);
+			}
+
+//			System.out.println(threadNum + "," + lowerbound + "," + upperbound);
+
+			for (int i = 0; i < chunkList1.size(); i++) {
+				boxOne.addThread(threadNum, lowerbound, upperbound);
+			}
+			for (int i = 0; i < chunkList1.size(); i++) {
+				boxTwo.addThread(threadNum, lowerbound, upperbound);
+			}
+			for (int i = 0; i < chunkList1.size(); i++) {
+				boxThree.addThread(threadNum, lowerbound, upperbound);
+			}
+
+		}
+
 	}
 
 	public static void main(String[] args) {

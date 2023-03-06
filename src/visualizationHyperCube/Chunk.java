@@ -71,6 +71,14 @@ public class Chunk extends HBox {
 		return getChildren().size();
 	}
 
+	public int lowerRange() {
+		return lowerRange;
+	}
+
+	public int upperRange() {
+		return upperRange;
+	}
+
 	/**
 	 * Adds a threads to the Chunk. Automatically resizes all visuals. Can't add
 	 * Threads already in the Chunk.
