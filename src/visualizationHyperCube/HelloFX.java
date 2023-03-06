@@ -18,7 +18,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import scala.util.Random;
 
 /**
  * Main JavaFX code
@@ -27,7 +26,7 @@ import scala.util.Random;
  *
  */
 public class HelloFX extends Application {
-
+	private final int NUMBER_OF_CHUNKS = 70;
 	public static Text threadText;
 	public static Text chunkText;
 
@@ -44,9 +43,12 @@ public class HelloFX extends Application {
 	private AttributeBox boxOne;
 	private AttributeBox boxTwo;
 	private AttributeBox boxThree;
+	private DataParser parser;
 
 	@Override
 	public void start(Stage stage) throws IOException {
+		parser = new DataParser();
+		int[] bounds = parser.getBounds();
 
 		// Speed Slider
 		VBox bottom = new VBox();
@@ -85,19 +87,24 @@ public class HelloFX extends Application {
 
 		// Center Attribute Boxes
 		HBox boxHolder = new HBox();
-		boxOne = new AttributeBox(stage, 0, 1000, 1);
-		boxTwo = new AttributeBox(stage, 0, 1000, 2);
-		boxThree = new AttributeBox(stage, 0, 1000, 3);
+		boxOne = new AttributeBox(stage, bounds[0], bounds[1], 1);
+		boxTwo = new AttributeBox(stage, bounds[2], bounds[3], 2);
+		boxThree = new AttributeBox(stage, bounds[4], bounds[5], 3);
 		boxHolder.getChildren().addAll(boxOne, boxTwo, boxThree);
 
 		chunkList1 = new ArrayList<Chunk>();
 		chunkList2 = new ArrayList<Chunk>();
 		chunkList3 = new ArrayList<Chunk>();
 
-		for (int i = 0; i < 70; i++) {
-			chunkList1.add(new Chunk(stage, i * 100, i * 100 + 99));
-			chunkList2.add(new Chunk(stage, i * 100, i * 100 + 99));
-			chunkList3.add(new Chunk(stage, i * 100, i * 100 + 99));
+		double difference = boxOne.getUpperBound() - boxOne.getLowerBound();
+		double multiplier = difference / NUMBER_OF_CHUNKS;
+		for (int i = 0; i < NUMBER_OF_CHUNKS; i++) {
+			chunkList1.add(new Chunk(stage, (int) Math.floor(i * multiplier + boxOne.getLowerBound()),
+					(int) Math.floor(i * multiplier + multiplier - 1 + boxOne.getLowerBound())));
+			chunkList2.add(new Chunk(stage, (int) Math.floor(i * multiplier + boxOne.getLowerBound()),
+					(int) Math.floor(i * multiplier + multiplier - 1 + boxOne.getLowerBound())));
+			chunkList3.add(new Chunk(stage, (int) Math.floor(i * multiplier + boxOne.getLowerBound()),
+					(int) Math.floor(i * multiplier + multiplier - 1 + boxOne.getLowerBound())));
 		}
 
 		chunkList1.forEach((chunk) -> {
@@ -257,39 +264,16 @@ public class HelloFX extends Application {
 		if (time >= 9) {
 			time = 0;
 
-			Random ran = new Random();
-
-			int lowerbound1 = 1;
-			int upperbound1 = 0;
-			int lowerbound2 = 1;
-			int upperbound2 = 0;
-			int lowerbound3 = 1;
-			int upperbound3 = 0;
-			int threadNum = ran.nextInt(5);
-
-			while (lowerbound1 > upperbound1) {
-				lowerbound1 = ran.nextInt(9000);
-				upperbound1 = ran.nextInt(9000);
-			}
-			while (lowerbound2 > upperbound2) {
-				lowerbound2 = ran.nextInt(9000);
-				upperbound2 = ran.nextInt(9000);
-			}
-			while (lowerbound3 > upperbound3) {
-				lowerbound3 = ran.nextInt(9000);
-				upperbound3 = ran.nextInt(9000);
-			}
-
-//			System.out.println(threadNum + "," + lowerbound + "," + upperbound);
+			int[] data = parser.getNext();
 
 			for (int i = 0; i < chunkList1.size(); i++) {
-				boxOne.addThread(threadNum, lowerbound1, upperbound1);
+				boxOne.addThread(data[6], data[0], data[1]);
 			}
 			for (int i = 0; i < chunkList1.size(); i++) {
-				boxTwo.addThread(threadNum, lowerbound2, upperbound2);
+				boxTwo.addThread(data[6], data[2], data[3]);
 			}
 			for (int i = 0; i < chunkList1.size(); i++) {
-				boxThree.addThread(threadNum, lowerbound3, upperbound3);
+				boxThree.addThread(data[6], data[4], data[5]);
 			}
 
 		}

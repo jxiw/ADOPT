@@ -86,4 +86,12 @@ public class AttributeBox extends VBox {
 		}
 	}
 
+	public int getLowerBound() {
+		return lowerBound;
+	}
+
+	public int getUpperBound() {
+		return upperBound;
+
+	}
 }
