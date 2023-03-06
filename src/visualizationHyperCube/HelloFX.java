@@ -62,7 +62,10 @@ public class HelloFX extends Application {
 		slide.valueProperty().addListener(new ChangeListener<Number>() {
 			public void changed(ObservableValue<? extends Number> ov, Number old_val, Number new_val) {
 				if (paused) {
+					slide.setDisable(true);
 					return;
+				} else {
+					slide.setDisable(false);
 				}
 
 				speed = new_val.intValue();
@@ -119,7 +122,9 @@ public class HelloFX extends Application {
 		root.setRight(boxThree);
 		root.setBottom(bottom);
 
-		Scene scene = new Scene(root, 1900, 1000);
+		Scene scene = new Scene(root, 1260, 1000);
+		stage.setMinWidth(1260);
+
 		scene.setOnKeyPressed((e) -> {
 			if (e.getCode() == KeyCode.SPACE && tempSpeed == -1) {
 				paused = true;
