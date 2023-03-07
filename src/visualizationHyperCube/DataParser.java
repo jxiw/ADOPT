@@ -35,7 +35,7 @@ public class DataParser {
 				bounds[2] = Integer.parseInt(temp2[2].substring(2));
 				bounds[3] = Integer.parseInt(temp2[3].substring(1, temp2[3].length() - 1));
 				bounds[4] = Integer.parseInt(temp2[4].substring(2));
-				bounds[5] = Integer.parseInt(temp2[5].substring(1, temp2[5].length() - 1));
+				bounds[5] = Integer.parseInt(temp2[5].substring(1, temp2[5].length() - 2));
 
 				break;
 			}
@@ -64,7 +64,9 @@ public class DataParser {
 
 			if (line.substring(0).equals("------------")) {
 				end = true;
-				break;
+				for (int i = 0; i < returner.length; i++) {
+					returner[i] = -1;
+				}
 			}
 
 			if (line.length() >= 7 && line.substring(0, 8).equals("log lftj")) {
