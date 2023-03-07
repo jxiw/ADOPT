@@ -1,7 +1,9 @@
 package visualizationHyperCube;
 
+import java.util.Comparator;
 import java.util.HashMap;
 
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.layout.Border;
@@ -105,6 +107,10 @@ public class Chunk extends HBox {
 	 * @param threadNum
 	 */
 	public void remove(int threadNum) {
+		if (threadMap.get((Integer) threadNum) == null) {
+			return;
+		}
+
 		getChildren().remove(threadMap.get((Integer) threadNum));
 		threadMap.remove((Integer) threadNum);
 
@@ -160,19 +166,18 @@ public class Chunk extends HBox {
 	 * Sort all threads in the chunk to make sure colors are consistent.
 	 */
 	private void sort() {
-		for (int i = 0; i < getChildren().size(); i++) {
-			for (int j = getChildren().size() - 1; j > i; j--) {
-				if (((Thread) getChildren().get(i)).compareTo((Thread) getChildren().get(j)) > 0) {
-					Thread tmp = (Thread) getChildren().get(i);
-					Thread tmp2 = (Thread) getChildren().get(j);
+		FXCollections.sort(getChildren(), new Comparator<Node>() {
 
-					getChildren().set(i, new Thread(-1, tmp.getColor()));
-					getChildren().set(j, new Thread(-1, tmp2.getColor()));
-					getChildren().set(i, tmp2);
-					getChildren().set(j, tmp);
+			@Override
+			public int compare(Node n1, Node n2) {
+				if (((Thread) n1).getThreadNum() > ((Thread) n2).getThreadNum()) {
+					return 1;
+				} else if (((Thread) n1).getThreadNum() == ((Thread) n2).getThreadNum()) {
+					return 0;
+				} else {
+					return -1;
 				}
 			}
-		}
+		});
 	}
-
 }
