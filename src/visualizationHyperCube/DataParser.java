@@ -75,7 +75,7 @@ public class DataParser {
 			}
 
 			if (line.length() >= 7 && line.substring(0, 8).equals("log lftj")) {
-				System.out.println(line);
+//				System.out.println(line);
 				String[] temp = line.split(":");
 				String[] temp2 = temp[5].split(",");
 
@@ -87,9 +87,9 @@ public class DataParser {
 				returner[5] = Integer.parseInt(temp2[11].substring(0, temp2[11].length() - 2));
 				returner[6] = Integer.parseInt(temp[3].substring(0, temp[3].indexOf(",")));
 
-				for (int i : returner) {
-					System.out.println(i);
-				}
+//				for (int i : returner) {
+//					System.out.println(i);
+//				}
 				if (returner[6] >= 10) {
 					continue;
 				}
