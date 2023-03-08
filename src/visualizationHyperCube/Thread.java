@@ -52,12 +52,12 @@ public class Thread extends Pane implements Comparable<Thread> {
 		});
 	}
 
-	public Rectangle getRectangle() {
-		return rect;
+	public void setRectangleWidth(double width) {
+		rect.setWidth(width);
 	}
 
-	public void setWidth(double width) {
-		rect.setWidth(width);
+	public double getRectangleWidth() {
+		return rect.getWidth();
 	}
 
 	public int getThreadNum() {

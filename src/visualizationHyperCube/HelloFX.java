@@ -26,6 +26,7 @@ import javafx.stage.Stage;
  *
  */
 public class HelloFX extends Application {
+	private final String FILE_PATH = "src/visualizationHyperCube/run4_budget.txt";
 	private final int NUMBER_OF_CHUNKS = 70;
 	public static Text threadText;
 	public static Text chunkText;
@@ -47,7 +48,7 @@ public class HelloFX extends Application {
 
 	@Override
 	public void start(Stage stage) throws IOException {
-		parser = new DataParser();
+		parser = new DataParser(FILE_PATH);
 		int[] bounds = parser.getBounds();
 
 		// Speed Slider
@@ -90,8 +91,12 @@ public class HelloFX extends Application {
 		boxOne = new AttributeBox(stage, bounds[0], bounds[1], 1);
 		boxTwo = new AttributeBox(stage, bounds[2], bounds[3], 2);
 		boxThree = new AttributeBox(stage, bounds[4], bounds[5], 3);
+		boxOne.setAlignment(Pos.CENTER);
+		boxTwo.setAlignment(Pos.CENTER);
+		boxThree.setAlignment(Pos.CENTER);
 		boxHolder.getChildren().addAll(boxOne, boxTwo, boxThree);
 
+		// Creates set number of chunks and assigns that many to each chunk.
 		chunkList1 = new ArrayList<Chunk>();
 		chunkList2 = new ArrayList<Chunk>();
 		chunkList3 = new ArrayList<Chunk>();
@@ -120,18 +125,15 @@ public class HelloFX extends Application {
 		// Setting up the root, scene, and stage
 		BorderPane root = new BorderPane();
 		root.setTop(textHolder);
-//		root.setCenter(boxHolder);
 		root.setLeft(boxOne);
 		root.setCenter(boxTwo);
-		boxOne.setAlignment(Pos.CENTER);
-		boxTwo.setAlignment(Pos.CENTER);
-		boxThree.setAlignment(Pos.CENTER);
 		root.setRight(boxThree);
 		root.setBottom(bottom);
 
 		Scene scene = new Scene(root, 1260, 1000);
 		stage.setMinWidth(1260);
 
+		// Handles pausing
 		scene.setOnKeyPressed((e) -> {
 			if (e.getCode() == KeyCode.SPACE && tempSpeed == -1) {
 				paused = true;
@@ -258,6 +260,10 @@ public class HelloFX extends Application {
 		return color;
 	}
 
+	/**
+	 * Updates the scene every time the `time` gets to 9. `time` is dependent on
+	 * `speed`
+	 */
 	public void update() {
 		time += 0.01 * speed;
 

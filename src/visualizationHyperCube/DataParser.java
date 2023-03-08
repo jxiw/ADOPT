@@ -11,12 +11,17 @@ public class DataParser {
 	private Scanner scan;
 	private int[] bounds;
 
-	public DataParser() {
+	/**
+	 * Constructor for data parser.
+	 * 
+	 * @Param filepath File to read from.
+	 */
+	public DataParser(String filepath) {
 		bounds = new int[6];
 
 		// Read the file.
 		try {
-			reader = new FileReader("src/visualizationHyperCube/run4_budget.txt");
+			reader = new FileReader(filepath);
 			scan = new Scanner(reader);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace(System.out);
@@ -109,7 +114,7 @@ public class DataParser {
 	}
 
 	public static void main(String[] args) {
-		DataParser data = new DataParser();
+		DataParser data = new DataParser("src/visualizationHyperCube/run4_budget.txt");
 
 		for (int i : data.getBounds()) {
 			System.out.println(i);

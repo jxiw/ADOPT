@@ -149,7 +149,7 @@ public class Chunk extends HBox {
 	private void resize() {
 		getChildren().forEach((n) -> {
 			Thread temp = (Thread) n;
-			temp.getRectangle().setWidth(Math
+			temp.setRectangleWidth(Math
 					.floor((double) ((CHUNK_WIDTH - 2. * BORDER_SIZE - 2 * THREAD_BORDER_SIZE * (size())) / (size()))));
 		});
 	}
@@ -158,8 +158,8 @@ public class Chunk extends HBox {
 	 * Resizes the last Thread to take any remaining space to remove white space.
 	 */
 	private void resizeLastThread() {
-		((Thread) getChildren().get(size() - 1)).getRectangle().setWidth(CHUNK_WIDTH - 2 * BORDER_SIZE
-				- 1 * THREAD_BORDER_SIZE * (size()) - ((size() - 1) * ((Thread) (get(0))).getRectangle().getWidth()));
+		((Thread) getChildren().get(size() - 1)).setRectangleWidth(CHUNK_WIDTH - 2 * BORDER_SIZE
+				- 1 * THREAD_BORDER_SIZE * (size()) - ((size() - 1) * ((Thread) (get(0))).getRectangleWidth()));
 	}
 
 	/**
