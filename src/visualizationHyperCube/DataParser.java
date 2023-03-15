@@ -90,7 +90,7 @@ public class DataParser {
 //				for (int i : returner) {
 //					System.out.println(i);
 //				}
-				if (returner[6] >= 10) {
+				if (returner[6] >= 5) {
 					continue;
 				}
 				break;

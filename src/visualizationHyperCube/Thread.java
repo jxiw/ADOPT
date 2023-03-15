@@ -17,6 +17,7 @@ public class Thread extends Pane implements Comparable<Thread> {
 	private Label text;
 	private int threadNum;
 	private Color color;
+	private int size;
 
 	/**
 	 * Constructor for Thread
@@ -24,10 +25,10 @@ public class Thread extends Pane implements Comparable<Thread> {
 	 * @param threadNum The number of the thread.
 	 * @param color     The color of the rectangle.
 	 */
-	public Thread(int threadNum, Color color) {
+	public Thread(int threadNum, Color color, int size) {
 		this.color = color;
 		this.threadNum = threadNum;
-
+		this.size = size;
 		rect = new Rectangle();
 		text = new Label();
 
@@ -71,5 +72,13 @@ public class Thread extends Pane implements Comparable<Thread> {
 	@Override
 	public int compareTo(Thread t) {
 		return ((Integer) getThreadNum()).compareTo(t.getThreadNum());
+	}
+
+	public void incrementSize() {
+		size++;
+	}
+
+	public int getSize() {
+		return size;
 	}
 }

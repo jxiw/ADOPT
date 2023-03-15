@@ -81,45 +81,65 @@ public class Chunk extends HBox {
 		return upperRange;
 	}
 
-	/**
-	 * Adds a threads to the Chunk. Automatically resizes all visuals. Can't add
-	 * Threads already in the Chunk.
-	 * 
-	 * @param threadNum number of thread to add.
-	 */
-	public void add(int threadNum) {
+//	/**
+//	 * Adds a threads to the Chunk. Automatically resizes all visuals. Can't add
+//	 * Threads already in the Chunk.
+//	 * 
+//	 * @param threadNum number of thread to add.
+//	 */
+//	public void add(int threadNum) {
+//		if (!threadMap.containsKey(threadNum)) {
+//			Color color = HelloFX.getColor(threadNum);
+//			Thread thread = new Thread(threadNum, color);
+//			threadMap.put(threadNum, thread);
+//
+//			getChildren().add(thread);
+//
+//			resize();
+//			sort();
+//			resizeLastThread();
+//		}
+//	}
+
+	public void newAdd(int threadNum) {
 		if (!threadMap.containsKey(threadNum)) {
 			Color color = HelloFX.getColor(threadNum);
-			Thread thread = new Thread(threadNum, color);
+			Thread thread = new Thread(threadNum, color, 1);
 			threadMap.put(threadNum, thread);
 
 			getChildren().add(thread);
 
-			resize();
-			sort();
-			resizeLastThread();
+			newResize();
+//			resizeLastThread();
+		} else {
+			threadMap.get(threadNum).incrementSize();
+			newResize();
 		}
 	}
 
-	/**
-	 * Removes a thread from Chunk. Automatically resizes all visuals.
-	 * 
-	 * @param threadNum
-	 */
-	public void remove(int threadNum) {
-		if (threadMap.get((Integer) threadNum) == null) {
-			return;
-		}
+//	/**
+//	 * Removes a thread from Chunk. Automatically resizes all visuals.
+//	 * 
+//	 * @param threadNum
+//	 */
+//	public void remove(int threadNum) {
+//		if (threadMap.get((Integer) threadNum) == null) {
+//			return;
+//		}
+//
+//		getChildren().remove(threadMap.get((Integer) threadNum));
+//		threadMap.remove((Integer) threadNum);
+//
+//		newResize();
+//		sort();
+//
+//		if (size() > 0) {
+//			resizeLastThread();
+//		}
+//
+//	}
 
-		getChildren().remove(threadMap.get((Integer) threadNum));
-		threadMap.remove((Integer) threadNum);
-
-		resize();
-		sort();
-
-		if (size() > 0) {
-			resizeLastThread();
-		}
+	public void newRemove(int threadNum) {
 
 	}
 
@@ -143,15 +163,33 @@ public class Chunk extends HBox {
 		return threadMap.containsKey(t);
 	}
 
+//	/**
+//	 * Resizes all Thread rectangles to evenly distribute across the Chunk.
+//	 */
+//	private void resize() {
+//		getChildren().forEach((n) -> {
+//			Thread temp = (Thread) n;
+//			temp.setRectangleWidth(Math
+//					.floor((double) ((CHUNK_WIDTH - 2. * BORDER_SIZE - 2 * THREAD_BORDER_SIZE * (size())) / (size()))));
+//		});
+//	}
+
 	/**
 	 * Resizes all Thread rectangles to evenly distribute across the Chunk.
 	 */
-	private void resize() {
-		getChildren().forEach((n) -> {
-			Thread temp = (Thread) n;
-			temp.setRectangleWidth(Math
-					.floor((double) ((CHUNK_WIDTH - 2. * BORDER_SIZE - 2 * THREAD_BORDER_SIZE * (size())) / (size()))));
-		});
+	private void newResize() {
+		int tempSize = 0;
+
+		for (int i = 0; i < getChildren().size(); i++) {
+			tempSize += ((Thread) getChildren().get(i)).getSize();
+		}
+
+		for (int i = 0; i < getChildren().size(); i++) {
+			Thread temp = (Thread) getChildren().get(i);
+			temp.setRectangleWidth(
+					Math.floor((double) ((CHUNK_WIDTH - 2. * BORDER_SIZE - 2 * THREAD_BORDER_SIZE * size())
+							* ((double) temp.getSize() / tempSize))));
+		}
 	}
 
 	/**

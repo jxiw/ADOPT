@@ -78,10 +78,10 @@ public class AttributeBox extends VBox {
 
 		for (Node chunk : vbox.getChildren()) {
 			Chunk temp = (Chunk) chunk;
-			temp.remove(threadNum);
+			temp.newRemove(threadNum);
 
 			if (lowerRange <= temp.upperRange() && temp.lowerRange() <= upperRange) {
-				temp.add(threadNum);
+				temp.newAdd(threadNum);
 			}
 		}
 	}
