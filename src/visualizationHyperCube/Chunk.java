@@ -115,7 +115,6 @@ public class Chunk extends HBox {
 		} else {
 			threadMap.get(threadNum).incrementSize();
 			newResize();
-//			resizeLastThread();
 		}
 	}
 
