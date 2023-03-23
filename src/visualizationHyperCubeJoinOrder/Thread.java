@@ -44,10 +44,10 @@ public class Thread extends Pane implements Comparable<Thread> {
 		rect.setHeight(Chunk.CHUNK_HEIGHT - 2 * Chunk.BORDER_SIZE);
 
 		this.setOnMouseEntered((e) -> {
-			HelloFX.threadText.setText("Join Order: " + joinOrder);
+			HelloFX.threadText.setText("Attribute Order: " + joinOrder);
 		});
 		this.setOnMouseExited((e) -> {
-			HelloFX.threadText.setText("Join Order: (None) ");
+			HelloFX.threadText.setText("Attribute Order: (None) ");
 		});
 	}
 

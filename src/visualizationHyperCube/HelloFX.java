@@ -91,6 +91,8 @@ public class HelloFX extends Application {
 		boxOne = new AttributeBox(stage, bounds[0], bounds[1], 1);
 		boxTwo = new AttributeBox(stage, bounds[2], bounds[3], 2);
 		boxThree = new AttributeBox(stage, bounds[4], bounds[5], 3);
+		boxOne.setTranslateX(50);
+		boxThree.setTranslateX(-50);
 		boxOne.setAlignment(Pos.CENTER);
 		boxTwo.setAlignment(Pos.CENTER);
 		boxThree.setAlignment(Pos.CENTER);
@@ -123,15 +125,18 @@ public class HelloFX extends Application {
 		});
 
 		// Setting up the root, scene, and stage
-		BorderPane root = new BorderPane();
-		root.setTop(textHolder);
-		root.setLeft(boxOne);
-		root.setCenter(boxTwo);
-		root.setRight(boxThree);
-		root.setBottom(bottom);
+//		Pane root = new Pane();
+		BorderPane bp = new BorderPane();
+//		BorderPane.setMargin(bp, new Insets(100, 100, 100, 100));
+		bp.setTop(textHolder);
+		bp.setLeft(boxOne);
+		bp.setCenter(boxTwo);
+		bp.setRight(boxThree);
+		bp.setBottom(bottom);
+//		root.getChildren().add(bp);
 
-		Scene scene = new Scene(root, 1260, 1000);
-		stage.setMinWidth(1260);
+		Scene scene = new Scene(bp, 1920, 1000);
+		stage.setMinWidth(1920);
 
 		// Handles pausing
 		scene.setOnKeyPressed((e) -> {
