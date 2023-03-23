@@ -54,7 +54,7 @@ public class Visualization {
 	private List<String> lightColumns;
 
 	private final String stylesheet = "" + "graph {" + " padding: 0%;" + "}" + "" + "sprite.counter {"
-			+ " fill-mode: none;" + " text-size: 10%;" + "} " + "" + "sprite.join { " + " shape: flow; "
+			+ " fill-mode: none;" + " text-size: 14%;" + "} " + "" + "sprite.join { " + " shape: flow; "
 			+ " size: 0.04%;" + " z-index: 0; " + " sprite-orientation: from;" + " fill-color: White;" + "} "
 			+ "sprite.visible { " + " shape: flow; " + " size: 0.04%;" + " z-index: 0; " + " sprite-orientation: from;"
 			+ " fill-color: LIGHTGRAY;" + "} " + "" + "node {" + " size: 30px;" +
