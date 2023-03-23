@@ -1,10 +1,8 @@
-package visualizationHyperCube;
+package visualizationHyperCubeJoinOrder;
 
-import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
 
 /**
  * One of the boxes inside of a chunk.
@@ -14,8 +12,8 @@ import javafx.scene.text.Font;
  */
 public class Thread extends Pane implements Comparable<Thread> {
 	private Rectangle rect;
-	private Label text;
-	private int threadNum;
+//	private Label text;
+	private String joinOrder;
 	private Color color;
 	private int size;
 
@@ -25,20 +23,20 @@ public class Thread extends Pane implements Comparable<Thread> {
 	 * @param threadNum The number of the thread.
 	 * @param color     The color of the rectangle.
 	 */
-	public Thread(int threadNum, Color color, int size) {
+	public Thread(String joinOrder, Color color, int size) {
 		this.color = color;
-		this.threadNum = threadNum;
+		this.joinOrder = joinOrder;
 		this.size = size;
 		rect = new Rectangle();
-		text = new Label();
+//		text = new Label();
 
-		text.setFont(new Font(8));
-		text.setText(Integer.toString(threadNum));
-		text.layoutXProperty().bind(rect.widthProperty().divide(2));
-		text.layoutYProperty().bind(rect.heightProperty().divide(2).multiply(-1));
+//		text.setFont(new Font(8));
+//		text.setText(joinOrder);
+////		text.layoutXProperty().bind(rect.widthProperty().divide(2));
+//		text.layoutYProperty().bind(rect.heightProperty().divide(2).multiply(-1));
 
 		getChildren().add(rect);
-		getChildren().add(text);
+//		getChildren().add(text);
 
 		rect.setStroke(Chunk.THREAD_BORDER_COLOR);
 		rect.setStrokeWidth(Chunk.THREAD_BORDER_SIZE);
@@ -46,10 +44,10 @@ public class Thread extends Pane implements Comparable<Thread> {
 		rect.setHeight(Chunk.CHUNK_HEIGHT - 2 * Chunk.BORDER_SIZE);
 
 		this.setOnMouseEntered((e) -> {
-			HelloFX.threadText.setText("Thread Number: " + Integer.toString(threadNum));
+			HelloFX.threadText.setText("Join Order: " + joinOrder);
 		});
 		this.setOnMouseExited((e) -> {
-			HelloFX.threadText.setText("Thread Number: (None) ");
+			HelloFX.threadText.setText("Join Order: (None) ");
 		});
 	}
 
@@ -61,8 +59,8 @@ public class Thread extends Pane implements Comparable<Thread> {
 		return rect.getWidth();
 	}
 
-	public int getThreadNum() {
-		return threadNum;
+	public String getJoinOrder() {
+		return joinOrder;
 	}
 
 	public Color getColor() {
@@ -71,7 +69,7 @@ public class Thread extends Pane implements Comparable<Thread> {
 
 	@Override
 	public int compareTo(Thread t) {
-		return ((Integer) getThreadNum()).compareTo(t.getThreadNum());
+		return joinOrder.compareTo(t.getJoinOrder());
 	}
 
 	public void incrementSize() {

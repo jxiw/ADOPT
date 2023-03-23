@@ -1,4 +1,4 @@
-package visualizationHyperCube;
+package visualizationHyperCubeJoinOrder;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ public class Chunk extends HBox {
 	/**
 	 * Keys are threadNums and Values are position in getChildren() List.
 	 */
-	private HashMap<Integer, Thread> threadMap;
+	private HashMap<String, Thread> threadMap;
 
 	/**
 	 * @param stage      The primary stage of the application.
@@ -45,7 +45,7 @@ public class Chunk extends HBox {
 	public Chunk(Stage stage, int lowerRange, int upperRange) {
 		this.lowerRange = lowerRange;
 		this.upperRange = upperRange;
-		threadMap = new HashMap<Integer, Thread>();
+		threadMap = new HashMap<String, Thread>();
 		setPadding(new Insets(0, 0, 0, 0));
 		HBox.setMargin(this, new Insets(0, 0, 0, 0));
 		setSpacing(0);
@@ -101,7 +101,7 @@ public class Chunk extends HBox {
 //		}
 //	}
 
-	public void newAdd(int threadNum) {
+	public void newAdd(String threadNum) {
 		if (!threadMap.containsKey(threadNum)) {
 			Color color = HelloFX.getColor(threadNum);
 			Thread thread = new Thread(threadNum, color, 1);
@@ -141,7 +141,7 @@ public class Chunk extends HBox {
 //
 //	}
 
-	public void newRemove(int threadNum) {
+	public void newRemove(String joinOrder) {
 
 	}
 
@@ -221,9 +221,9 @@ public class Chunk extends HBox {
 
 			@Override
 			public int compare(Node n1, Node n2) {
-				if (((Thread) n1).getThreadNum() > ((Thread) n2).getThreadNum()) {
+				if (((Thread) n1).getJoinOrder().compareTo(((Thread) n2).getJoinOrder()) > 0) {
 					return 1;
-				} else if (((Thread) n1).getThreadNum() == ((Thread) n2).getThreadNum()) {
+				} else if (((Thread) n1).getJoinOrder().equals(((Thread) n2).getJoinOrder())) {
 					return 0;
 				} else {
 					return -1;

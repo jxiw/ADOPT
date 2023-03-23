@@ -1,4 +1,4 @@
-package visualizationHyperCube;
+package visualizationHyperCubeJoinOrder;
 
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -72,16 +72,16 @@ public class AttributeBox extends VBox {
 	 * @param lowerRange The lower access range of the thread.
 	 * @param upperRange The higher access range of the thread.
 	 */
-	public void addThread(int threadNum, int lowerRange, int upperRange) {
+	public void addThread(String joinOrder, int lowerRange, int upperRange) {
 		if (lowerRange > upperRange)
 			return;
 
 		for (Node chunk : vbox.getChildren()) {
 			Chunk temp = (Chunk) chunk;
-			temp.newRemove(threadNum);
+			temp.newRemove(joinOrder);
 
 			if (lowerRange <= temp.upperRange() && temp.lowerRange() <= upperRange) {
-				temp.newAdd(threadNum);
+				temp.newAdd(joinOrder);
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-package visualizationHyperCube;
+package visualizationHyperCubeJoinOrder;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -54,10 +54,10 @@ public class DataParser {
 	 * @return an int array, the array has a length of 7. Sequential 2 indexes are
 	 *         the lower and upper range values respectively for each attribute box.
 	 *         [0,1,4,5,9,10] (0,1) are lower and upper for a1, (4,5) for a2, (9,10)
-	 *         for a3. The last index, 6, is the threadNum.
+	 *         for a3. The last index, 6, is the Join Order.
 	 */
-	public int[] getNext() {
-		int[] returner = new int[7];
+	public String[] getNext() {
+		String[] returner = new String[7];
 
 		while (true) {
 			String line;
@@ -70,7 +70,7 @@ public class DataParser {
 			if (line.substring(0).equals("------------")) {
 				end = true;
 				for (int i = 0; i < returner.length; i++) {
-					returner[i] = -1;
+					returner[i] = "-1";
 				}
 			}
 
@@ -79,20 +79,22 @@ public class DataParser {
 				String[] temp = line.split(":");
 				String[] temp2 = temp[5].split(",");
 
-				returner[0] = Integer.parseInt(temp2[6].substring(16));
-				returner[1] = Integer.parseInt(temp2[7].substring(0, temp2[7].length() - 1));
-				returner[2] = Integer.parseInt(temp2[8].substring(2));
-				returner[3] = Integer.parseInt(temp2[9].substring(0, temp2[9].length() - 1));
-				returner[4] = Integer.parseInt(temp2[10].substring(2));
-				returner[5] = Integer.parseInt(temp2[11].substring(0, temp2[11].length() - 2));
-				returner[6] = Integer.parseInt(temp[3].substring(0, temp[3].indexOf(",")));
+				returner[0] = temp2[6].substring(16);
+				returner[1] = temp2[7].substring(0, temp2[7].length() - 1);
+				returner[2] = temp2[8].substring(2);
+				returner[3] = temp2[9].substring(0, temp2[9].length() - 1);
+				returner[4] = temp2[10].substring(2);
+				returner[5] = temp2[11].substring(0, temp2[11].length() - 2);
+				int commaIndex = temp[1].indexOf(",", 6);
+				returner[6] = (temp[1].substring(1, commaIndex - 1));
+				System.out.println("|" + returner[6] + "|");
 
 //				for (int i : returner) {
 //					System.out.println(i);
 //				}
-				if (returner[6] >= 5) {
-					continue;
-				}
+//				if (returner[6] >= 5) {
+//					continue;
+//				}
 				break;
 			}
 
@@ -116,8 +118,21 @@ public class DataParser {
 	public static void main(String[] args) {
 		DataParser data = new DataParser("src/visualizationHyperCube/run4_budget.txt");
 
-		for (int i : data.getBounds()) {
-			System.out.println(i);
+//		for (int i : data.getBounds()) {
+//			System.out.println(i);
+//		}
+		int j = 0;
+		while (j < 20) {
+			try {
+				String[] testNext = data.getNext();
+				for (int i = 0; i < testNext.length; i++) {
+					System.out.println(testNext[i]);
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			j++;
 		}
 
 	}
