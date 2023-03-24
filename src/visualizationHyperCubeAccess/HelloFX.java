@@ -127,6 +127,7 @@ public class HelloFX extends Application {
 		// Setting up the root, scene, and stage
 //		Pane root = new Pane();
 		BorderPane bp = new BorderPane();
+		bp.setStyle("-fx-background-color: White;");
 //		BorderPane.setMargin(bp, new Insets(100, 100, 100, 100));
 		bp.setTop(textHolder);
 		bp.setLeft(boxOne);

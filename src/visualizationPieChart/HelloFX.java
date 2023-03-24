@@ -46,6 +46,8 @@ public class HelloFX extends Application {
 	public void start(Stage stage) throws IOException {
 		parser = new DataParser("src/visualizationHyperCube/run4_budget.txt");
 		BorderPane group = new BorderPane();
+		group.setStyle("-fx-background-color: White;");
+		group.setStyle("-fx-background-color: White;");
 		Scene scene = new Scene(group);
 		stage.setTitle("Hypercube Attribute Orders");
 		stage.setWidth(500);
