@@ -2,6 +2,7 @@ package visualizationPieChart;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Comparator;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
@@ -18,7 +19,7 @@ import javafx.scene.control.Slider;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -36,6 +37,7 @@ public class HelloFX extends Application {
 	private double time = 0;
 	private int speed = 50;
 	private ObservableList<PieChart.Data> pieChartData;
+	private ObservableList<PieChart.Data> pieChartData2;
 	private Label caption = new Label("");
 	private boolean paused;
 	private int tempSpeed = -1;
@@ -77,17 +79,27 @@ public class HelloFX extends Application {
 		});
 
 		pieChartData = FXCollections.observableArrayList();
+		pieChartData2 = FXCollections.observableArrayList();
 //		new PieChart.Data("", 0)
 		final PieChart chart = new PieChart(pieChartData);
+		final PieChart chart2 = new PieChart(pieChartData2);
 		chart.setAnimated(false);
+		chart2.setAnimated(false);
+
+		chart2.setTitle("Hypercube Threads");
+		chart2.setTitleSide(Side.BOTTOM);
+		chart2.setLegendSide(Side.RIGHT);
 		caption.setTextFill(Color.BLACK);
 		caption.setStyle("-fx-font: 24 arial;");
 
 		chart.setTitle("Hypercube Attribute Orders");
-		chart.setLegendSide(Side.BOTTOM);
+		chart.setLegendSide(Side.LEFT);
+		chart.setTitleSide(Side.BOTTOM);
+		chart.setStyle("-fx-font-size: " + 28 + "px;");
+		chart2.setStyle("-fx-font-size: " + 28 + "px;");
 		group.getChildren().addAll(caption);
-		StackPane center = new StackPane();
-		center.getChildren().addAll(chart, caption);
+		HBox center = new HBox();
+		center.getChildren().addAll(chart, chart2, caption);
 		group.setCenter(center);
 		group.setBottom(bottom);
 
@@ -131,23 +143,62 @@ public class HelloFX extends Application {
 			}
 
 			totalData += (Double) data[1];
+
+			boolean firstChart = false;
 			for (int i = 0; i < pieChartData.size(); i++) {
 				if (pieChartData.get(i).getName().equals(data[0])) {
 					pieChartData.get(i).setPieValue(pieChartData.get(i).getPieValue() + (Double) (data[1]));
-					return;
+					firstChart = true;
 				}
 
 			}
 
-			PieChart.Data tempData = new PieChart.Data((String) data[0], (Double) (data[1]));
-			pieChartData.add(tempData);
+			if (!firstChart) {
+				PieChart.Data tempData = new PieChart.Data((String) data[0], (Double) (data[1]));
+				pieChartData.add(tempData);
+				tempData.getNode().addEventHandler(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
+					@Override
+					public void handle(MouseEvent e) {
+						caption.setTranslateX(e.getSceneX() / 3);
+						caption.setTranslateY(e.getSceneY() / 3);
+						caption.setText(String.valueOf(df.format(tempData.getPieValue() / totalData * 100)) + "%");
+					}
+				});
+			}
+
+			boolean secondChart = false;
+			for (int i = 0; i < pieChartData2.size(); i++) {
+				if (pieChartData2.get(i).getName().equals(Integer.toString((Integer) data[2]))) {
+					pieChartData2.get(i).setPieValue(pieChartData2.get(i).getPieValue() + (Double) (data[1]));
+					secondChart = true;
+				}
+
+			}
+
+			if (!secondChart) {
+				PieChart.Data tempData2 = new PieChart.Data(Integer.toString((Integer) data[2]), (Double) (data[1]));
+				pieChartData2.add(tempData2);
 //			tempData.getNode()
-			tempData.getNode().addEventHandler(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
+				tempData2.getNode().addEventHandler(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
+					@Override
+					public void handle(MouseEvent e) {
+						caption.setTranslateX(e.getSceneX() / 3);
+						caption.setTranslateY(e.getSceneY() / 3);
+						caption.setText(String.valueOf(df.format(tempData2.getPieValue() / totalData * 100)) + "%");
+					}
+				});
+			}
+			FXCollections.sort(pieChartData2, new Comparator<PieChart.Data>() {
+
 				@Override
-				public void handle(MouseEvent e) {
-					caption.setTranslateX(e.getSceneX() / 3);
-					caption.setTranslateY(e.getSceneY() / 3);
-					caption.setText(String.valueOf(df.format(tempData.getPieValue() / totalData * 100)) + "%");
+				public int compare(PieChart.Data n1, PieChart.Data n2) {
+					if (Integer.parseInt(n1.getName()) == Integer.parseInt(n2.getName())) {
+						return 0;
+					} else if (Integer.parseInt(n1.getName()) > Integer.parseInt(n2.getName())) {
+						return 1;
+					} else {
+						return -1;
+					}
 				}
 			});
 
