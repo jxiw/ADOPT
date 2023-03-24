@@ -61,7 +61,7 @@ public class DataParser {
 	 *         for a3. The last index, 6, is the Join Order.
 	 */
 	public Object[] getNext() {
-		Object[] returner = new Object[2];
+		Object[] returner = new Object[3];
 
 		while (true) {
 			String line;
@@ -71,6 +71,7 @@ public class DataParser {
 			else {
 				returner[0] = "-1";
 				returner[1] = -1.;
+				returner[2] = "-1";
 				return returner;
 			}
 
@@ -78,6 +79,7 @@ public class DataParser {
 				end = true;
 				returner[0] = "-1";
 				returner[1] = -1.;
+				returner[2] = "-1";
 				return returner;
 
 			}
@@ -85,6 +87,8 @@ public class DataParser {
 			if (line.length() >= 7 && line.substring(0, 8).equals("log lftj")) {
 				String[] temp = line.split(":");
 				String[] temp2 = temp[5].split(",");
+
+				returner[2] = Integer.parseInt(temp[3].substring(0, temp[3].indexOf(",")));
 
 				ArrayList<Pair<Double, Double>> intervals = new ArrayList<>();
 				Pair<Double, Double> pairOne = new Pair<>(Double.parseDouble(temp2[6].substring(16)),
