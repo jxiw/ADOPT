@@ -101,11 +101,13 @@ public class Visualization {
 
 		iterationCounter = 0;
 		counterLabel = new JLabel("Number of Samples: " + iterationCounter);
-		counterLabel.setBounds(25, 0, 200, 50);
+		counterLabel.setFont(new Font("Serif", Font.PLAIN, 32));
+		counterLabel.setBounds(25, 0, 500, 50);
 		view.add(counterLabel);
 
 		textPane = new JTextPane();
-		textPane.setBounds(25, 50, 300, 120);
+		textPane.setFont(new Font("Serif", Font.PLAIN, 48));
+		textPane.setBounds(25, 50, 300, 250);
 		for (int i = 0; i < lightColumns.size(); i++) {
 			String index = lightColumns.get(i);
 			print(textPane, "⬤", colors[i], Color.WHITE);
@@ -140,7 +142,7 @@ public class Visualization {
 		javax.swing.text.StyleConstants.setBackground(attributes, background);
 
 		try {
-			textPane.setFont(new javax.swing.plaf.FontUIResource("Ayuthaya", Font.PLAIN, 13));
+			textPane.setFont(new javax.swing.plaf.FontUIResource("Ayuthaya", Font.PLAIN, 28));
 			textPane.getStyledDocument().insertString(textPane.getDocument().getLength(), msg, attributes);
 		} catch (BadLocationException ignored) {
 		}
