@@ -12,11 +12,11 @@ import javax.swing.JTextPane;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
 
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.SingleGraph;
+import org.graphstream.ui.graphicGraph.stylesheet.StyleConstants;
 import org.graphstream.ui.layout.LayoutRunner;
 import org.graphstream.ui.spriteManager.Sprite;
 import org.graphstream.ui.spriteManager.SpriteManager;
@@ -27,6 +27,7 @@ import org.graphstream.ui.view.Viewer;
  * Creates and manages a visualization of the query.
  */
 public class Visualization {
+	private int count = 0;
 	private SingleGraph graph;
 	private Viewer viewer;
 	private ViewPanel view;
@@ -38,6 +39,7 @@ public class Visualization {
 	private Map<String, Integer> numVisits;
 	private Map<String, Double> maxReward;
 	private Map<String, Double> rewardSum;
+	private Map<String, Integer> iteration;
 //    private ViewerPipe pipeIn;
 
 	private Color colors[] = { Color.RED, Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.MAGENTA, Color.GRAY,
@@ -51,19 +53,27 @@ public class Visualization {
 
 	private List<String> lightColumns;
 
-	private final String stylesheet = "" + "graph {" + " padding: 60px;" + "}" + "" + "sprite.counter {"
-			+ " fill-mode: none;" + " text-size: 30px;" + "} " + "" + "sprite.join { " + " shape: flow; "
-			+ " size: 30px;" + " z-index: 0; " + " sprite-orientation: from;" + " fill-color: green;" + "} " + ""
-			+ "node {" + " size: 60px;" +
+	private final String stylesheet = "" + "graph {" + " padding: 0%;" + "}" + "" + "sprite.counter {"
+			+ " fill-mode: none;" + " text-size: 14%;" + "} " + "" + "sprite.join { " + " shape: flow; "
+			+ " size: 0.04%;" + " z-index: 0; " + " sprite-orientation: from;" + " fill-color: White;" + "} "
+			+ "sprite.visible { " + " shape: flow; " + " size: 0.04%;" + " z-index: 0; " + " sprite-orientation: from;"
+			+ " fill-color: LIGHTGRAY;" + "} " + "" + "node {" + " size: 30px;" +
 			// " fill-color: white;" +
 			// " text-color: white;" +
 			// " text-style: bold;" +
 			// " text-padding: 2px;" +
-			" text-size: 30px;" +
+			" text-size: 25%;" +
 			// " text-background-mode: rounded-box;" +
 			// " text-background-color: rgb(35, 47, 62);" +
 			" fill-mode : dyn-plain;" + " size-mode: dyn-size;" + "}" + "" + "edge {" + "  arrow-shape: none;"
-			+ "  text-size: 30px;" + "}";
+			+ "  text-size: 1%;" + "} " + "" + "node.root {" + " size: 30px;" +
+			// " fill-color: white;" +
+			// " text-color: white;" +
+			// " text-style: bold;" +
+			" text-alignment: above;" + " text-size: 25%;" +
+			// " text-background-mode: rounded-box;" +
+			// " text-background-color: rgb(35, 47, 62);" +
+			" fill-mode : dyn-plain;" + " size-mode: dyn-size;" + "}";
 
 	/**
 	 * Initializes the state/data structures of the query visualizer
@@ -83,17 +93,21 @@ public class Visualization {
 		viewer.disableAutoLayout();
 		view = viewer.getDefaultView();
 		view.setLayout(null);
+		view.getCamera().setViewPercent(1.1);
+		view.getCamera().setViewCenter(0, -2, 0);
 
 		// Setup layout
 		layout = new TreeLayout(graph);
 
 		iterationCounter = 0;
 		counterLabel = new JLabel("Number of Samples: " + iterationCounter);
-		counterLabel.setBounds(25, 0, 200, 50);
+		counterLabel.setFont(new Font("Serif", Font.PLAIN, 32));
+		counterLabel.setBounds(25, 0, 500, 50);
 		view.add(counterLabel);
 
 		textPane = new JTextPane();
-		textPane.setBounds(25, 50, 300, 120);
+		textPane.setFont(new Font("Serif", Font.PLAIN, 48));
+		textPane.setBounds(25, 50, 300, 250);
 		for (int i = 0; i < lightColumns.size(); i++) {
 			String index = lightColumns.get(i);
 			print(textPane, "⬤", colors[i], Color.WHITE);
@@ -101,7 +115,6 @@ public class Visualization {
 		}
 		textPane.setEditable(false);
 		view.add(textPane);
-
 		spriteManager = new SpriteManager(graph);
 		graph.setAttribute("ui.stylesheet", stylesheet);
 		graph.setAttribute("ui.antialias");
@@ -111,12 +124,15 @@ public class Visualization {
 //        addNode("root").addAttribute("ui.label", "Code Reorder Search Tree");
 		Node root = addNode("root");
 		root.addAttribute("ui.label", "Parameter Tree");
-		root.addAttribute("ui.color", Color.BLACK);
+		root.addAttribute("ui.class", "root");
+		root.addAttribute("ui.basecolor", Color.GRAY);
+		root.addAttribute("ui.color", Color.GRAY);
 
 		// Data structures for max/average reward for join order
 		numVisits = new HashMap<>();
 		maxReward = new HashMap<>();
 		rewardSum = new HashMap<>();
+		iteration = new HashMap<>();
 
 	}
 
@@ -126,7 +142,7 @@ public class Visualization {
 		javax.swing.text.StyleConstants.setBackground(attributes, background);
 
 		try {
-			textPane.setFont(new javax.swing.plaf.FontUIResource("Ayuthaya", Font.PLAIN, 13));
+			textPane.setFont(new javax.swing.plaf.FontUIResource("Ayuthaya", Font.PLAIN, 28));
 			textPane.getStyledDocument().insertString(textPane.getDocument().getLength(), msg, attributes);
 		} catch (BadLocationException ignored) {
 		}
@@ -139,6 +155,7 @@ public class Visualization {
 	 * @param reward  the reward received
 	 */
 	public void update(java.util.List<Integer> actions, double reward) {
+
 		incrementCounter();
 		for (Sprite sprite : spriteManager.sprites()) {
 			if (sprite.hasAttribute("progress")) {
@@ -148,6 +165,12 @@ public class Visualization {
 
 		if (createNodesSpriteIfNotPresent(actions)) {
 			layout.compute();
+		}
+
+		count++;
+
+		for (Node node : graph.getNodeSet()) {
+			changeNodeTransparency(node.getId());
 		}
 
 		String currentJoinNode = "";
@@ -244,12 +267,13 @@ public class Visualization {
 				if (graph.getNode(currentJoinNode) == null) {
 					Node newNode = addNode(currentJoinNode);
 					newNode.addAttribute("ui.label", actionName);
-					newNode.addAttribute("ui.color", color);
+					newNode.addAttribute("ui.basecolor", color);
 					Edge edge = addEdge(previous + "--" + currentJoinNode, previous, currentJoinNode, true);
 
 					System.out.println("S#" + previous + "--" + currentJoinNode);
 					Sprite sprite = spriteManager.addSprite("S#" + previous + "--" + currentJoinNode);
-					sprite.addAttribute("ui.class", "join");
+					sprite.addAttribute("ui.class", "join");// join
+					sprite.addAttribute("ui.color", new Color(255, 0, 0, 0));// join
 					sprite.addAttribute("progress");
 					sprite.attachToEdge(edge.getId());
 					sprite.setPosition(0);
@@ -269,6 +293,11 @@ public class Visualization {
 				avgSprite.attachToNode(currentJoinNode);
 				avgSprite.setPosition(StyleConstants.Units.PX, 40, 250, -90);
 				globalModified = true;
+
+				Sprite iterationSprite = spriteManager.addSprite("SM#" + currentJoinNode + "SA#" + currentJoinNode);
+				iterationSprite.addAttribute("ui.class", "counter");
+				iterationSprite.attachToNode(currentJoinNode);
+				iterationSprite.setPosition(StyleConstants.Units.PX, 58, 362, -90);
 			}
 		}
 
@@ -310,7 +339,43 @@ public class Visualization {
 //        String color = "rgb(255, " + gb + ", " + gb + ")";
 //        graph.getNode(node)
 //                .addAttribute("ui.style", "fill-color: " + color + ";");
+
 		graph.getNode(node).addAttribute("ui.size", gb);
+
+	}
+
+	/**
+	 * Change the transparency based on the current iteration and last iteration
+	 * node was touched.
+	 * 
+	 * @param node nodeId
+	 */
+	private void changeNodeTransparency(String node) {
+
+		String substring = node.substring(0, node.length() - 1).isEmpty() ? "root"
+				: node.substring(0, node.length() - 1);
+
+		Sprite joinSprite = spriteManager.getSprite("S#" + substring + "--" + node);
+
+		if (joinSprite != null) {
+
+			joinSprite.setAttribute("ui.class", "join");
+		}
+
+		Color baseColor = (Color) graph.getNode(node).getAttribute("ui.basecolor") == null ? Color.LIGHT_GRAY
+				: (Color) graph.getNode(node).getAttribute("ui.basecolor");
+		graph.getNode(node).setAttribute("ui.color", baseColor);
+//		graph.getNode(node).addAttribute("ui.color", );
+		Color nodeColor = graph.getNode(node).getAttribute("ui.color");
+		int red = nodeColor.getRed();
+		int green = nodeColor.getGreen();
+		int blue = nodeColor.getBlue();
+
+		int totalIterations = count;
+		int iterations = iteration.getOrDefault(node, count);
+
+		graph.getNode(node).addAttribute("ui.color", new Color(red, green, blue,
+				(int) (((double) 255 - (Math.min(((double) totalIterations - iterations) / 100, 10)) * 25.5))));
 	}
 
 	/**
@@ -332,12 +397,30 @@ public class Visualization {
 			rewardSum.put(currentJoinNode, reward + maxReward.get(currentJoinNode));
 		}
 
+		if (!iteration.containsKey(currentJoinNode)) {
+			iteration.put(currentJoinNode, count);
+		} else {
+			iteration.put(currentJoinNode, count);
+		}
+
+		graph.getNode(currentJoinNode).addAttribute("ui.color", Color.LIGHT_GRAY);
+
 		Sprite rewardSprite = spriteManager.getSprite("SM#" + currentJoinNode);
 		rewardSprite.setAttribute("ui.label", "Max: " + String.format("%6.2e", maxReward.get(currentJoinNode)));
 
 		Sprite averageRewardSprite = spriteManager.getSprite("SA#" + currentJoinNode);
 		double average = rewardSum.get(currentJoinNode) / numVisits.get(currentJoinNode);
 		averageRewardSprite.setAttribute("ui.label", "Average: " + String.format("%6.2e", average));
+
+		Sprite iterationSprite = spriteManager.getSprite("SM#" + currentJoinNode + "SA#" + currentJoinNode);
+		iterationSprite.setAttribute("ui.label", "Iteration: " + count);
+
+		String substring = currentJoinNode.substring(0, currentJoinNode.length() - 1).isEmpty() ? "root"
+				: currentJoinNode.substring(0, currentJoinNode.length() - 1);
+
+		Sprite joinSprite = spriteManager.getSprite("S#" + substring + "--" + currentJoinNode);
+
+		joinSprite.setAttribute("ui.class", "visible");
 	}
 
 	private void sleep(int ms) {
