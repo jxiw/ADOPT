@@ -18,6 +18,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import visualizationHyperCube.DataParser;
 
 /**
  * Main JavaFX code
@@ -48,7 +49,7 @@ public class HelloFX extends Application {
 
 	@Override
 	public void start(Stage stage) throws IOException {
-		parser = new DataParser(FILE_PATH);
+		parser = new DataParser(totalVisualization.HelloFX.globalFileName);
 		int[] bounds = parser.getBounds();
 
 		// Speed Slider

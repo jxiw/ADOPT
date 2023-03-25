@@ -48,7 +48,7 @@ public class HelloFX extends Application {
 
 	@Override
 	public void start(Stage stage) throws IOException {
-		parser = new DataParser(FILE_PATH);
+		parser = new DataParser(totalVisualization.HelloFX.globalFileName);
 		int[] bounds = parser.getBounds();
 
 		// Speed Slider

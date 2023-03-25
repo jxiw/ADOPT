@@ -46,7 +46,7 @@ public class HelloFX extends Application {
 
 	@Override
 	public void start(Stage stage) throws IOException {
-		parser = new DataParser("src/visualizationHyperCube/run4_budget.txt");
+		parser = new DataParser(totalVisualization.HelloFX.globalFileName);
 		BorderPane group = new BorderPane();
 		group.setStyle("-fx-background-color: White;");
 		group.setStyle("-fx-background-color: White;");
