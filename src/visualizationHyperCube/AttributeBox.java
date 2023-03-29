@@ -21,7 +21,7 @@ public class AttributeBox extends VBox {
 	private Text attributeText;
 	private Text lowerBoundText;
 	private Text upperBoundText;
-	private final int attributeNum;
+	private final String attributeName;
 	private final int lowerBound;
 	private final int upperBound;
 
@@ -32,18 +32,20 @@ public class AttributeBox extends VBox {
 	 * @param lowerBound The lowerbound to display on the upper left of the box.
 	 * @param upperBound The upperbound to display on the bottom left of the box,
 	 */
-	public AttributeBox(Stage stage, int lowerBound, int upperBound, int attributeNum) {
-		this.attributeNum = attributeNum;
+	public AttributeBox(Stage stage, int lowerBound, int upperBound, String attributeName) {
+		this.attributeName = attributeName;
 		this.lowerBound = lowerBound;
 		this.upperBound = upperBound;
 		vbox = new VBox();
 		vbox.setAlignment(Pos.CENTER);
-		attributeText = new Text("a" + Integer.toString(attributeNum));
-		attributeText.setFont(new Font(32));
+		attributeText = new Text(attributeName);
+		attributeText.setFont(new Font(36));
 		attributeText.setFill(Color.RED);
 		attributeText.setTextAlignment(TextAlignment.CENTER);
 		lowerBoundText = new Text("Lower Bound: " + Integer.toString(lowerBound));
+		lowerBoundText.setFont(new Font(32));
 		upperBoundText = new Text("Upper Bound: " + Integer.toString(upperBound));
+		upperBoundText.setFont(new Font(32));
 		getChildren().addAll(attributeText, lowerBoundText, vbox, upperBoundText);
 
 	}

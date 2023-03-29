@@ -108,7 +108,7 @@ public class Visualization {
 
 		textPane = new JTextPane();
 		textPane.setFont(new Font("Serif", Font.PLAIN, 48));
-		textPane.setBounds(25, 50, 300, 250);
+		textPane.setBounds(25, 50, 300, 200);
 		for (int i = 0; i < lightColumns.size(); i++) {
 			String index = lightColumns.get(i);
 			print(textPane, "⬤", colors[i], Color.WHITE);

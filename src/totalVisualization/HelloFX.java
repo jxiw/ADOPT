@@ -45,26 +45,33 @@ public class HelloFX extends Application {
 
 		VBox leftButtons = new VBox();
 		leftButtons.setAlignment(Pos.TOP_LEFT);
-		Button button = new Button("Tree");
+		Button button = new Button("Visualize Tree");
 		button.setFont(new Font(24));
 		button.setPrefWidth(350);
 		button.setPrefHeight(75);
 		button.setOnMouseClicked(e -> {
 			selectedProgram = "Tree";
 		});
-		Button button2 = new Button("Hypercube");
+		Button button2 = new Button("Visualize Hypercube");
 		button2.setPrefWidth(350);
 		button2.setPrefHeight(75);
 		button2.setFont(new Font(24));
 		button2.setOnMouseClicked(e -> {
 			selectedProgram = "Hypercube";
 		});
-		Button button3 = new Button("PieChart");
+		Button button3 = new Button("Statistics of Attribute Order");
 		button3.setPrefWidth(350);
 		button3.setPrefHeight(75);
 		button3.setFont(new Font(24));
 		button3.setOnMouseClicked(e -> {
-			selectedProgram = "PieChart";
+			selectedProgram = "AttributePieChart";
+		});
+		Button button4 = new Button("Statistics of Thread");
+		button4.setPrefWidth(350);
+		button4.setPrefHeight(75);
+		button4.setFont(new Font(24));
+		button4.setOnMouseClicked(e -> {
+			selectedProgram = "ThreadPieChart";
 		});
 		VBox rightButtons = new VBox();
 		Button fileOpener = new Button("Select Log File");
@@ -91,17 +98,28 @@ public class HelloFX extends Application {
 		center.getChildren().addAll(filePrompt, fileName);
 		center.setAlignment(Pos.TOP_CENTER);
 
-		leftButtons.getChildren().addAll(button, button2, button3);
+		leftButtons.getChildren().addAll(button, button2, button3, button4);
 
 		HBox bottom = new HBox();
 		Button bottomStart = new Button("Start");
 		bottomStart.setOnMouseClicked(e -> {
 
-			if (selectedProgram == "PieChart") {
+			if (selectedProgram == "AttributePieChart") {
 				Platform.runLater(new Runnable() {
 					public void run() {
 						try {
-							(new visualizationPieChart.HelloFX()).start(new Stage());
+							(new visualizationAttributePieChart.HelloFX()).start(new Stage());
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				});
+			} else if (selectedProgram == "ThreadPieChart") {
+				Platform.runLater(new Runnable() {
+					public void run() {
+						try {
+							(new visualizationThreadPieChart.HelloFX()).start(new Stage());
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();

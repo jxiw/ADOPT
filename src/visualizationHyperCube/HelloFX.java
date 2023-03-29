@@ -50,6 +50,7 @@ public class HelloFX extends Application {
 	public void start(Stage stage) throws IOException {
 		parser = new DataParser(totalVisualization.HelloFX.globalFileName);
 		int[] bounds = parser.getBounds();
+		String[] attributes = parser.getAttributes();
 
 		// Speed Slider
 		VBox bottom = new VBox();
@@ -88,9 +89,9 @@ public class HelloFX extends Application {
 
 		// Center Attribute Boxes
 		HBox boxHolder = new HBox();
-		boxOne = new AttributeBox(stage, bounds[0], bounds[1], 1);
-		boxTwo = new AttributeBox(stage, bounds[2], bounds[3], 2);
-		boxThree = new AttributeBox(stage, bounds[4], bounds[5], 3);
+		boxOne = new AttributeBox(stage, bounds[0], bounds[1], attributes[0]);
+		boxTwo = new AttributeBox(stage, bounds[2], bounds[3], attributes[1]);
+		boxThree = new AttributeBox(stage, bounds[4], bounds[5], attributes[2]);
 		boxOne.setTranslateX(50);
 		boxThree.setTranslateX(-50);
 		boxOne.setAlignment(Pos.CENTER);

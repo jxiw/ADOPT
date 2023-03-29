@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 
 public class VisualRunner {
 
-	private final static Pattern attributePattern = Pattern.compile("attribute order:\\[(.*)\\]");
+	private final static Pattern attributePattern = Pattern.compile("attribute order:\\[(.*)\\], values:");
 
-	private final static Pattern pattern = Pattern.compile("lftj order index:\\[(.*)\\], reward:(.*)");
+	private final static Pattern pattern = Pattern.compile("lftj order index:\\[(.*)\\], reward:(.*?),");
 
 	public void analysisFile(String logFilePath) {
 		try {
