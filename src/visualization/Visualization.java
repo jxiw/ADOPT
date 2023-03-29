@@ -90,6 +90,7 @@ public class Visualization {
 		graph = new SingleGraph("");
 		viewer = graph.display(false);
 		viewer.setCloseFramePolicy(Viewer.CloseFramePolicy.CLOSE_VIEWER);
+
 		viewer.disableAutoLayout();
 		view = viewer.getDefaultView();
 		view.setLayout(null);

@@ -159,8 +159,6 @@ public class HelloFX extends Application {
 				tempData.getNode().addEventHandler(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
 					@Override
 					public void handle(MouseEvent e) {
-						caption.setTranslateX(e.getSceneX() / 3);
-						caption.setTranslateY(e.getSceneY() / 3);
 						caption.setText(String.valueOf(df.format(tempData.getPieValue() / totalData * 100)) + "%");
 					}
 				});
@@ -182,8 +180,8 @@ public class HelloFX extends Application {
 				tempData2.getNode().addEventHandler(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
 					@Override
 					public void handle(MouseEvent e) {
-						caption.setTranslateX(e.getSceneX() / 3);
-						caption.setTranslateY(e.getSceneY() / 3);
+						caption.setTranslateX(-550);
+						caption.setTranslateY(100);
 						caption.setText(String.valueOf(df.format(tempData2.getPieValue() / totalData * 100)) + "%");
 					}
 				});

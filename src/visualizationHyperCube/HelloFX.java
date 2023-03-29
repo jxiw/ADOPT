@@ -137,7 +137,7 @@ public class HelloFX extends Application {
 //		root.getChildren().add(bp);
 
 		Scene scene = new Scene(bp, 1920, 1000);
-		stage.setMinWidth(1920);
+//		stage.setMinWidth(1920);
 
 		// Handles pausing
 		scene.setOnKeyPressed((e) -> {
