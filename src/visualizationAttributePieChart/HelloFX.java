@@ -84,13 +84,13 @@ public class HelloFX extends Application {
 		final PieChart chart = new PieChart(pieChartData);
 		final PieChart chart2 = new PieChart(pieChartData2);
 		chart.setAnimated(false);
-		chart.setTitle("Proceed Volume of Different Attribute Orders");
+		chart.setTitle("Proceed Volume Breakdown by Attribute Orders");
 		chart.setLegendSide(Side.LEFT);
 		chart.setTitleSide(Side.BOTTOM);
 		chart.setStyle("-fx-font-size: " + 28 + "px;");
 
 		chart2.setAnimated(false);
-		chart2.setTitle("Execution Time of Different Attribute Orders");
+		chart2.setTitle("Execution Time Breakdown by Attribute Orders");
 		chart2.setTitleSide(Side.BOTTOM);
 		chart2.setLegendVisible(false);
 		chart2.setStyle("-fx-font-size: " + 28 + "px;");
