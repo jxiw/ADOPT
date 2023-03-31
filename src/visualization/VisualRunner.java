@@ -1,7 +1,5 @@
 package visualization;
 
-import totalVisualization.HelloFX;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -56,7 +54,7 @@ public class VisualRunner {
 
 	public static void main(String[] args) {
 		VisualRunner visualRunner = new VisualRunner();
-		visualRunner.analysisFile(HelloFX.globalFileName);
+		visualRunner.analysisFile(totalVisualization.HelloFX.globalFileName);
 	}
 
 }
