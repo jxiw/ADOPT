@@ -1,0 +1,6 @@
+.button {
+	-fx-focus-color: black;
+}
+.combo-box {
+    -fx-font-size : 16pt;
+}
