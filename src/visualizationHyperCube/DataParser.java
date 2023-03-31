@@ -40,7 +40,6 @@ public class DataParser {
 
 		while (true) {
 			String line = scan.nextLine();
-
 			Matcher n = spacePattern.matcher(line);
 			if (n.find()) {
 				String attributeContent = n.group(1);

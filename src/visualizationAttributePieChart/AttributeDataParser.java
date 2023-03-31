@@ -20,9 +20,14 @@ public class AttributeDataParser {
 
 	private final static Pattern hypercubePattern = Pattern.compile("\\[(.*?)\\]");
 
+	private final static Pattern spacePattern = Pattern.compile("attribute order:\\[(.*)\\], values:\\[(.*)\\]");
+
 	private final static Pattern executionTimePattern = Pattern.compile("thread:(.*), execution time in ms:(.*)");
 
 	private final static int maxThread = 32;
+
+	private List<String> attributes = new ArrayList<>();
+
 	/**
 	 * Constructor for data parser.
 	 * 
@@ -40,6 +45,19 @@ public class AttributeDataParser {
 			System.exit(1);
 		}
 
+		while (true) {
+			String line = scan.nextLine();
+			Matcher n = spacePattern.matcher(line);
+			if (n.find()) {
+				String attributeContent = n.group(1);
+				Matcher attributeMatch =  hypercubePattern.matcher(attributeContent);
+				while (attributeMatch.find()) {
+					String attribute = attributeMatch.group(1);
+					attributes.add(attribute);
+				}
+				break;
+			}
+		}
 	}
 
 	/**

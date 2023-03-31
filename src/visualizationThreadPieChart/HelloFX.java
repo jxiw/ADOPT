@@ -83,7 +83,7 @@ public class HelloFX extends Application {
 		final PieChart chart = new PieChart(pieChartData);
 		final PieChart chart2 = new PieChart(pieChartData2);
 		chart.setAnimated(false);
-		chart.setTitle("Proceed Volume Breakdown by Threads");
+		chart.setTitle("Processed Volume Breakdown by Threads");
 		chart.setLegendSide(Side.LEFT);
 		chart.setTitleSide(Side.BOTTOM);
 		chart.setStyle("-fx-font-size: " + 28 + "px;");
