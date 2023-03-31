@@ -4,3 +4,7 @@
 .combo-box {
     -fx-font-size : 16pt;
 }
+
+#selected {
+	-fx-background-color: Gray;
+}
