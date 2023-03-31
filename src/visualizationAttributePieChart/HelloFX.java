@@ -43,6 +43,8 @@ public class HelloFX extends Application {
 	private int tempSpeed = -1;
 	private double totalData = 0;
 	private static final DecimalFormat df = new DecimalFormat("0.00");
+	private int nSample = 0;
+	private Text topText;
 
 	@Override
 	public void start(Stage stage) throws IOException {
@@ -98,9 +100,24 @@ public class HelloFX extends Application {
 		caption.setTextFill(Color.BLACK);
 		caption.setStyle("-fx-font: 24 arial;");
 
+		VBox top = new VBox();
+		topText = new Text();
+		topText.setText(String.format("Sample: %d/%d", 0, AttributeDataParser.totalSample));
+		topText.setFont(new Font(32));
+
+		Text attributeText = new Text();
+		attributeText.setText(AttributeDataParser.showAttributeInString());
+		attributeText.setFont(new Font(32));
+
+//		Text queryText = new Text();
+//		queryText.setText(runQuery);
+//		queryText.setFont(new Font(32));
+		top.getChildren().addAll(topText, attributeText);
+
 		group.getChildren().addAll(caption);
 		HBox center = new HBox();
 		center.getChildren().addAll(chart, chart2, caption);
+		group.setTop(top);
 		group.setCenter(center);
 		group.setBottom(bottom);
 
@@ -143,6 +160,8 @@ public class HelloFX extends Application {
 
 			Object[] data = parser.getNext();
 			if ((Double) data[1] < 0) {
+				nSample = Math.min(nSample + 1, AttributeDataParser.totalSample);
+				this.topText.setText(String.format("Sample: %d/%d", nSample, AttributeDataParser.totalSample));
 				return;
 			}
 
@@ -198,6 +217,8 @@ public class HelloFX extends Application {
 				});
 			}
 
+			nSample = Math.min(nSample + 1, AttributeDataParser.totalSample);
+			this.topText.setText(String.format("Sample: %d/%d", nSample, AttributeDataParser.totalSample));
 		}
 
 	}

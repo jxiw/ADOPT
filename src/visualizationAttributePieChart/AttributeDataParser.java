@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class AttributeDataParser {
 //	public static final double TOTAL_VOLUME = Math.pow(564882983 - 13 + 1, 3);
@@ -26,7 +28,9 @@ public class AttributeDataParser {
 
 	private final static int maxThread = 32;
 
-	private List<String> attributes = new ArrayList<>();
+	private static List<String> attributes = new ArrayList<>();
+
+	public static int totalSample = 0;
 
 	/**
 	 * Constructor for data parser.
@@ -45,18 +49,25 @@ public class AttributeDataParser {
 			System.exit(1);
 		}
 
-		while (true) {
-			String line = scan.nextLine();
-			Matcher n = spacePattern.matcher(line);
-			if (n.find()) {
-				String attributeContent = n.group(1);
-				Matcher attributeMatch =  hypercubePattern.matcher(attributeContent);
-				while (attributeMatch.find()) {
-					String attribute = attributeMatch.group(1);
-					attributes.add(attribute);
+		totalSample = 0;
+		try (BufferedReader br = new BufferedReader(new FileReader(filepath))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				Matcher n = spacePattern.matcher(line);
+				if (n.find()) {
+					String attributeContent = n.group(1);
+					Matcher attributeMatch =  hypercubePattern.matcher(attributeContent);
+					while (attributeMatch.find()) {
+						String attribute = attributeMatch.group(1);
+						attributes.add(attribute);
+					}
 				}
-				break;
+				if (line.startsWith("log lftj order")) {
+					totalSample += 1;
+				}
 			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -155,6 +166,12 @@ public class AttributeDataParser {
 			}
 		}
 		return allVol + 1;
+	}
+
+	public static String showAttributeInString() {
+		return IntStream.range(0, attributes.size())
+				.mapToObj(i -> i + ": [" + attributes.get(i) + "]")
+				.collect(Collectors.joining(", "));
 	}
 
 	public static void main(String[] args) {

@@ -46,6 +46,9 @@ public class HelloFX extends Application {
 	private AttributeBox boxThree;
 	private DataParser parser;
 
+	private int nSample = 0;
+	private Text topText;
+
 	@Override
 	public void start(Stage stage) throws IOException {
 		parser = new DataParser(totalVisualization.HelloFX.globalFileName);
@@ -84,8 +87,13 @@ public class HelloFX extends Application {
 		threadText = new Text();
 		threadText.setFont(new Font(36));
 		threadText.setText("Thread Number: (None) ");
+
+		topText = new Text();
+		topText.setText(String.format("Sample: %d/%d ", 0, DataParser.totalSample));
+		topText.setFont(new Font(36));
+
 		HBox textHolder = new HBox();
-		textHolder.getChildren().addAll(chunkText, threadText);
+		textHolder.getChildren().addAll(topText, chunkText, threadText);
 
 		// Center Attribute Boxes
 		HBox boxHolder = new HBox();
@@ -289,6 +297,8 @@ public class HelloFX extends Application {
 				boxThree.addThread(data[6], data[4], data[5]);
 			}
 
+			nSample = Math.min(nSample + 1, DataParser.totalSample);
+			this.topText.setText(String.format("Sample: %d/%d ", nSample, DataParser.totalSample));
 		}
 
 	}

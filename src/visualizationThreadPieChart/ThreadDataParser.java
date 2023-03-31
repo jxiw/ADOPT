@@ -25,6 +25,9 @@ public class ThreadDataParser {
 	private final static Pattern executionTimePattern = Pattern.compile("thread:(.*), execution time in ms:(.*)");
 
 	private final static int maxThread = 32;
+
+	public static int totalSample = 0;
+
 	/**
 	 * Constructor for data parser.
 	 * 
@@ -43,6 +46,7 @@ public class ThreadDataParser {
 		}
 
 		int threadId=0;
+		totalSample = 0;
 		try (BufferedReader br = new BufferedReader(new FileReader(filepath))) {
 			String line;
 			while ((line = br.readLine()) != null) {
@@ -51,6 +55,9 @@ public class ThreadDataParser {
 					double execTime = Double.parseDouble(executionTimeMatcher.group(2));
 					threadExecTime.put(threadId, execTime);
 					threadId++;
+				}
+				if (line.startsWith("log lftj order")) {
+					totalSample += 1;
 				}
 			}
 		} catch (IOException e) {

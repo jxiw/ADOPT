@@ -1,7 +1,9 @@
 package visualizationHyperCube;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,6 +21,8 @@ public class DataParser {
 	private final static Pattern lftjPattern = Pattern.compile("lftj order index:(.*), reward:(.*), threadId:(.*), select cube:hypercube:(.*), exploreDomain:\\[(.*)\\], (endValues:|finish hypercubes)(.*)");
 
 	private final static Pattern hypercubePattern = Pattern.compile("\\[(.*?)\\]");
+
+	public static int totalSample = 0;
 
 	/**
 	 * Constructor for data parser.
@@ -38,37 +42,44 @@ public class DataParser {
 			System.exit(1);
 		}
 
-		while (true) {
-			String line = scan.nextLine();
-			Matcher n = spacePattern.matcher(line);
-			if (n.find()) {
-				String attributeContent = n.group(1);
-				String rangeContent = n.group(2);
-				Matcher attributeMatch =  hypercubePattern.matcher(attributeContent);
-				Matcher rangeMatch = hypercubePattern.matcher(rangeContent);
-				int dimensionId = 0;
-				while (attributeMatch.find()) {
-					String attribute = attributeMatch.group(1);
-					attributes[dimensionId] = attribute;
-					dimensionId++;
-					if (dimensionId >=3) {
-						break;
+		totalSample = 0;
+		try (BufferedReader br = new BufferedReader(new FileReader(filepath))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				if (line.startsWith("log lftj order")) {
+					totalSample += 1;
+				}
+				Matcher n = spacePattern.matcher(line);
+				if (n.find()) {
+					String attributeContent = n.group(1);
+					String rangeContent = n.group(2);
+					Matcher attributeMatch = hypercubePattern.matcher(attributeContent);
+					Matcher rangeMatch = hypercubePattern.matcher(rangeContent);
+					int dimensionId = 0;
+					while (attributeMatch.find()) {
+						String attribute = attributeMatch.group(1);
+						attributes[dimensionId] = attribute;
+						dimensionId++;
+						if (dimensionId >= 3) {
+							break;
+						}
+					}
+					dimensionId = 0;
+					while (rangeMatch.find()) {
+						String rangeValue = rangeMatch.group(1);
+						String[] rangeArray = rangeValue.split(",");
+						bounds[2 * dimensionId] = Integer.parseInt(rangeArray[0].trim());
+						bounds[2 * dimensionId + 1] = Integer.parseInt(rangeArray[1].trim());
+						dimensionId++;
+						if (dimensionId >= 3) {
+							break;
+						}
 					}
 				}
-				dimensionId = 0;
-				while (rangeMatch.find()) {
-					String rangeValue = rangeMatch.group(1);
-					String[] rangeArray = rangeValue.split(",");
-					bounds[2 * dimensionId] = Integer.parseInt(rangeArray[0].trim());
-					bounds[2 * dimensionId + 1] = Integer.parseInt(rangeArray[1].trim());
-					dimensionId++;
-					if (dimensionId >=3) {
-						break;
-					}
-				}
-				break;
 			}
-
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 //			if (line.length() >= 15 && line.substring(0, 15).equals("attribute order")) {
 //				String[] temp = line.split(":");
@@ -84,7 +95,6 @@ public class DataParser {
 //				break;
 //			}
 
-		}
 	}
 
 	/**
