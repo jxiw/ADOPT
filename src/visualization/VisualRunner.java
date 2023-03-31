@@ -16,9 +16,21 @@ public class VisualRunner {
 
 	private final static Pattern pattern = Pattern.compile("lftj order index:\\[(.*)\\], reward:(.*?),");
 
+	public static int totalSample = 0;
+
 	public void analysisFile(String logFilePath) {
 		try {
 			System.out.println(logFilePath);
+			try (BufferedReader br = new BufferedReader(new FileReader(logFilePath))) {
+				String line;
+				while ((line = br.readLine()) != null) {
+					if (line.startsWith("log lftj order")) {
+						totalSample += 1;
+					}
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			Visualization adoptVisualization = new Visualization();
 			BufferedReader br = new BufferedReader(new FileReader(logFilePath));
 			String line = br.readLine();

@@ -101,7 +101,7 @@ public class Visualization {
 		layout = new TreeLayout(graph);
 
 		iterationCounter = 0;
-		counterLabel = new JLabel("Number of Samples: " + iterationCounter);
+		counterLabel = new JLabel("Number of Samples: " + iterationCounter + "/" + VisualRunner.totalSample);
 		counterLabel.setFont(new Font("Serif", Font.PLAIN, 32));
 		counterLabel.setBounds(25, 0, 500, 50);
 		view.add(counterLabel);
@@ -237,7 +237,7 @@ public class Visualization {
 	 */
 	private void incrementCounter() {
 		iterationCounter++;
-		counterLabel.setText("Number of Samples: " + iterationCounter);
+		counterLabel.setText("Number of Samples: " + iterationCounter + "/" + VisualRunner.totalSample);
 	}
 
 	/**
