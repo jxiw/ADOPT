@@ -37,7 +37,7 @@ public class AdoptVisual extends JFrame {
                 File chosenFile = chooser.getSelectedFile();
                 logFilePath = chosenFile.getAbsolutePath();
                 textField.setText(logFilePath);
-                totalVisualization.HelloFX.globalFileName = logFilePath;
+                HelloFX.globalFileName = logFilePath;
             }
         });
 
