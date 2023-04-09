@@ -1,8 +1,5 @@
 package joining.join.wcoj;
 
-import joining.progress.Progress;
-import joining.progress.State;
-
 public class ProgressLFTJ {
     /**
      * Latest state reached by any join order sharing

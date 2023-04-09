@@ -1,8 +1,8 @@
 package joining.join.wcoj;
 
-import config.JoinConfig;
 import data.IntData;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class LFTJoin {
@@ -68,6 +68,7 @@ public class LFTJoin {
 
     public int seek(int seekKey) {
         // Search next tuple in current range
+//        System.out.println("cur ub:" + curUBs[curTrieLevel]);
         int[] nextInfo =  seekInRangeExp(seekKey, curUBs[curTrieLevel]);
         int next = nextInfo[0];
         // Did we find a tuple?
@@ -204,6 +205,22 @@ public class LFTJoin {
      */
     public int rid() {
         return lftJiter.tupleOrder[this.curTuples[this.curTrieLevel]];
+    }
+
+    public ArrayList<Integer> rids() {
+        // return rids has same join value
+        int startSortIdx = this.curTuples[this.curTrieLevel];
+        int rowIdx = this.lftJiter.tupleOrder[startSortIdx];
+        ArrayList<Integer> results =  new ArrayList<>();
+        results.add(rowIdx);
+        for (int i = startSortIdx + 1; i < this.lftJiter.tupleOrder.length; i++) {
+            if (this.lftJiter.compareTuples(this.lftJiter.tupleOrder[i], rowIdx) == 0) {
+                results.add(this.lftJiter.tupleOrder[i]);
+            } else {
+                break;
+            }
+        }
+        return results;
     }
 
     /**

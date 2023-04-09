@@ -5,10 +5,13 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.List;
 
-//import joining.result.ResultTuple;
+import indexing.Index;
+import joining.result.ResultTuple;
 
 /**
  * Represents data contained in one table column.
+ * 
+ * @author immanueltrummer
  *
  */
 public abstract class ColumnData implements Serializable {
@@ -39,6 +42,13 @@ public abstract class ColumnData implements Serializable {
 	 * @return		-1, 0, 1 depending on element comparison
 	 */
 	public abstract int compareRows(int row1, int row2);
+	/**
+	 * Returns long value for element in specified row.
+	 *
+	 * @param row	index of row to hash
+	 * @return		long value for given row element
+	 */
+	public abstract long longForRow(int row);
 	/**
 	 * Returns hash code for element in specified row.
 	 * 
@@ -74,6 +84,16 @@ public abstract class ColumnData implements Serializable {
 	 */
 	public abstract ColumnData copyRows(List<Integer> rowsToCopy);
 	/**
+	 * Produces new column by copying rows with given range indices
+	 * (the same row may be copied multiple times).
+	 *
+	 * @param first			first id
+	 * @param last			last row id
+	 * @param index			filtered index
+	 * @return				new column with copied rows
+	 */
+	public abstract ColumnData copyRangeRows(int first, int last, Index index);
+	/**
 	 * Produces new column by copying rows with indices
 	 * given as a bit set.
 	 * 
@@ -91,7 +111,7 @@ public abstract class ColumnData implements Serializable {
 	 * @return			new column that copies given rows
 	 */
 	public abstract ColumnData copyRows(
-			List<int[]> tuples, int tableIdx);
+			Collection<ResultTuple> tuples, int tableIdx);
 	/**
 	 * Returns number of rows stored for column.
 	 * 
@@ -100,5 +120,4 @@ public abstract class ColumnData implements Serializable {
 	public int getCardinality() {
 		return cardinality;
 	}
-
 }

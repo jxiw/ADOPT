@@ -26,7 +26,7 @@ import types.TypeUtil;
  * Evaluates a given expression on each row of a source table and
  * stores results in newly created column.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class MapRows {
@@ -42,7 +42,7 @@ public class MapRows {
 	 * 						result contains one row per group if specified.
 	 * @param nrGroups		specifies the number of groups (not used if
 	 * 						no group reference is specified).
-	 * @param targetCol		store results in this target column
+	 * @param targetRef		store results in this target column
 	 * @throws Exception
 	 */
 	public static void execute(String sourceRel, ExpressionInfo expression, 

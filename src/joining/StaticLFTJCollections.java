@@ -1,7 +1,6 @@
 package joining;
 
 import buffer.BufferManager;
-import config.JoinConfig;
 import data.ColumnData;
 import data.IntData;
 import joining.join.wcoj.StaticLFTJ;
@@ -12,9 +11,7 @@ import query.QueryInfo;
 import util.ArrayUtil;
 import util.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class StaticLFTJCollections {
@@ -27,9 +24,10 @@ public class StaticLFTJCollections {
 
     static List<Pair<Integer, Integer>> joinValueBound;
 
-    static long initTime = 0;
+    public static Map<ColumnRef, int[]> joinValueBoundCache =
+            new HashMap<>();
 
-    public static void init(QueryInfo query, Context executionContext) throws Exception {
+    public static boolean init(QueryInfo query, Context executionContext) throws Exception {
         StaticLFTJCollections.query = query;
         StaticLFTJCollections.executionContext = executionContext;
         StaticLFTJCollections.staticLFTJMap = new ConcurrentHashMap<>();
@@ -43,22 +41,36 @@ public class StaticLFTJCollections {
                 // Retrieve corresponding data
                 String alias = attribute.aliasName;
                 String table = executionContext.aliasToFiltered.get(alias);
-                if (JoinConfig.DISTINCT_START) {
-                    table = executionContext.aliasToDistinct.get(alias);
-                }
                 String column = attribute.columnName;
                 ColumnRef baseRef = new ColumnRef(table, column);
-                ColumnData columnData = BufferManager.getData(baseRef);
-                System.out.println(columnData.getClass().getName());
-                if (columnData instanceof IntData) {
-                    IntData columnIntData = (IntData) columnData;
-                    lb = Math.max(lb, ArrayUtil.getLowerBound(columnIntData.data));
-                    ub = Math.min(ub, ArrayUtil.getUpperBound(columnIntData.data));
-                    System.out.println("lb:" + lb + ", ub:" + ub +", card:" + columnIntData.cardinality);
+                long start = System.currentTimeMillis();
+                if (joinValueBoundCache.containsKey(baseRef)) {
+                    int[] bound = joinValueBoundCache.get(baseRef);
+                    lb = Math.max(lb, bound[0]);
+                    ub = Math.max(ub, bound[1]);
+                } else {
+                    ColumnData columnData = BufferManager.getData(baseRef);
+                    if (columnData instanceof IntData) {
+                        IntData columnIntData = (IntData) columnData;
+                        if (columnIntData.data == null || columnIntData.data.length == 0) {
+                            return false;
+                        }
+                        int ilb = ArrayUtil.getLowerBound(columnIntData.data);
+                        int iub = ArrayUtil.getUpperBound(columnIntData.data);
+                        lb = Math.max(lb, ilb);
+                        ub = Math.min(ub, iub);
+//                        if (!table.contains(FILTERED_PRE)) {
+//                            joinValueBoundCache.put(baseRef, new Pair<>(ilb, iub));
+//                        }
+                        System.out.println("baseRef:" + baseRef + ", card:" + columnIntData.data.length);
+                    }
                 }
+                System.out.println("baseRef:" + baseRef + ", min:" + lb  + ", max:" + ub);
+                System.out.println("min max duration:" + (System.currentTimeMillis() - start));
             }
             joinValueBound.add(new Pair<>(lb, ub));
         }
+        return true;
     }
 
     public static StaticLFTJ generateLFTJ(AttributeOrder order) throws Exception {
@@ -66,8 +78,11 @@ public class StaticLFTJCollections {
             if (staticLFTJMap.contains(order)) {
                 return staticLFTJMap.get(order);
             } else {
+//                long startMillis = System.currentTimeMillis();
                 StaticLFTJ staticLFTJ = new StaticLFTJ(query, executionContext, order.order, joinValueBound);
                 staticLFTJMap.put(order, staticLFTJ);
+//                long endMillis = System.currentTimeMillis();
+//                System.out.println("duration for StaticLFTJ:" + (endMillis - startMillis));
                 return staticLFTJ;
             }
         }

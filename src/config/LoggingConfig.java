@@ -4,14 +4,14 @@ package config;
  * Configures debugging output for different stages of
  * query analysis and query processing.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class LoggingConfig {
 	/**
 	 * Whether to log sub-queries generated during unnesting.
 	 */
-	public final static boolean UNNESTING_VERBOSE = false;
+	public final static boolean UNNESTING_VERBOSE = true;
 	/**
 	 * Whether to log intermediate steps during query analysis.
 	 */
@@ -60,4 +60,12 @@ public class LoggingConfig {
 	 * Whether to generate debugging output during post-processing.
 	 */
 	public final static boolean POST_PROCESSING_VERBOSE = false;
+	/**
+	 * Whether to generate debugging output during joining.parallel join.
+	 */
+	public final static boolean PARALLEL_JOIN_VERBOSE = false;
+	/**
+	 * Whether to generate performance output during.
+	 */
+	public final static boolean PERFORMANCE_VERBOSE = false;
 }

@@ -14,7 +14,7 @@ import net.sf.jsqlparser.schema.Table;
  * Collects all tables and columns referenced in a given expression.
  * Also collects LIKE expression and aggregates.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class CollectReferencesVisitor extends PlainVisitor {
@@ -53,8 +53,10 @@ public class CollectReferencesVisitor extends PlainVisitor {
 	@Override
 	public void visit(Function arg0) {
 		// Recursive collection
-		for (Expression param : arg0.getParameters().getExpressions()) {
-			param.accept(this);
+		if (arg0.getParameters() != null && arg0.getParameters().getExpressions() != null) {
+			for (Expression param : arg0.getParameters().getExpressions()) {
+				param.accept(this);
+			}
 		}
 		// Is it an aggregation function?
 		String functionName = arg0.getName().toLowerCase();

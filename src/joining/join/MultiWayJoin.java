@@ -1,11 +1,9 @@
 package joining.join;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import catalog.CatalogManager;
-import config.JoinConfig;
 import config.LoggingConfig;
 import expressions.ExpressionInfo;
 import expressions.compilation.EvaluatorType;
@@ -18,8 +16,11 @@ import query.QueryInfo;
 
 /**
  * A multi-way join operator that executes joins in small
- * episodes. Collects result tuples over different episodes
+ * episodes, using for each episode a newly specified join
+ * order. Collects result tuples over different episodes
  * and contains finally a complete join result.
+ * 
+ * @author immanueltrummer
  *
  */
 public abstract class MultiWayJoin {
@@ -43,16 +44,16 @@ public abstract class MultiWayJoin {
     /**
      * Maps non-equi join predicates to compiled evaluators.
      */
-//    protected final Map<Expression, KnaryBoolEval> predToEval;
+    protected final Map<Expression, KnaryBoolEval> predToEval;
     /**
      * Collects result tuples and contains
      * finally a complete result.
      */
-//    public static JoinResult result;
-
-//    static long superTime1 = 0;
-
-//    public static long superTime2 = 0;
+    public final JoinResult result;
+    /**
+     * A list of logs.
+     */
+    public List<String> logs;
     /**
      * This constructor only serves for testing purposes.
      * It initializes most field to null pointers.
@@ -65,77 +66,72 @@ public abstract class MultiWayJoin {
     	this.nrJoined = query.nrJoined;
     	this.preSummary = null;
     	this.cardinalities = null;
-//    	this.result = null;
-//    	predToEval = null;
-    }
-    /**
-     * Initializes join for given query, execution context,
-     * and for a freshly generated join result.
-     * 
-     * @param query				query to evaluate
-     * @param executionContext	execution context for join
-     * @throws Exception
-     */
-    public MultiWayJoin(QueryInfo query, 
-    		Context executionContext) throws Exception {
-    	this(query, executionContext, 
-    			new JoinResult(query.nrJoined));
+    	this.result = null;
+    	predToEval = null;
+        this.logs = new ArrayList<>();
     }
     /**
      * Initializes join operator for given query
-     * and given join result.
+     * and initialize new join result.
      * 
      * @param query			query to process
      * @param preSummary	summarizes pre-processing steps
-     * @param joinResult	insert result tuples here
      */
-    public MultiWayJoin(QueryInfo query, Context preSummary,
-    		JoinResult joinResult) throws Exception {
-//        long stime1 = System.currentTimeMillis();
+    public MultiWayJoin(QueryInfo query, Context preSummary) throws Exception {
         this.query = query;
         this.nrJoined = query.nrJoined;
         this.preSummary = preSummary;
         // Retrieve table cardinalities
         this.cardinalities = new int[nrJoined];
-//        for (Entry<String,Integer> entry :
-//        	query.aliasToIndex.entrySet()) {
-//        	String alias = entry.getKey();
-//        	String table = preSummary.aliasToFiltered.get(alias);
-//            if (JoinConfig.DISTINCT_START) {
-//                table = preSummary.aliasToDistinct.get(alias);
-//            }
-//        	int index = entry.getValue();
-//        	int cardinality = CatalogManager.getCardinality(table);
-//        	cardinalities[index] = cardinality;
-//        }
-//        long stime2 = System.currentTimeMillis();
-//        this.result = joinResult;
+        this.logs = new ArrayList<>();
+        for (Entry<String,Integer> entry : 
+        	query.aliasToIndex.entrySet()) {
+        	String alias = entry.getKey();
+        	String table = preSummary.aliasToFiltered.get(alias);
+        	int index = entry.getValue();
+        	int cardinality = CatalogManager.getCardinality(table);
+        	cardinalities[index] = cardinality;
+        }
+        this.result = new JoinResult(nrJoined);
         // Compile predicates
-//        predToEval = new HashMap<>();
-//        for (ExpressionInfo predInfo : query.wherePredicates) {
-//    		// Log predicate compilation if enabled
-//    		if (LoggingConfig.MAX_JOIN_LOGS>0) {
-//    			System.out.println("Compiling predicate " + predInfo + " ...");
-//    		}
-//    		// Compile predicate and store in lookup table
-//        	Expression pred = predInfo.finalExpression;
-//        	ExpressionCompiler compiler = new ExpressionCompiler(predInfo,
-//        			preSummary.columnMapping, query.aliasToIndex, null,
-//        			EvaluatorType.KARY_BOOLEAN);
-//        	predInfo.finalExpression.accept(compiler);
-//        	KnaryBoolEval boolEval = (KnaryBoolEval)compiler.getBoolEval();
-//        	predToEval.put(pred, boolEval);
-//        }
-//        long stime3 = System.currentTimeMillis();
-//        superTime1 += (stime2 - stime1);
-//        superTime2 += (stime3 - stime2);
-//        System.out.println("superTime 1:"+ superTime1);
-//        System.out.println("superTime 2:"+ superTime2);
+        predToEval = new HashMap<>();
+        for (ExpressionInfo predInfo : query.wherePredicates) {
+    		// Log predicate compilation if enabled
+    		if (LoggingConfig.MAX_JOIN_LOGS>0) {
+    			System.out.println("Compiling predicate " + predInfo + " ...");
+    		}
+    		// Compile predicate and store in lookup table
+        	Expression pred = predInfo.finalExpression;
+        	ExpressionCompiler compiler = new ExpressionCompiler(predInfo, 
+        			preSummary.columnMapping, query.aliasToIndex, null,
+        			EvaluatorType.KARY_BOOLEAN);
+        	predInfo.finalExpression.accept(compiler);
+        	KnaryBoolEval boolEval = (KnaryBoolEval)compiler.getBoolEval();
+        	predToEval.put(pred, boolEval);        		
+        }
     }
+    /**
+     * Executes given join order for a given number of steps.
+     * 
+     * @param order		execute this join order
+     * @return			reward (higher reward means faster progress)
+     * @throws Exception 
+     */
+    public abstract double execute(int[] order) throws Exception;
     /**
      * Returns true iff a complete join result was generated.
      * 
      * @return	true iff query processing is finished
      */
     public abstract boolean isFinished();
+    /**
+     * Put a log sentence into a list of logs.
+     *
+     * @param line      log candidate
+     */
+    public void writeLog(String line) {
+        if (LoggingConfig.PARALLEL_JOIN_VERBOSE) {
+            logs.add(line);
+        }
+    }
 }

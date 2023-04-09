@@ -3,7 +3,7 @@ package types;
 /**
  * Contains utility methods for dealing with types.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class TypeUtil {

@@ -10,12 +10,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-//import joining.result.ResultTuple;
+import indexing.Index;
+import joining.result.ResultTuple;
 
 /**
  * Represents content of string column.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class StringData extends ColumnData implements Serializable {
@@ -42,7 +43,12 @@ public class StringData extends ColumnData implements Serializable {
 			return cmp>0?1:(cmp<0?-1:0);
 		}
 	}
-	
+
+	@Override
+	public long longForRow(int row) {
+		return 0;
+	}
+
 	@Override
 	public int hashForRow(int row) {
 		return data[row].hashCode();
@@ -87,11 +93,26 @@ public class StringData extends ColumnData implements Serializable {
 	}
 
 	@Override
-	public ColumnData copyRows(List<int[]> tuples, int tableIdx) {
+	public ColumnData copyRangeRows(int first, int last, Index index) {
+		int cardinality = last - first;
+		StringData copyColumn = new StringData(cardinality);
+		int copiedRowCtr = 0;
+		for (int rid = first; rid < last; rid++) {
+			int row = index.sortedRow[rid];
+			// Treat special case: insertion of null values
+			copyColumn.data[copiedRowCtr] = data[row];
+			copyColumn.isNull.set(copiedRowCtr, isNull.get(row));
+			++copiedRowCtr;
+		}
+		return copyColumn;
+	}
+
+	@Override
+	public ColumnData copyRows(Collection<ResultTuple> tuples, int tableIdx) {
 		StringData copyColumn = new StringData(tuples.size());
 		int copiedRowCtr = 0;
-		for (int[] compositeTuple : tuples) {
-			int baseTuple = compositeTuple[tableIdx];
+		for (ResultTuple compositeTuple : tuples) {
+			int baseTuple = compositeTuple.baseIndices[tableIdx];
 			copyColumn.data[copiedRowCtr] = data[baseTuple];
 			copyColumn.isNull.set(copiedRowCtr, isNull.get(baseTuple));
 			++copiedRowCtr;

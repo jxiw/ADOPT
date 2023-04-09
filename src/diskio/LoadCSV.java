@@ -29,7 +29,7 @@ import types.TypeUtil;
 /**
  * Loads CSV file into table.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class LoadCSV {

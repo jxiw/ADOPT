@@ -6,6 +6,8 @@ package joining.join;
  * - right: advance to next table in join order
  * - up: reset tuple index of current table
  * - down: select next tuple for current table
+ * 
+ * @author immanueltrummer
  *
  */
 public enum JoinMove {

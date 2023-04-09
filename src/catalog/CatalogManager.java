@@ -17,7 +17,7 @@ import query.ColumnRef;
 /**
  * Provides access to schema information for current database.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class CatalogManager {
@@ -58,6 +58,7 @@ public class CatalogManager {
 	 * @return			table cardinality (number of rows)
 	 */
 	public static int getCardinality(String tableName) {
+//		System.out.println(currentStats.tableToStats.keySet());
 		TableStats tableStats = currentStats.tableToStats.get(tableName);
 		return tableStats.cardinality;
 	}

@@ -1,20 +1,14 @@
 package joining.uct;
 
+import config.JoinConfig;
 import joining.ParallelLFTJ;
-import joining.join.DynamicMWJoin;
-import joining.result.JoinResult;
 import query.QueryInfo;
-import statistics.JoinStats;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import config.JoinConfig;
-
 /**
  * Represents node in UCT search tree.
- *
- * 
  */
 public class ParallelUctNodeLFTJ {
     /**

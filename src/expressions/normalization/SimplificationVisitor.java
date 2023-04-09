@@ -1,5 +1,6 @@
 package expressions.normalization;
 
+import java.math.BigDecimal;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -89,7 +90,7 @@ import query.where.WhereUtil;
  * 		(avoids recalculating them for each tuple at run time).
  * 
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class SimplificationVisitor extends SkinnerVisitor {
@@ -161,27 +162,32 @@ public class SimplificationVisitor extends SkinnerVisitor {
 			caseResultNull.setElseExpression(newFunction);
 			opStack.push(caseResultNull);
 		} else if (fctName.equals("avg")) {
-			// Sum over average input expression and cast to double
-			newFunction.setName("sum");
-			newFunction.setAllColumns(false);
+//			// Sum over average input expression and cast to double
+//			newFunction.setName("sum");
+//			newFunction.setAllColumns(false);
+//			newFunction.setParameters(new ExpressionList(newParams));
+//			CastExpression newCast = new CastExpression();
+//			newCast.setLeftExpression(newFunction);
+//			ColDataType doubleType = new ColDataType();
+//			doubleType.setDataType("double");
+//			newCast.setType(doubleType);
+//			// Divide by the count of average input
+//			Function divisorFct = new Function();
+//			divisorFct.setAllColumns(false);
+//			divisorFct.setDistinct(false);
+//			divisorFct.setEscaped(false);
+//			divisorFct.setName("count");
+//			divisorFct.setParameters(new ExpressionList(newParams));
+//			Division division = new Division();
+//			division.setLeftExpression(newCast);
+//			division.setRightExpression(divisorFct);
+//			// Still need to rewrite the count statement
+//			division.accept(this);
+			newFunction.setName(arg0.getName());
+			newFunction.setAllColumns(arg0.isAllColumns());
 			newFunction.setParameters(new ExpressionList(newParams));
-			CastExpression newCast = new CastExpression();
-			newCast.setLeftExpression(newFunction);
-			ColDataType doubleType = new ColDataType();
-			doubleType.setDataType("double");
-			newCast.setType(doubleType);
-			// Divide by the count of average input
-			Function divisorFct = new Function();
-			divisorFct.setAllColumns(false);
-			divisorFct.setDistinct(false);
-			divisorFct.setEscaped(false);
-			divisorFct.setName("count");
-			divisorFct.setParameters(new ExpressionList(newParams));
-			Division division = new Division();
-			division.setLeftExpression(newCast);
-			division.setRightExpression(divisorFct);
-			// Still need to rewrite the count statement
-			division.accept(this);
+			opStack.push(newFunction);
+
 		} else {
 			newFunction.setName(arg0.getName());
 			newFunction.setAllColumns(arg0.isAllColumns());	
@@ -293,25 +299,35 @@ public class SimplificationVisitor extends SkinnerVisitor {
 				newBinaryOp.setRightExpression(op2);
 				opStack.push(newBinaryOp);
 			}
-		} else if (op1 instanceof DoubleValue && op2 instanceof DoubleValue) {
+		}
+		// TODO: precision issues
+		else if (op1 instanceof DoubleValue && op2 instanceof DoubleValue) {
 			// Resolve operation on two constants of type double
 			double doubleVal1 = ((DoubleValue)op1).getValue();
 			double doubleVal2 = ((DoubleValue)op2).getValue();
-			DoubleValue result = new DoubleValue("0");
 			if (newBinaryOp instanceof Addition) {
-				result.setValue(doubleVal1 + doubleVal2);
+				BigDecimal d1 = BigDecimal.valueOf(doubleVal1);
+				BigDecimal d2 = BigDecimal.valueOf(doubleVal2);
+				String value = d1.add(d2).toString();
+				DoubleValue result = new DoubleValue(value);
 				opStack.push(result);
 			} else if (newBinaryOp instanceof Subtraction) {
-				result.setValue(doubleVal1 - doubleVal2);
+				BigDecimal d1 = BigDecimal.valueOf(doubleVal1);
+				BigDecimal d2 = BigDecimal.valueOf(doubleVal2);
+				String value = d1.subtract(d2).toString();
+				DoubleValue result = new DoubleValue(value);
 				opStack.push(result);
 			} else if (newBinaryOp instanceof Multiplication) {
-				result.setValue(doubleVal1 * doubleVal2);
+				double value = doubleVal1 * doubleVal2;
+				DoubleValue result = new DoubleValue(String.valueOf(value));
 				opStack.push(result);
 			} else if (newBinaryOp instanceof Division) {
-				result.setValue(doubleVal1 / doubleVal2);
+				double value = doubleVal1 / doubleVal2;
+				DoubleValue result = new DoubleValue(String.valueOf(value));
 				opStack.push(result);
 			} else if (newBinaryOp instanceof Modulo) {
-				result.setValue(doubleVal1 % doubleVal2);
+				double value = doubleVal1 % doubleVal2;
+				DoubleValue result = new DoubleValue(String.valueOf(value));
 				opStack.push(result);
 			} else {
 				newBinaryOp.setLeftExpression(op1);
@@ -364,7 +380,11 @@ public class SimplificationVisitor extends SkinnerVisitor {
 		} else if (op1 instanceof NullValue && op2 instanceof NullValue) {
 			opStack.push(new NullValue());
 		} else {
-			opStack.push(new AndExpression(op1, op2));
+			AndExpression newAnd = new AndExpression(op1, op2);
+			if (arg0.isNot()) {
+				newAnd.setNot();
+			}
+			opStack.push(newAnd);
 		}
 	}
 	/**
@@ -544,18 +564,27 @@ public class SimplificationVisitor extends SkinnerVisitor {
 	public void visit(EqualsTo arg0) {
 		EqualsTo newEquals = new EqualsTo();
 		treatBinaryComparison(arg0, newEquals);
+		if (arg0.isNot()) {
+			newEquals.setNot();
+		}
 	}
 
 	@Override
 	public void visit(GreaterThan arg0) {
 		GreaterThan newGt = new GreaterThan();
 		treatBinaryComparison(arg0, newGt);
+		if (arg0.isNot()) {
+			newGt.setNot();
+		}
 	}
 
 	@Override
 	public void visit(GreaterThanEquals arg0) {
 		GreaterThanEquals newGte = new GreaterThanEquals();
 		treatBinaryComparison(arg0, newGte);
+		if (arg0.isNot()) {
+			newGte.setNot();
+		}
 	}
 	/**
 	 * We transform an in expression into nested OR expressions.
@@ -621,18 +650,27 @@ public class SimplificationVisitor extends SkinnerVisitor {
 	public void visit(MinorThan arg0) {
 		MinorThan newMt = new MinorThan();
 		treatBinaryComparison(arg0, newMt);
+		if (arg0.isNot()) {
+			newMt.setNot();
+		}
 	}
 
 	@Override
 	public void visit(MinorThanEquals arg0) {
 		MinorThanEquals newMte = new MinorThanEquals();
 		treatBinaryComparison(arg0, newMte);
+		if (arg0.isNot()) {
+			newMte.setNot();
+		}
 	}
 
 	@Override
 	public void visit(NotEqualsTo arg0) {
 		NotEqualsTo newNe = new NotEqualsTo();
 		treatBinaryComparison(arg0, newNe);
+		if (arg0.isNot()) {
+			newNe.setNot();
+		}
 	}
 
 	@Override

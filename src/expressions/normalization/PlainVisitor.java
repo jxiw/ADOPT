@@ -76,7 +76,7 @@ import net.sf.jsqlparser.statement.select.SubSelect;
  * only need to treat specific node types (the corresponding
  * methods are overridden). 
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class PlainVisitor extends SkinnerVisitor {

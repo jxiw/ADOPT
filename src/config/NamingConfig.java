@@ -4,7 +4,7 @@ package config;
  * Configuration parameter concerning naming
  * for intermediate result tables and columns.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class NamingConfig {
@@ -92,7 +92,7 @@ public class NamingConfig {
 	 */
 	public static final String FINAL_RESULT_NAME = "result.";
 	/**
-	 * Name of the table containing unique join key.
+	 * Name of the table containing test query result.
 	 */
-	public static final String DISTINCT_PRE = "distinct.";
+	public static final String TEST_RESULT_NAME = "test.";
 }

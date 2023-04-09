@@ -1,6 +1,6 @@
 package joining.uct;
 
-import joining.join.DynamicMWJoin;
+import joining.join.MultiWayJoin;
 import query.QueryInfo;
 import statistics.JoinStats;
 
@@ -11,13 +11,13 @@ import config.JoinConfig;
 /**
  * Represents node in UCT search tree.
  *
- * 
+ * @author immanueltrummer
  */
 public class UctNode {
     /**
      * Used for randomized selection policy.
      */
-    final Random random = new Random(42);
+    final Random random = new Random();
     /**
      * The query for which we are optimizing.
      */
@@ -79,7 +79,7 @@ public class UctNode {
     /**
      * Evaluates a given join order and accumulates results.
      */
-    final DynamicMWJoin joinOp;
+    final MultiWayJoin joinOp;
     /**
      * Indicates whether the search space is restricted to
      * join orders that avoid Cartesian products. This
@@ -104,9 +104,9 @@ public class UctNode {
      * @param joinOp		multi-way join operator allowing fast join order switching
      */
     public UctNode(long roundCtr, QueryInfo query, 
-    		boolean useHeuristic, DynamicMWJoin joinOp) {
+    		boolean useHeuristic, MultiWayJoin joinOp) {
     	// Count node generation
-//    	++JoinStats.nrUctNodes;
+    	++JoinStats.nrUctNodes;
         this.query = query;
         this.nrTables = query.nrJoined;
         createdIn = roundCtr;
@@ -143,7 +143,7 @@ public class UctNode {
      */
     public UctNode(long roundCtr, UctNode parent, int joinedTable) {
     	// Count node generation
-//    	++JoinStats.nrUctNodes;
+    	++JoinStats.nrUctNodes;
         createdIn = roundCtr;
         treeLevel = parent.treeLevel + 1;
         nrActions = parent.nrActions - 1;

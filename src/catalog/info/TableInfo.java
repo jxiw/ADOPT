@@ -11,7 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Meta-data about one database table.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class TableInfo implements Serializable {

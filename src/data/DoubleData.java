@@ -9,12 +9,13 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.List;
 
-//import joining.result.ResultTuple;
+import indexing.Index;
+import joining.result.ResultTuple;
 
 /**
  * Represents content of numeric column.
  * 
- *
+ * @author immanueltrummer
  *
  */
 public class DoubleData extends ColumnData implements Serializable {
@@ -39,6 +40,11 @@ public class DoubleData extends ColumnData implements Serializable {
 		} else {
 			return Double.compare(data[row1], data[row2]);			
 		}
+	}
+
+	@Override
+	public long longForRow(int row) {
+		return Double.doubleToRawLongBits(data[row]);
 	}
 
 	@Override
@@ -85,11 +91,26 @@ public class DoubleData extends ColumnData implements Serializable {
 	}
 
 	@Override
-	public ColumnData copyRows(List<int[]> tuples, int tableIdx) {
+	public ColumnData copyRangeRows(int first, int last, Index index) {
+		int cardinality = last - first;
+		DoubleData copyColumn = new DoubleData(cardinality);
+		int copiedRowCtr = 0;
+		for (int rid = first; rid < last; rid++) {
+			int row = index.sortedRow[rid];
+			// Treat special case: insertion of null values
+			copyColumn.data[copiedRowCtr] = data[row];
+			copyColumn.isNull.set(copiedRowCtr, isNull.get(row));
+			++copiedRowCtr;
+		}
+		return copyColumn;
+	}
+
+	@Override
+	public ColumnData copyRows(Collection<ResultTuple> tuples, int tableIdx) {
 		DoubleData copyColumn = new DoubleData(tuples.size());
 		int copiedRowCtr = 0;
-		for (int[] compositeTuple : tuples) {
-			int baseTuple = compositeTuple[tableIdx];
+		for (ResultTuple compositeTuple : tuples) {
+			int baseTuple = compositeTuple.baseIndices[tableIdx];
 			copyColumn.data[copiedRowCtr] = data[baseTuple];
 			copyColumn.isNull.set(copiedRowCtr, isNull.get(baseTuple));
 			++copiedRowCtr;

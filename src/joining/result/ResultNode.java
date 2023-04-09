@@ -7,7 +7,7 @@ import java.util.Map;
  * Represents one node in a tree representation
  * of a join result.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class ResultNode {

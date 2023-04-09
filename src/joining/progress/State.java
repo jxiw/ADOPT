@@ -7,7 +7,7 @@ import joining.join.JoinMove;
 /**
  * Captures processing state for a specific join order.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class State {
@@ -25,6 +25,10 @@ public class State {
 	 * we have seen.
 	 */
 	public int[] tupleIndices;
+	/**
+	 * Time version of the state.
+	 */
+	public int roundCtr;
 	/**
 	 * Initializes tuple indices to appropriate size.
 	 * 

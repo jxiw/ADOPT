@@ -1,11 +1,12 @@
 package indexing;
 
+import com.koloboke.collect.IntCollection;
 import config.LoggingConfig;
 
 /**
  * Common superclass of all indexing structures.
  * 
- *
+ * @author immanueltrummer
  *
  */
 public abstract class Index {
@@ -20,6 +21,16 @@ public abstract class Index {
 	 */
 	public int[] positions;
 	/**
+	 * After indexing: contains row id where the element
+	 * is sorted in an increasing way.
+	 */
+	public int[] sortedRow;
+	/**
+	 * After indexing: contains group id that the element
+	 * belongs to.
+	 */
+	public int[] groupIds;
+	/**
 	 * Initialize for given cardinality of indexed table.
 	 * 
 	 * @param cardinality	number of rows to index
@@ -27,6 +38,18 @@ public abstract class Index {
 	public Index(int cardinality) {
 		this.cardinality = cardinality;
 	}
+
+	/**
+	 * Return a Set of first position for each distinct key.
+	 *
+	 * @return		Set of first position for each distinct key.
+	 */
+	public abstract IntCollection posSet();
+	/**
+	 * Sort the elements and initialize the array of sortedRow
+	 */
+	public abstract void sortRows();
+
 	/**
 	 * Output given log text if activated.
 	 * 

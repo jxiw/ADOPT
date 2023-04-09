@@ -1,10 +1,6 @@
 package buffer;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import catalog.CatalogManager;
@@ -27,7 +23,7 @@ import types.TypeUtil;
 /**
  * Manages the main memory database buffer.
  * 
- *
+ * @author immanueltrummer
  *
  */
 public class BufferManager {
@@ -38,7 +34,7 @@ public class BufferManager {
 	/**
 	 * Maps table and column names to corresponding data.
 	 * Using a thread-safe data structure allows inserting
-	 * columns by parallel processing threads.
+	 * columns by joining.parallel processing threads.
 	 */
 	public final static Map<ColumnRef, ColumnData> colToData =
 			new ConcurrentHashMap<ColumnRef, ColumnData>();
@@ -47,6 +43,21 @@ public class BufferManager {
 	 */
 	public final static Map<ColumnRef, Index> colToIndex =
 			new ConcurrentHashMap<ColumnRef, Index>();
+	/**
+	 * Filtering cache used in pre-processing.
+	 */
+	public final static Map<Integer, List<Integer>> indexCache =
+			new ConcurrentHashMap<>();
+	/**
+	 * Maps predicate string to associated id.
+	 */
+	public final static Map<String, Integer> predicateToID =
+			new HashMap<>();
+	/**
+	 * Previous query name.
+	 */
+	public static String prevQuery;
+
 	/**
 	 * Loads dictionary from hard disk.
 	 */
@@ -81,7 +92,7 @@ public class BufferManager {
 		colToData.clear();
 		// Load dictionary from disk
 		loadDictionary();
-		// Collect columns to load in parallel
+		// Collect columns to load in joining.parallel
 		List<ColumnRef> colsToLoad = new ArrayList<ColumnRef>();
 		for (TableInfo table : CatalogManager.currentDB.nameToTable.values()) {
 			String tableName = table.name;
@@ -145,17 +156,16 @@ public class BufferManager {
 			// Generate debugging output
 			log("*** Column " + columnRef.toString() + " sample ***");
 			int cardinality = colToData.get(columnRef).getCardinality();
-			System.out.println("cardinality:" + cardinality);
-//			int sampleSize = Math.min(10, cardinality);
-//			for (int i=0; i<sampleSize; ++i) {
-//				switch (column.type) {
-//				case STRING_CODE:
-//					int code = ((IntData)object).data[i];
-//					log(dictionary.getString(code));
-//					break;
-//				}
-//			}
-//			log("******");
+			int sampleSize = Math.min(10, cardinality);
+			for (int i=0; i<sampleSize; ++i) {
+				switch (column.type) {
+				case STRING_CODE:
+					int code = ((IntData)object).data[i];
+					log(dictionary.getString(code));
+					break;
+				}
+			}
+			log("******");
 		}
 	}
 	/**
@@ -203,6 +213,23 @@ public class BufferManager {
 					unloadColumn(colRef);
 				}
 			}
+		}
+	}
+	/**
+	 * Unload all cache rows of temporary tables (typically after
+	 * a group of query processing is finished).
+	 *
+	 * @param queryName		the name of query group.
+	 */
+	public static void unloadCache(String queryName) {
+		if (prevQuery == null) {
+			prevQuery = queryName;
+		}
+		else if (!queryName.equals(prevQuery)) {
+			prevQuery = queryName;
+			indexCache.clear();
+			predicateToID.clear();
+			System.out.println("Clear the cache!");
 		}
 	}
 	/**

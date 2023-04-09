@@ -7,7 +7,7 @@ import java.io.ObjectInputStream;
  * Implements utility methods for loading
  * or storing data from/to disk.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class DiskUtil {

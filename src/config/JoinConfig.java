@@ -6,6 +6,9 @@ import joining.uct.SelectionPolicy;
 /**
  * Configures reinforcement-learning based
  * search for optimal join orders.
+ * 
+ * @author immanueltrummer
+ *
  */
 public class JoinConfig {
 	/**
@@ -16,7 +19,7 @@ public class JoinConfig {
 	/**
 	 * Number of steps performed per episode.
 	 */
-	public static int BUDGET_PER_EPISODE = 500000;
+	public static int BUDGET_PER_EPISODE = 1000000;
 	/**
 	 * Weight for UCT exploration term (used to select
 	 * most interesting action to try next). This
@@ -35,14 +38,20 @@ public class JoinConfig {
 	 * selected as opposed to the maximum reward action).
 	 */
 	public static final double EPSILON = 0.1;
+	/**
+	 * Whether to regularly forget everything that was
+	 * learned about join orders so far. This is helpful
+	 * since the reward distribution keeps changing due
+	 * to table offsets etc. Also helps against 
+	 * non-uniform data which may cause (too) early
+	 * convergence to one specific join order.
+	 */
+	public static final boolean FORGET = true;
 
+	/**
+	 *
+	 */
 	public static int NTHREAD = 32;
 
-	public static int INITCUBE = 100;
-
-	public static final boolean DISTINCT_START = false;
-
-	public static final boolean DISTINCT_END = false;
-
-	public static final boolean CACHE_ENABLE = false;
+	public static int INITCUBE = 64;
 }

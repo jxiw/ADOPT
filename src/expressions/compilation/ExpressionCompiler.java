@@ -116,7 +116,7 @@ import org.objectweb.asm.util.TraceMethodVisitor;
  * whether a non-null value results. The null value is on top of
  * the stack to allow quick checks for NULL values.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class ExpressionCompiler extends SkinnerVisitor {
@@ -813,6 +813,28 @@ public class ExpressionCompiler extends SkinnerVisitor {
 				"expressions.compilation." + className,
 				classWriter.toByteArray());
 		return (UnaryIntEval)expressionClass.newInstance();
+	}
+
+	/**
+	 * Instantiates a new class for evaluating unary
+	 * integer expressions.
+	 *
+	 * @return	newly generated evaluator object
+	 * @throws Exception
+	 */
+	public UnaryIntEval[] getUnaryIntEvals(int size) throws Exception {
+		// Finalize code for unary evaluator of integer result
+		finalizeUnaryEval();
+		// Create instance of freshly generated class
+		DynamicClassLoader loader = new DynamicClassLoader();
+		Class<?> expressionClass = loader.defineClass(
+				"expressions.compilation." + className,
+				classWriter.toByteArray());
+		UnaryIntEval[] unaryIntEvals = new UnaryIntEval[size];
+		for (int i = 0; i < unaryIntEvals.length; i++) {
+			unaryIntEvals[i] = (UnaryIntEval)expressionClass.newInstance();
+		}
+		return unaryIntEvals;
 	}
 	/**
 	 * Instantiates a new class for evaluating unary

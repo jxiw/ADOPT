@@ -14,12 +14,7 @@ import data.IntData;
 import expressions.ExpressionInfo;
 import expressions.aggregates.AggInfo;
 import net.sf.jsqlparser.schema.Column;
-import operators.GroupBy;
-import operators.MapRows;
-import operators.Materialize;
-import operators.MinMaxAggregate;
-import operators.OrderBy;
-import operators.SumAggregate;
+import operators.*;
 import preprocessing.Context;
 import print.RelationPrinter;
 import query.ColumnRef;
@@ -32,7 +27,7 @@ import statistics.PostStats;
  * sorting. Produces the final result of a
  * query block.
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class PostProcessor {
@@ -155,6 +150,10 @@ public class PostProcessor {
 				MinMaxAggregate.execute(sourceRef, nrGroups, 
 						groupRef, true, targetRef);
 				break;
+			case AVG:
+				AvgAggregate.execute(sourceRef, nrGroups,
+						groupRef, targetRef);
+				break;
 			default:
 				throw new Exception("Error - aggregate " + aggInfo +
 						" should have been rewritten");
@@ -264,7 +263,7 @@ public class PostProcessor {
 	 * @param query			query to process
 	 * @param context		query processing context
 	 * @param resultRelName	name of result relation
-	 * @param tempResul		whether result relation is temporary
+	 * @param tempResult	whether result relation is temporary
 	 * @throws Exception
 	 */
 	static void treatAllRowsAggQuery(QueryInfo query, 
@@ -411,7 +410,6 @@ public class PostProcessor {
 	 * 
 	 * @param query			query whose HAVING clause to process
 	 * @param context		execution context containing column mappings
-	 * @param havingExpr	condition specified in HAVING clause
 	 * @return				indices of rows satisfying HAVING clause
 	 * @throws Exception
 	 */
@@ -566,5 +564,6 @@ public class PostProcessor {
 		CatalogManager.updateStats(resultRel);
 		// Measure time and store as statistics
 		PostStats.postMillis = System.currentTimeMillis() - startMillis;
+		PostStats.subPostMillis.add(PostStats.postMillis);
 	}
 }

@@ -2,20 +2,16 @@ package query;
 
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
+import buffer.BufferManager;
 import catalog.CatalogManager;
 import catalog.info.ColumnInfo;
 import catalog.info.TableInfo;
-import config.JoinConfig;
 import config.LoggingConfig;
 import config.NamingConfig;
 import expressions.ExpressionInfo;
 import expressions.aggregates.AggInfo;
 import expressions.typing.ExpressionScope;
-import joining.join.wcoj.ArrayUtilities;
-import joining.plan.AttributeOrder;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.expression.LongValue;
@@ -31,16 +27,20 @@ import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
+import net.sf.jsqlparser.util.cnfexpression.CNFConverter;
+import predicate.NonEquiCols;
+import predicate.NonEquiNode;
+import predicate.NonEquiNodesTest;
+import preprocessing.Context;
 import query.from.FromUtil;
 import query.select.SelectUtil;
 
 import org.apache.commons.lang3.StringUtils;
-import util.Pair;
 
 /**
  * Contains information on the query to execute.
  *
- * 
+ * @author immanueltrummer
  */
 public class QueryInfo {
     /**
@@ -67,10 +67,10 @@ public class QueryInfo {
      * Number of table instances in FROM clause.
      */
     public int nrJoined = 0;
-    /**
-     * Number of join attribute
-     */
-    public int nrAttribute = 0;
+	/**
+	 * Number of join attribute
+	 */
+	public int nrAttribute = 0;
     /**
      * All aliases in the query's FROM clause.
      */
@@ -146,10 +146,14 @@ public class QueryInfo {
      * Equivalence classes of columns involved in equi-joins.
      */
     public Set<Set<ColumnRef>> equiJoinClasses = new HashSet<>();
+	/**
+	 * Equivalence classes of attribute involved in equi-joins.
+	 */
+	public List<Set<ColumnRef>> equiJoinAttribute = new ArrayList<>();
     /**
-     * Equivalence classes of attribute involved in equi-joins.
+     * Columns that are needed to create an index.
      */
-    public List<Set<ColumnRef>> equiJoinAttribute = new ArrayList<>();
+    public Set<ColumnRef> indexCols = new HashSet<>();
     /**
      * List of expressions that correspond to
      * equality join predicates.
@@ -162,6 +166,12 @@ public class QueryInfo {
      */
     public List<ExpressionInfo> nonEquiJoinPreds =
             new ArrayList<ExpressionInfo>();
+    /**
+     * List of trees that correspond to
+     * non-equi join predicates.
+     */
+    public List<NonEquiNode> nonEquiJoinNodes =
+            new ArrayList<>();
     /**
      * Expressions that appear in GROUP-BY clause with
      * associated meta-data.
@@ -206,6 +216,16 @@ public class QueryInfo {
      * or -1 if no LIMIT specified.
      */
     public final int limit;
+    /**
+     * The set of temporary alias that are the result of
+     * inner sub query.
+     */
+    public final Set<String> temporaryAlias = new HashSet<>();
+    /**
+     * The set of temporary tables that are the result of
+     * inner sub query.
+     */
+    public final Set<Integer> temporaryTables = new HashSet<>();
 
     /**
      * Extract information from the FROM clause (e.g.,
@@ -244,6 +264,8 @@ public class QueryInfo {
                             + "not unique");
                 }
             }
+            TableInfo tableInfo = CatalogManager.currentDB.
+                    nameToTable.get(tableName);
             // Register mapping from alias to table
             aliasToTable.put(alias, tableName);
             // Register mapping from index to alias
@@ -251,8 +273,7 @@ public class QueryInfo {
             // Register mapping from alias to index
             aliasToIndex.put(alias, i);
             // Extract columns with types
-            for (ColumnInfo colInfo : CatalogManager.currentDB.
-                    nameToTable.get(tableName).nameToCol.values()) {
+            for (ColumnInfo colInfo : tableInfo.nameToCol.values()) {
                 String colName = colInfo.name;
                 colRefToInfo.put(new ColumnRef(alias, colName), colInfo);
             }
@@ -351,7 +372,7 @@ public class QueryInfo {
             Expression left = equalsExpr.getLeftExpression();
             Expression right = equalsExpr.getRightExpression();
             // Is it an equality between two columns?
-            if (left instanceof Column && right instanceof Column) {
+            if (left instanceof Column && right instanceof Column && !equalsExpr.isNot()) {
                 Column leftCol = (Column) left;
                 Column rightCol = (Column) right;
                 ColumnRef leftRef = new ColumnRef(
@@ -371,6 +392,13 @@ public class QueryInfo {
         }
         return null;
     }
+
+    Set<ColumnRef> extractNonEquiJoinCols(ExpressionInfo exprInfo) {
+        NonEquiCols nonEquiCols = new NonEquiCols(this);
+        exprInfo.conjuncts.get(0).accept(nonEquiCols);
+        return nonEquiCols.extractedCols;
+    }
+
 
     /**
      * Extracts predicates from normalized WHERE clause, separating
@@ -422,7 +450,8 @@ public class QueryInfo {
                         Set<ColumnRef> curEquiJoinCols = extractEquiJoinCols(curInfo);
                         if (curEquiJoinCols != null) {
                             equiJoinCols.addAll(curEquiJoinCols);
-                            equiJoinPairs.add(curEquiJoinCols);
+							equiJoinPairs.add(curEquiJoinCols);
+                            indexCols.addAll(curEquiJoinCols);
                             equiJoinPreds.add(curInfo);
                         } else {
                             nonEquiPred = nonEquiPred == null ? conjunct :
@@ -431,94 +460,159 @@ public class QueryInfo {
                     } // over conjuncts of join predicates
                     // Add non-equi join predicates if any
                     if (nonEquiPred != null) {
-                        nonEquiJoinPreds.add(new ExpressionInfo(this, nonEquiPred));
+                        ExpressionInfo curInfo = new ExpressionInfo(this, nonEquiPred);
+                        for (String alias : curInfo.aliasesMentioned) {
+                            int index = aliasToIndex.get(alias);
+                            TableInfo tableInfo = CatalogManager.currentDB.
+                                    nameToTable.get(aliasToTable.get(alias));
+                            if (tableInfo.tempTable || temporaryAlias.contains(alias)) {
+                                temporaryTables.add(index);
+                            }
+                        }
+                        nonEquiJoinPreds.add(curInfo);
+                        indexCols.addAll(extractNonEquiJoinCols(curInfo));
                     }
                 } // if join predicate
             } // over where conjuncts
         } // if where clause
     }
 
-    /**
-     * Partition columns involved in equality joins
-     * into equivalence classes.
-     */
-    void partitionEquiJoinCols() {
-        // Initialize equivalence classes: each column
-        // forms an equivalence class on its own.
-        for (ColumnRef colRef : equiJoinCols) {
-            Set<ColumnRef> colClass = Collections.singleton(colRef);
-            equiJoinClasses.add(colClass);
-        }
-        // Continue until no more merge operations
-        boolean mergedClasses = false;
-        do {
-            // No classes merged in this iteration
-            mergedClasses = false;
-            // Equivalence classes after this iteration
-            Set<Set<ColumnRef>> nextClasses = new HashSet<>();
-            // Iterate over current equivalence classes
-            for (Set<ColumnRef> equiJoinClass : equiJoinClasses) {
-                // Copy before changing
-                Set<ColumnRef> newEquiJoinClass = new HashSet<>();
-                newEquiJoinClass.addAll(equiJoinClass);
-                // Iterate over column pairs in equi joins
-                for (Set<ColumnRef> equiJoinPair : equiJoinPairs) {
-                    // Iterate over columns in predicate
-                    for (ColumnRef colRef : equiJoinPair) {
-                        if (equiJoinClass.contains(colRef)) {
-                            mergedClasses = mergedClasses ||
-                                    newEquiJoinClass.addAll(
-                                            equiJoinPair);
-                        }
-                    }
-                }
-                // Add potentially changed class to new set
-                nextClasses.add(newEquiJoinClass);
-            }
-            // Next classes become current classes
-            equiJoinClasses = nextClasses;
-        } while (mergedClasses);
-    }
+	/**
+	 * Partition columns involved in equality joins
+	 * into equivalence classes.
+	 */
+	void partitionEquiJoinCols() {
+		// Initialize equivalence classes: each column
+		// forms an equivalence class on its own.
+		for (ColumnRef colRef : equiJoinCols) {
+			Set<ColumnRef> colClass = Collections.singleton(colRef);
+			equiJoinClasses.add(colClass);
+		}
+		// Continue until no more merge operations
+		boolean mergedClasses = false;
+		do {
+			// No classes merged in this iteration
+			mergedClasses = false;
+			// Equivalence classes after this iteration
+			Set<Set<ColumnRef>> nextClasses = new HashSet<>();
+			// Iterate over current equivalence classes
+			for (Set<ColumnRef> equiJoinClass : equiJoinClasses) {
+				// Copy before changing
+				Set<ColumnRef> newEquiJoinClass = new HashSet<>();
+				newEquiJoinClass.addAll(equiJoinClass);
+				// Iterate over column pairs in equi joins
+				for (Set<ColumnRef> equiJoinPair : equiJoinPairs) {
+					// Iterate over columns in predicate
+					for (ColumnRef colRef : equiJoinPair) {
+						if (equiJoinClass.contains(colRef)) {
+							mergedClasses = mergedClasses ||
+									newEquiJoinClass.addAll(
+											equiJoinPair);
+						}
+					}
+				}
+				// Add potentially changed class to new set
+				nextClasses.add(newEquiJoinClass);
+			}
+			// Next classes become current classes
+			equiJoinClasses = nextClasses;
+		} while (mergedClasses);
+	}
 
-    /**
-     * Add unary predicates that connect two columns in
-     * the same table via an equality predicate, based
-     * on predicate equivalence classes.
+
+	/**
+	 * Add unary predicates that connect two columns in
+	 * the same table via an equality predicate, based
+	 * on predicate equivalence classes.
+	 */
+	void addUnaryEquiPreds() throws Exception {
+		// Iterate over predicate equivalence classes
+		for (Set<ColumnRef> equiClass : equiJoinClasses) {
+			// Map table alias to first column in equivalence class
+			Map<String, ColumnRef> aliasToCol = new HashMap<>();
+			for (ColumnRef colRef : equiClass) {
+				aliasToCol.put(colRef.aliasName, colRef);
+			}
+			// Form unary predicates if possible
+			Iterator<ColumnRef> colIter = equiClass.iterator();
+			while (colIter.hasNext()) {
+				ColumnRef colRef = colIter.next();
+				String alias = colRef.aliasName;
+				// Have other column on same table?
+				if (aliasToCol.containsKey(alias) &&
+						!aliasToCol.get(alias).equals(colRef)) {
+					ColumnRef otherColRef = aliasToCol.get(alias);
+					// Create equality predicate expression
+					Table aliasTable = new Table(alias);
+					Column col = new Column(aliasTable,
+							colRef.columnName);
+					Column otherCol = new Column(aliasTable,
+							otherColRef.columnName);
+					EqualsTo equalsTo = new EqualsTo();
+					equalsTo.setLeftExpression(col);
+					equalsTo.setRightExpression(otherCol);
+					ExpressionInfo equalsToExpr =
+							new ExpressionInfo(this, equalsTo);
+					unaryPredicates.add(equalsToExpr);
+					// Remove prior join predicates - TODO
+					colIter.remove();
+				}
+			}
+		}
+	}
+
+	/**
+	 * Returns true if there it at least one join predicate
+	 * connecting the set of items in the FROM clause to the
+	 * single item. We assume that the new table is not in
+	 * the set of already joined tables.
+	 */
+	public boolean connectedAttribute(Set<Integer> aliasIndices, int newAttribute) {
+		// Resulting join indices if selecting new table for join
+		Set<ColumnRef> toJoinColumns = equiJoinAttribute.get(newAttribute);
+		Set<String> toJoinTable = new HashSet<>();
+		for (ColumnRef column : toJoinColumns) {
+			toJoinTable.add(column.aliasName);
+		}
+		for (Integer index : aliasIndices) {
+			Set<ColumnRef> joinColumns = equiJoinAttribute.get(index);
+			for (ColumnRef joinColumn : joinColumns) {
+				if (toJoinTable.contains(joinColumn.aliasName)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public boolean isValidAttributeOrder(int[] attributeOrder) {
+		Set<Integer> currentAttributes = new HashSet<>();
+		currentAttributes.add(attributeOrder[0]);
+		for (int i = 1; i < attributeOrder.length; i++) {
+			int attribute = attributeOrder[i];
+			if (connectedAttribute(currentAttributes, attribute)) {
+				currentAttributes.add(attribute);
+			} else {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+     * /**
+     * Convert each nonequi-predicates into a tree.
+     *
+     * @param context context after preprocessing
      */
-    void addUnaryEquiPreds() throws Exception {
-        // Iterate over predicate equivalence classes
-        for (Set<ColumnRef> equiClass : equiJoinClasses) {
-            // Map table alias to first column in equivalence class
-            Map<String, ColumnRef> aliasToCol = new HashMap<>();
-            for (ColumnRef colRef : equiClass) {
-                aliasToCol.put(colRef.aliasName, colRef);
-            }
-            // Form unary predicates if possible
-            Iterator<ColumnRef> colIter = equiClass.iterator();
-            while (colIter.hasNext()) {
-                ColumnRef colRef = colIter.next();
-                String alias = colRef.aliasName;
-                // Have other column on same table?
-                if (aliasToCol.containsKey(alias) &&
-                        !aliasToCol.get(alias).equals(colRef)) {
-                    ColumnRef otherColRef = aliasToCol.get(alias);
-                    // Create equality predicate expression
-                    Table aliasTable = new Table(alias);
-                    Column col = new Column(aliasTable,
-                            colRef.columnName);
-                    Column otherCol = new Column(aliasTable,
-                            otherColRef.columnName);
-                    EqualsTo equalsTo = new EqualsTo();
-                    equalsTo.setLeftExpression(col);
-                    equalsTo.setRightExpression(otherCol);
-                    ExpressionInfo equalsToExpr =
-                            new ExpressionInfo(this, equalsTo);
-                    unaryPredicates.add(equalsToExpr);
-                    // Remove prior join predicates - TODO
-                    colIter.remove();
-                }
-            }
-        }
+    public void convertNonEquiPredicates(Context context) {
+        // Build non-equi nodes
+        NonEquiNodesTest nonEquiNodesTest = new NonEquiNodesTest(this, context.columnMapping);
+        nonEquiJoinPreds.forEach(pred -> {
+            pred.conjuncts.get(0).accept(nonEquiNodesTest);
+            if (nonEquiNodesTest.nonEquiNodes.size() > 0)
+                nonEquiJoinNodes.add(nonEquiNodesTest.nonEquiNodes.pop());
+        });
     }
 
     /**
@@ -688,45 +782,6 @@ public class QueryInfo {
         return false;
     }
 
-	/**
-	 * Returns true if there it at least one join predicate
-	 * connecting the set of items in the FROM clause to the
-	 * single item. We assume that the new table is not in
-	 * the set of already joined tables.
-	 *
-	 */
-    public boolean connectedAttribute(Set<Integer> aliasIndices, int newAttribute) {
-        // Resulting join indices if selecting new table for join
-        Set<ColumnRef> toJoinColumns = equiJoinAttribute.get(newAttribute);
-        Set<String> toJoinTable = new HashSet<>();
-        for (ColumnRef column : toJoinColumns) {
-            toJoinTable.add(column.aliasName);
-        }
-        for (Integer index : aliasIndices) {
-            Set<ColumnRef> joinColumns = equiJoinAttribute.get(index);
-            for (ColumnRef joinColumn : joinColumns) {
-                if (toJoinTable.contains(joinColumn.aliasName)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public boolean isValidAttributeOrder(int[] attributeOrder) {
-        Set<Integer> currentAttributes = new HashSet<>();
-        currentAttributes.add(attributeOrder[0]);
-        for (int i = 1; i < attributeOrder.length ;i++) {
-            int attribute = attributeOrder[i];
-            if (connectedAttribute(currentAttributes, attribute)) {
-                currentAttributes.add(attribute);
-            } else {
-                return false;
-            }
-        }
-        return true;
-    }
-
     /**
      * Concatenates string representations of given expression
      * list, using the given separator.
@@ -760,8 +815,8 @@ public class QueryInfo {
      * and returns -1 if none specified.
      *
      * @param plainSelect input query
-     * @return result tuple limit or -1 if none specified
      * @throws Exception
+     * @return result tuple limit or -1 if none specified
      */
     static int getLimit(PlainSelect plainSelect) throws Exception {
         Limit limitObj = plainSelect.getLimit();
@@ -779,6 +834,26 @@ public class QueryInfo {
             throw new SQLexception("Error - only constant limits supported");
         } else {
             return (int) (((LongValue) limitExpr).getValue());
+        }
+    }
+
+    /**
+     * Generate unique id for each predicate.
+     */
+    void maintainPredicatesID() {
+        unaryPredicates.forEach(predicate -> {
+            String pstr = predicate.toString();
+            int pid = BufferManager.predicateToID.getOrDefault(pstr, -1);
+            if (pid < 0) {
+                pid = BufferManager.predicateToID.size();
+                BufferManager.predicateToID.put(pstr, pid);
+            }
+            predicate.pid = pid;
+        });
+        int id = 0;
+        for (ExpressionInfo predicate : equiJoinPreds) {
+            predicate.pid = id;
+            id++;
         }
     }
 
@@ -813,14 +888,16 @@ public class QueryInfo {
         log("Alias to expression: " + aliasToExpression);
         // Extract predicates in WHERE clause
         extractPredicates();
-        partitionEquiJoinCols();
-        addUnaryEquiPreds();
+		partitionEquiJoinCols();
+		addUnaryEquiPreds();
         log("Unary predicates: " + unaryPredicates);
         log("Equi join cols: " + equiJoinCols);
-        log("Equi join pairs: " + equiJoinPairs);
         log("Equi join preds: " + equiJoinPreds);
-        log("Equivalent cols: " + equiJoinClasses);
+		log("Equi join pairs: " + equiJoinPairs);
+		log("Equivalent cols: " + equiJoinClasses);
         log("Other join preds: " + nonEquiJoinPreds);
+        // Assign integers to predicates
+        maintainPredicatesID();
         // Add expressions in GROUP BY clause
         treatGroupBy();
         log("GROUP BY expressions: " + groupByExpressions);
@@ -843,85 +920,75 @@ public class QueryInfo {
         // Set result tuple limit
         limit = getLimit(plainSelect);
         log("Limit:\t" + limit);
-        equiJoinAttribute.addAll(equiJoinClasses);
-        nrAttribute = equiJoinAttribute.size();
-//
-//        if (JoinConfig.CACHE_ENABLE) {
-//            JoinCache.hashMetaData = new HashMap<>();
-//            // cache information of all orders
-//            for (int[] order : ArrayUtilities.permutations(nrAttribute)) {
-//                if (this.isValidAttributeOrder(order)) {
-////                    System.out.println("order:" + Arrays.toString(order));
-//                    HashMap<Integer, Pair<Set<Integer>, Set<Integer>>> cacheInfoCurrentOrder = new HashMap<>();
-//                    // for each validate order
-//                    List<Set<ColumnRef>> varOrder = Arrays.stream(order).boxed().map(i -> this.equiJoinAttribute.get(i)).collect(Collectors.toList());
-//                    // for cache
-//                    // gather table in each attribute
-//                    Map<String, Set<Integer>> joinTableToAttributeIdx = new HashMap<>();
-//                    for (int aliasCtr = 0; aliasCtr < this.nrAttribute; ++aliasCtr) {
-//                        for (ColumnRef columnRef : varOrder.get(aliasCtr)) {
-//                            joinTableToAttributeIdx.putIfAbsent(columnRef.aliasName, new HashSet<>());
-//                            joinTableToAttributeIdx.get(columnRef.aliasName).add(aliasCtr);
-//                        }
-//                    }
-//
-//                    // construct dependency set
-//                    Map<Integer, Set<Integer>> dependencySet = new HashMap<>();
-//                    for (int aliasCtr = this.nrAttribute - 1; aliasCtr > 0; --aliasCtr) {
-//                        Set<Integer> dependency = new HashSet<>();
-//                        for (ColumnRef columnRef : varOrder.get(aliasCtr)) {
-//                            Set<Integer> attributeIdx = joinTableToAttributeIdx.get(columnRef.aliasName);
-//                            dependency.addAll(attributeIdx);
-//                        }
-//                        if (aliasCtr < this.nrAttribute - 1) {
-//                            dependency.addAll(dependencySet.get(aliasCtr + 1));
-//                        }
-//                        // remove key in front of this key
-//                        for (int i = this.nrAttribute - 1; i >= aliasCtr; --i) {
-//                            dependency.remove(i);
-//                        }
-//                        dependencySet.put(aliasCtr, dependency);
-//                    }
-//
-//                    // collect which attribute to cache
-//                    for (int aliasCtr = 1; aliasCtr < this.nrAttribute; aliasCtr++) {
-//                        // dependency
-//                        Set<Integer> dependency = dependencySet.get(aliasCtr);
-//                        if (dependency.size() < aliasCtr) {
-//                            // validate cache key and value
-//                            Set<Integer> attributeLater = new HashSet<>();
-//                            for (int i = aliasCtr; i < nrAttribute; i++) {
-//                                attributeLater.add(i);
-//                            }
-//
-//                            // map the local order to the global order
-//                            // dependency: example, key: 1,3, value: 2, 4
-//                            Set<Integer> globalKey = dependency.stream().map(key -> order[key]).collect(Collectors.toSet());
-//                            Set<Integer> globalValue = attributeLater.stream().map(key -> order[key]).collect(Collectors.toSet());
-//
-//                            cacheInfoCurrentOrder.put(aliasCtr - 1, new Pair(globalKey, globalValue));
-//
-////                            System.out.println("ctr:" + aliasCtr + ", key:" + globalKey + ", value:" + globalValue);
-////                            System.out.println("key+++++");
-////                            for (int k : globalKey) {
-////                                System.out.println(this.equiJoinAttribute.get(k));
-////                            }
-////
-////                            System.out.println("value+++++");
-////                            for (int v : globalValue) {
-////                                System.out.println(this.equiJoinAttribute.get(v));
-////                            }
-////                            System.out.println("");
-//
-//                        }
-//                    }
-//
-//                    JoinCache.hashMetaData.put(new AttributeOrder(order), cacheInfoCurrentOrder);
-//                }
-//            }
-//            JoinCache.cacheResult = new ConcurrentHashMap<>();
-//            // finish cache information of all orders
-//            System.out.println("JoinCache.hashMetaData:" + JoinCache.hashMetaData);
-//        }
+		equiJoinAttribute.addAll(equiJoinClasses);
+		nrAttribute = equiJoinAttribute.size();
+    }
+
+    /**
+     * Analyzes a select query to prepare processing.
+     *
+     * @param plainSelect a plain select query
+     * @param explain     whether this is an explain query
+     * @param plotAtMost  plot at most that many plots (in explain mode)
+     * @param plotEvery   generate one plot after that many samples (in explain mode)
+     * @param plotDir     add plots to this directory (in explain mode)
+     */
+    public QueryInfo(PlainSelect plainSelect, Set<String> temporary, boolean explain,
+                     int plotAtMost, int plotEvery, String plotDir) throws Exception {
+        log("Input query: " + plainSelect);
+        this.plainSelect = plainSelect;
+        this.explain = explain;
+        this.plotAtMost = plotAtMost;
+        this.plotEvery = plotEvery;
+        this.plotDir = plotDir;
+        this.temporaryAlias.addAll(temporary);
+        // Extract information in FROM clause
+        extractFromInfo();
+        log("Alias -> table: " + aliasToTable);
+        log("Column info: " + colRefToInfo);
+        // Add implicit references to aliases
+        addImplicitRefs();
+        log("Unique column name -> alias: " + columnToAlias);
+        // Resolve wildcards and add aliases for SELECT clause
+        treatSelectClause();
+        log("Select expressions: " + selectExpressions);
+        log("Select aliases: " + selectToAlias);
+        log("Alias to expression: " + aliasToExpression);
+        // Extract predicates in WHERE clause
+        extractPredicates();
+		partitionEquiJoinCols();
+		addUnaryEquiPreds();
+        log("Unary predicates: " + unaryPredicates);
+        log("Equi join cols: " + equiJoinCols);
+        log("Equi join preds: " + equiJoinPreds);
+        log("Other join preds: " + nonEquiJoinPreds);
+		log("Equi join pairs: " + equiJoinPairs);
+		log("Equivalent cols: " + equiJoinClasses);
+        // Assign integers to predicates
+        maintainPredicatesID();
+        // Add expressions in GROUP BY clause
+        treatGroupBy();
+        log("GROUP BY expressions: " + groupByExpressions);
+        // Add expression in HAVING clause
+        treatHaving();
+        log("HAVING clause: " + (havingExpression != null ? havingExpression : "none"));
+        // Adds expressions in ORDER BY clause
+        treatOrderBy();
+        log("ORDER BY expressions: " + orderByExpressions);
+        // Collect required columns
+        collectRequiredCols();
+        log("Required cols for joins: " + colsForJoins);
+        log("Required for post-processing: " + colsForPostProcessing);
+        // Collect aggregates
+        collectAggregates();
+        log("Extracted aggregates: " + aggregates);
+        // Set aggregation type
+        aggregationType = getAggregationType();
+        log("Aggregation type:\t" + aggregationType);
+        // Set result tuple limit
+        limit = getLimit(plainSelect);
+        log("Limit:\t" + limit);
+		equiJoinAttribute.addAll(equiJoinClasses);
+		nrAttribute = equiJoinAttribute.size();
     }
 }

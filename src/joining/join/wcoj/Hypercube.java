@@ -2,32 +2,22 @@ package joining.join.wcoj;
 
 import util.Pair;
 
-import java.util.*;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class Hypercube {
 
     public List<Pair<Integer, Integer>> intervals;
 
-//    public boolean explore;
-
     final int dim;
 
     public Hypercube(List<Pair<Integer, Integer>> intervals) {
         this.intervals = intervals;
         this.dim = intervals.size();
-//        this.explore = false;
     }
-
-//    public double getVolume() {
-//        double volume = 1;
-//        int toIndex = Math.min(3, intervals.size());
-//        for (Pair<Integer, Integer> interval: intervals.subList(0, toIndex)) {
-//            volume *= (interval.getSecond() - interval.getFirst() + 1);
-//        }
-////        System.out.println("volume:" + volume);
-//        return volume;
-//    }
 
     public List<Pair<Integer, Integer>> unfoldCube(int[] order) {
         return Arrays.stream(order).mapToObj(intervals::get).collect(Collectors.toList());
@@ -44,7 +34,6 @@ public class Hypercube {
             reorderInterval[order[i]] = intervals.get(i);
         }
         intervals = Arrays.asList(reorderInterval);
-//        intervals.sort(Comparator.comparing(s -> order[intervals.indexOf(s)]));
     }
 
     public boolean overlap(Hypercube cube) {
@@ -120,6 +109,24 @@ public class Hypercube {
         return subCubes;
     }
 
+    public static long getCubeVolume(List<Pair<Integer, Integer>> intervals, List<Integer> endPoints) {
+        int dim = intervals.size();
+        long allVol = 0;
+        for (int i = 0; i < dim; i++) {
+            int currentI = endPoints.get(i);
+            int startI = intervals.get(i).getFirst();
+            int endI = intervals.get(i).getSecond();
+            if (currentI > startI) {
+                long remindVol = (currentI - startI);
+                for (int j = i + 1; j < dim; j++) {
+                    remindVol *= intervals.get(j).getSecond() - intervals.get(j).getFirst() + 1;
+                }
+                allVol += remindVol;
+            }
+        }
+        return allVol + 1;
+    }
+
     @Override
     public String toString() {
         return String.format("hypercube:%s", intervals.toString());
@@ -192,6 +199,28 @@ public class Hypercube {
         hypercube2.alignToUniversalOrder(order2);
         System.out.println(hypercube2);
 //        after swap:hypercube:[[3002,4000], [1001,2000], [2,1000], [2001,3000]]
+
+        List<Pair<Integer, Integer>> intervals3 = new ArrayList<>();
+        intervals3.add(new Pair<>(0, 9));
+        intervals3.add(new Pair<>(0, 9));
+        intervals3.add(new Pair<>(0, 9));
+        intervals3.add(new Pair<>(0, 9));
+        List<Integer> points = new ArrayList<>();
+        // if reach to [5]
+        points.add(2);
+        points.add(4);
+        points.add(6);
+        points.add(8);
+        // 2000 + 400 + 60 + 9
+        System.out.println(getCubeVolume(intervals3, points));
+
+        BigInteger bigInteger1 = new BigInteger("564882983");
+        BigInteger bigInteger2 = new BigInteger("564882983");
+        BigInteger bigInteger3 = new BigInteger("564882983");
+        BigInteger bigInteger4 = new BigInteger("18025008395252088861455608700000");
+
+        System.out.println(bigInteger1.multiply(bigInteger2).multiply(bigInteger3).doubleValue()/ bigInteger4.doubleValue());
+
 
     }
 }

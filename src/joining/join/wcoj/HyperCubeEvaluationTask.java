@@ -1,6 +1,6 @@
 package joining.join.wcoj;
 
-//import joining.JoinCache;
+import util.CartesianProduct;
 import util.Pair;
 
 import java.util.*;
@@ -24,6 +24,8 @@ public class HyperCubeEvaluationTask {
      */
     final int nrVars;
 
+    private final int nrJoined;
+
     /**
      * Bookkeeping information associated
      * with attributes (needed to resume join).
@@ -45,7 +47,7 @@ public class HyperCubeEvaluationTask {
      */
     boolean backtracked = false;
 
-//    HashMap<Integer, Pair<Set<Integer>, Set<Integer>>> cacheInfo;
+    private final List<int[]> joinResult;
 
     /**
      * Advance to next variable in join order.
@@ -62,9 +64,9 @@ public class HyperCubeEvaluationTask {
         backtracked = true;
     }
 
-    public HyperCubeEvaluationTask(LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar, List<Pair<Integer, Integer>> attributeValueBound) {
+    public HyperCubeEvaluationTask(LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar, List<int[]> joinResult, List<Pair<Integer, Integer>> attributeValueBound) {
         // for every table in from clause
-        int nrJoined = idToIter.length;
+        this.nrJoined = idToIter.length;
         this.joins = new LFTJoin[nrJoined];
         for (int i = 0; i < nrJoined; i++) {
             this.joins[i] = new LFTJoin(idToIter[i]);
@@ -85,27 +87,7 @@ public class HyperCubeEvaluationTask {
             joinsByVar.add(joinByVar);
         }
         this.attributeValueBound = attributeValueBound;
-    }
-
-    double rewardFirstTupleScale(List<Integer>[] startTuplePosition, List<Integer>[] endTuplePosition, List<Integer>[] cardInfo, List<Integer> hypercubeValueStart, List<Integer> hypercubeValueEnd) {
-        double scaledReward = 0;
-        List<Integer> tupleStart = startTuplePosition[0];
-        List<Integer> tupleEnd = endTuplePosition[0];
-        List<Integer> tupleCard = cardInfo[0];
-        if (tupleStart != null && tupleEnd != null && tupleCard != null) {
-            for (int j = 0; j < tupleStart.size(); j++) {
-                double progressTuple = tupleEnd.get(j) - tupleStart.get(j);
-                scaledReward += progressTuple / (tupleCard.get(j) + 1);
-            }
-            scaledReward = scaledReward / tupleStart.size();
-        }
-        // scale with hypercube volume
-        for (int i = 1; i < hypercubeValueEnd.size(); i++) {
-            double hypercubeRange = hypercubeValueEnd.get(i) - hypercubeValueStart.get(i) + 1;
-            double dimRange = attributeValueBound.get(i).getSecond() - attributeValueBound.get(i).getFirst() + 1;
-            scaledReward = scaledReward * (hypercubeRange / dimRange);
-        }
-        return scaledReward;
+        this.joinResult = joinResult;
     }
 
     double rewardFirstValueScale(List<Integer> attributesValueStart, List<Integer> attributesValueEnd, List<Integer> hypercubeValueEnd) {
@@ -125,13 +107,54 @@ public class HyperCubeEvaluationTask {
         return ((double) nrProcessTuple) / ((double) budget);
     }
 
-    public Pair execute(int budget, int[] attributeOrder, Hypercube selectCube) {
+    /**
+     * Add join result tuple based on current
+     * iterator positions.
+     */
+    void addResultTuple() {
+        // Update reward-related statistics
+        // Generate result tuple
+        int[] resultTuple = new int[nrJoined];
+        // Iterate over all joined tables
+        for (int aliasCtr = 0; aliasCtr < nrJoined; ++aliasCtr) {
+            LFTJoin iter = joins[aliasCtr];
+            resultTuple[aliasCtr] = iter.rid();
+        }
+        // Add new result tuple
+        joinResult.add(resultTuple);
+    }
+
+    void addResultTuples() {
+        // Update reward-related statistics
+        // Generate result tuple
+        // Iterate over all joined tables
+        List<List<Integer>> resultTuples = new ArrayList<>();
+        for (int aliasCtr = 0; aliasCtr < nrJoined; ++aliasCtr) {
+            LFTJoin iter = joins[aliasCtr];
+            if (iter.curTrieLevel == -1) {
+                // table is not joined in where clause
+                List<Integer> result = new ArrayList<>();
+                result.add(-1);
+                resultTuples.add(result);
+            } else {
+                resultTuples.add(iter.rids());
+            }
+        }
+        List<List<Integer>> finalResults = CartesianProduct.constructCombinations(resultTuples);
+        List<int[]> results = new ArrayList<>();
+        for (List<Integer> finalResult : finalResults) {
+            results.add(finalResult.stream().mapToInt(Integer::intValue).toArray());
+        }
+        // Add new result tuple
+        joinResult.addAll(results);
+    }
+
+    public double execute(int budget, int[] attributeOrder, Hypercube selectCube) {
 
         List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
 
         List<Integer> cubeStartValues = exploreDomain.stream().map(Pair::getFirst).collect(Collectors.toList());
         List<Integer> cubeEndValues = exploreDomain.stream().map(Pair::getSecond).collect(Collectors.toList());
-        long resultTuple = 0;
         int estimateBudget = budget;
 
         List<Integer>[] startTuplePosition = new ArrayList[nrVars];
@@ -144,6 +167,12 @@ public class HyperCubeEvaluationTask {
         curVariableID = 0;
         // set the start position of LFTJ
         backtracked = false;
+        // step two: move iterator to start of unexplored part
+        // case 1: [10], [10], [1, 100]
+        // case 2: [1, 100], [10], [10]
+
+        // step three, start the join
+        // Initialize reward-related statistics
 
         // Until we finish processing (break)
         // finish the current hypercube
@@ -160,7 +189,7 @@ public class HyperCubeEvaluationTask {
                 backtracked = false;
                 LFTJoin minIter = joinFrame.curIters.get(joinFrame.p);
                 minIter.seek(joinFrame.maxKey + 1);
-                // budget -= minIter.seek(joinFrame.maxKey + 1);
+//                budget -= minIter.seek(joinFrame.maxKey + 1);
                 // Check for early termination
                 // if iterator reach to the end of select hypercube
                 if (minIter.atEnd() || minIter.key() > exploreDomain.get(curVariableID).getSecond()) {
@@ -175,32 +204,12 @@ public class HyperCubeEvaluationTask {
                 joinFrame.maxKey = minIter.key();
                 joinFrame.p = (joinFrame.p + 1) % joinFrame.nrCurIters;
 
-                // cache result here
-//                if (this.cacheInfo.containsKey(curVariableID)) {
-//                    Set<Integer> keysToCache = this.cacheInfo.get(curVariableID).getFirst();
-//                    // obtain the seek value of cache key
-//                    Set<Pair<Integer, Integer>> cacheAttributeKeyAndValue = new HashSet<>();
-//                    for (Integer keyToCache : keysToCache) {
-//                        Integer valueToCache = joinFrames.get(keyToCache).maxKey;
-//                        cacheAttributeKeyAndValue.add(new Pair<>(keyToCache, valueToCache));
-//                    }
-//                    if (!JoinCache.cacheResult.contains(cacheAttributeKeyAndValue)) {
-//                        System.out.println("cache value:" + cacheResult[curVariableID]);
-//                        JoinCache.cacheResult.put(cacheAttributeKeyAndValue, cacheResult[curVariableID]);
-//                    }
-//                }
-                // end of cache
-
             } else {
                 // go to next level
                 // Have we completed a result tuple?
                 if (curVariableID >= nrVars) {
-                    resultTuple += 1;
+                    addResultTuples();
                     backtrack();
-                    // update cache information
-//                    for (int i = 0; i < nrVars; i++) {
-//                        cacheResult[i] += 1;
-//                    }
                     continue;
                 }
 
@@ -238,25 +247,6 @@ public class HyperCubeEvaluationTask {
                     continue;
                 } else {
 
-//                    // before start join, check whether is cached
-//                    if(this.cacheInfo.containsKey(curVariableID)) {
-//                        Set<Integer> keysToCache = this.cacheInfo.get(curVariableID).getFirst();
-//                        // obtain the seek value of cache key
-//                        Set<Pair<Integer, Integer>> cacheAttributeKeyAndValue = new HashSet<>();
-//                        for (Integer keyToCache : keysToCache) {
-//                            Integer valueToCache = joinFrames.get(keyToCache).maxKey;
-//                            cacheAttributeKeyAndValue.add(new Pair<>(keyToCache, valueToCache));
-//                        }
-//                        if (JoinCache.cacheResult.contains(cacheAttributeKeyAndValue)) {
-//                            System.out.println("using cache value!");
-//                            resultTuple += JoinCache.cacheResult.get(cacheAttributeKeyAndValue);
-//                            // skip the next executions
-//                            backtrack();
-//                            continue;
-//                        }
-//                    }
-//
-//
                     if (startTuplePosition[curVariableID] == null) {
                         ArrayList<Integer> tuplePosition = new ArrayList<>();
                         for (LFTJoin curJoin : joinsByVar.get(curVariableID)) {
@@ -322,22 +312,8 @@ public class HyperCubeEvaluationTask {
 
                     HypercubeManager.updateInterval(selectCube, endValues, attributeOrder);
 
-//                    double budgetScale = (estimateBudget) / (double) (estimateBudget - budget);
                     double reward = Math.max(rewardFirstValueScale(cubeStartValues, endValues, cubeEndValues), 0);
-//                    double reward = Math.max(rewardFirstTupleScale(startTuplePosition, endTuplePosition, tupleCard, cubeStartValues, cubeEndValues), 0);
-//                    double reward = rewardNrTuple((estimateBudget - budget), resultTuple);
-
-//                    System.out.println("1 join order:" + Arrays.toString(attributeOrder) +
-//                            ", startTuplePosition:" + Arrays.toString(startTuplePosition) +
-//                            ", endTuplePosition:" + Arrays.toString(endTuplePosition) +
-//                            ", tupleCard:" + Arrays.toString(tupleCard) +
-//                            ", start value:" + cubeStartValues +
-//                            ", end value:" + endValues +
-//                            ", hypercube:" + exploreDomain +
-//                            ", reward:" + reward
-//                    );
-
-                    return new Pair(reward, resultTuple);
+                    return reward;
                 }
 
                 // Get current key
@@ -352,6 +328,7 @@ public class HyperCubeEvaluationTask {
                     break;
                 } else {
                     // min key not equal max key
+//                    minIter.seek(joinFrame.maxKey);
                     budget -= minIter.seek(joinFrame.maxKey);
                     if (minIter.atEnd() || minIter.key() > endKey) {
                         // Go one level up in each trie
@@ -371,40 +348,27 @@ public class HyperCubeEvaluationTask {
 
         //  finish query
         HypercubeManager.finishHyperCube();
-        double budgetScale = (estimateBudget) / (double) (estimateBudget - budget);
+//        double budgetScale = (estimateBudget) / (double) (estimateBudget - budget);
 
         // final position of tuple
-        List<Integer>[] endTuplePosition = new ArrayList[nrVars];
-        List<Integer>[] cardInfo = new ArrayList[nrVars];
-        Map<LFTJoin, Integer> tableTrieLevel = new HashMap<>();
-        for (int i = 0; i < nrVars; i++) {
-            List<LFTJoin> curJoins = joinsByVar.get(i);
-            ArrayList<Integer> tuplePosition = new ArrayList<>();
-            ArrayList<Integer> tupleCardEach = new ArrayList<>();
-            for (LFTJoin curJoin : curJoins) {
-                int trieLevel = tableTrieLevel.getOrDefault(curJoin, 0);
-                tuplePosition.add(curJoin.curTuples[trieLevel]);
-                tupleCardEach.add(curJoin.curUBs[trieLevel]);
-                tableTrieLevel.put(curJoin, trieLevel + 1);
-            }
-            endTuplePosition[i] = tuplePosition;
-            cardInfo[i] = tupleCardEach;
-        }
+//        List<Integer>[] endTuplePosition = new ArrayList[nrVars];
+//        List<Integer>[] cardInfo = new ArrayList[nrVars];
+//        Map<LFTJoin, Integer> tableTrieLevel = new HashMap<>();
+//        for (int i = 0; i < nrVars; i++) {
+//            List<LFTJoin> curJoins = joinsByVar.get(i);
+//            ArrayList<Integer> tuplePosition = new ArrayList<>();
+//            ArrayList<Integer> tupleCardEach = new ArrayList<>();
+//            for (LFTJoin curJoin : curJoins) {
+//                int trieLevel = tableTrieLevel.getOrDefault(curJoin, 0);
+//                tuplePosition.add(curJoin.curTuples[trieLevel]);
+//                tupleCardEach.add(curJoin.curUBs[trieLevel]);
+//                tableTrieLevel.put(curJoin, trieLevel + 1);
+//            }
+//            endTuplePosition[i] = tuplePosition;
+//            cardInfo[i] = tupleCardEach;
+//        }
 
         double reward = Math.max(rewardFirstValueScale(cubeStartValues, cubeEndValues, cubeEndValues), 0);
-//        double reward = Math.max(rewardFirstTupleScale(startTuplePosition, endTuplePosition, tupleCard, cubeStartValues, cubeEndValues), 0);
-//        double reward = rewardNrTuple((estimateBudget - budget), resultTuple);
-
-//        System.out.println("2 join order:" + Arrays.toString(attributeOrder) +
-//                ", startTuplePosition:" + Arrays.toString(startTuplePosition) +
-//                ", endTuplePosition:" + Arrays.toString(endTuplePosition) +
-//                ", tupleCard:" + Arrays.toString(tupleCard) +
-//                ", start value:" + cubeStartValues +
-//                ", end value:" + cubeEndValues +
-//                ", hypercube:" + exploreDomain +
-//                ", reward:" + reward
-//        );
-
-        return new Pair(reward, resultTuple);
+        return reward;
     }
 }

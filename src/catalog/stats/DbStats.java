@@ -11,7 +11,7 @@ import diskio.PathUtil;
  * Statistics about database content (e.g., the
  * cardinality of each database table).
  * 
- * 
+ * @author immanueltrummer
  *
  */
 public class DbStats {
