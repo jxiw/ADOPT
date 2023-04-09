@@ -490,13 +490,13 @@ public class SkinnerCmd {
 //            System.out.println("Threads: " + ParallelConfig.EXE_THREADS + " " + ParallelConfig.PARALLEL_SPEC);
 //        }
         // whether to use parallel strategy
-        GeneralConfig.isParallel = false; // Integer.parseInt(Configuration.getProperty("ISPARALLEL", "0")) == 1;
+//        GeneralConfig.isParallel = false; // Integer.parseInt(Configuration.getProperty("ISPARALLEL", "0")) == 1;
         //if (GeneralConfig.isParallel) {
         //	ParallelConfig.PARALLEL_SPEC = Integer.parseInt(Configuration.getProperty("PARALLEL_SPEC", "0"));
         //}
         //else {
-          ParallelConfig.EXE_THREADS = 1;
-          ParallelConfig.PARALLEL_SPEC = 0;
+//          ParallelConfig.EXE_THREADS = 1;
+//          ParallelConfig.PARALLEL_SPEC = 0;
         //}
         // Load database schema and initialize path mapping
         dbDir = args[0];

@@ -2,6 +2,7 @@ package joining;
 
 import catalog.CatalogManager;
 import config.*;
+import expressions.ExpressionInfo;
 import joining.join.wcoj.HypercubeManager;
 import joining.join.wcoj.LFTJiter;
 import joining.parallel.parallelization.dpdsync.DPDSync;
@@ -12,6 +13,7 @@ import joining.parallel.parallelization.tree.TreeParallelization;
 import joining.parallel.threads.ThreadPool;
 import joining.result.ResultTuple;
 import joining.uct.ParallelUctNodeLFTJ;
+import net.sf.jsqlparser.expression.Expression;
 import operators.Materialize;
 import joining.parallel.parallelization.Parallelization;
 import joining.parallel.parallelization.lockfree.LockFreeParallelization;
@@ -115,17 +117,25 @@ public class ParallelJoinProcessor {
             long nonEquiStartTime = System.currentTimeMillis();
 
             if (query.nonEquiJoinPreds.size() > 0) {
-                int nrNonEquiPredict = query.nonEquiJoinNodes.size();
+                // number of non equality join predicates
+                int nrNonEquivalentPredict = query.nonEquiJoinNodes.size();
+                List<ExpressionInfo> nonEquiExpressions = query.nonEquiJoinPreds;
+                List<NonEquiNode> nonEquiNodes = query.nonEquiJoinNodes;
+                // map non equality predicate id to table id
                 HashMap<Integer, Integer> nonEquiTablesToAliasIndex = new HashMap<>();
-                ArrayList<Integer> nonEquiCards = new ArrayList<>();
-                int[] r = results.get(0);
-                for (int tid = 0; tid < r.length; tid++) {
-                    if (r[tid] == -1) {
-                        nonEquiTablesToAliasIndex.put(nonEquiCards.size(), tid);
-                        String alias = query.aliases[tid];
-                        String table = context.aliasToFiltered.get(alias);
-                        int cardinality = CatalogManager.getCardinality(table);
-                        nonEquiCards.add(cardinality);
+                HashMap<Integer, Integer> nonEquiCards = new HashMap<>();
+                Set<Integer> availableTables = new HashSet<>();
+
+                for (int tid = 0; tid < query.nrJoined; tid++) {
+                    availableTables.add(tid);
+                    for (int eid = 0; eid < nrNonEquivalentPredict; eid++) {
+                        if (!nonEquiTablesToAliasIndex.containsKey(eid) && availableTables.containsAll(
+                                nonEquiExpressions.get(eid).aliasIdxMentioned)) {
+                            nonEquiTablesToAliasIndex.put(eid, tid);
+                            String alias = query.aliases[tid];
+                            String table = context.aliasToFiltered.get(alias);
+                            nonEquiCards.put(eid, CatalogManager.getCardinality(table));
+                        }
                     }
                 }
 
@@ -134,7 +144,7 @@ public class ParallelJoinProcessor {
                     validateRowIds.add(rid);
                 }
 
-                for (int nonEquiPredictId = 0; nonEquiPredictId < nrNonEquiPredict; nonEquiPredictId++) {
+                for (int nonEquiPredictId = 0; nonEquiPredictId < nrNonEquivalentPredict; nonEquiPredictId++) {
                     int processTableId = nonEquiTablesToAliasIndex.get(nonEquiPredictId);
                     int cardinality = nonEquiCards.get(nonEquiPredictId);
                     NonEquiNode nonEquiNode = query.nonEquiJoinNodes.get(nonEquiPredictId);
@@ -155,63 +165,11 @@ public class ParallelJoinProcessor {
                     validateRowIds = currentValidateRowIds;
                 }
 
-                System.out.println("Non Equi Time" + (System.currentTimeMillis() - nonEquiStartTime));
+                System.out.println("Non Equi Time:" + (System.currentTimeMillis() - nonEquiStartTime));
 
                 for (int validateRowId : validateRowIds) {
                     resultTuples.add(new ResultTuple(results.get(validateRowId)));
                 }
-
-//                for (int i = 0; i < results.size(); i++) {
-//                    int[] result = results.get(i);
-//                    int nonEquiTableIdx = 0;
-//                    int[] nonEquiTablePositions = new int[nonEquiCards.size()];
-//                    int currentProcessTableId = nonEquiTablesToAliasIndex.get(nonEquiTableIdx);
-//                    int cardinality = nonEquiCards.get(nonEquiTableIdx);
-//                    NonEquiNode nonEquiNode = query.nonEquiJoinNodes.get(nonEquiTableIdx);
-//                    while (true) {
-//                        if (nonEquiTablePositions[nonEquiTableIdx] >= cardinality) {
-//                            if (nonEquiTableIdx == 0) {
-//                                // finish execution
-//                                break;
-//                            } else {
-//                                nonEquiTablePositions[nonEquiTableIdx] = 0;
-//                                result[nonEquiTablesToAliasIndex.get(nonEquiTableIdx)] = 0;
-//                                // reach to the end, and move to the previous node
-//                                nonEquiTableIdx--;
-//                                cardinality = nonEquiCards.get(nonEquiTableIdx);
-//                                nonEquiNode = query.nonEquiJoinNodes.get(nonEquiTableIdx);
-//                                currentProcessTableId = nonEquiTablesToAliasIndex.get(nonEquiTableIdx);
-//                                // move to the next tuple
-//                                nonEquiTablePositions[nonEquiTableIdx] += 1;
-//                            }
-//                        }
-//
-//                        // test validate current is valid
-//                        result[nonEquiTablesToAliasIndex.get(nonEquiTableIdx)] = nonEquiTablePositions[nonEquiTableIdx];
-//                        if (nonEquiNode.evaluate(result, currentProcessTableId, cardinality)) {
-//                            assert nonEquiTableIdx < nrNonEquiTable;
-//                            if (nonEquiTableIdx == nrNonEquiTable - 1) {
-//                                // finish all validate testing, add into final result
-//                                resultTuples.add(new ResultTuple(result));
-//                                // move to next tuple
-//                                nonEquiTablePositions[nonEquiTableIdx] += 1;
-//                                break;
-//                            } else {
-//                                // proceed to next node
-//                                nonEquiTableIdx += 1;
-//                                // move to next validate node, and start from beginning
-//                                nonEquiTablePositions[nonEquiTableIdx] = 0;
-//                                cardinality = nonEquiCards.get(nonEquiTableIdx);
-//                                nonEquiNode = query.nonEquiJoinNodes.get(nonEquiTableIdx);
-//                                currentProcessTableId = nonEquiTablesToAliasIndex.get(nonEquiTableIdx);
-//                            }
-//
-//                        } else {
-//                            // move to next tuple
-//                            nonEquiTablePositions[nonEquiTableIdx] += 1;
-//                        }
-//                    }
-//                }
 
             } else {
                 resultTuples = results.stream().map(ResultTuple::new).collect(Collectors.toSet());
@@ -229,7 +187,7 @@ public class ParallelJoinProcessor {
 
             long materializeStart = System.currentTimeMillis();
             // Materialize result table
-            int nrTuples = resultTuples.size();
+//            int nrTuples = resultTuples.size();
 //            String resultRel = query.plainSelect.getIntoTables().get(0).getName();
 //            log("Materializing join result with " + nrTuples + " tuples ...");
             String targetRelName = NamingConfig.JOINED_NAME;
