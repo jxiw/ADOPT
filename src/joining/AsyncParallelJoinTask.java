@@ -5,6 +5,7 @@ import joining.join.wcoj.Hypercube;
 import joining.join.wcoj.HypercubeManager;
 import joining.uct.ParallelUctNodeLFTJ;
 import joining.uct.SelectionPolicy;
+import preprocessing.Context;
 import query.QueryInfo;
 
 import java.util.ArrayList;
@@ -27,10 +28,10 @@ public class AsyncParallelJoinTask implements Callable<ParallelJoinResult> {
 
     final int threadId;
 
-    public AsyncParallelJoinTask(QueryInfo query, ParallelUctNodeLFTJ uctNodeLFTJ, int threadId) {
+    public AsyncParallelJoinTask(QueryInfo query, Context context, ParallelUctNodeLFTJ uctNodeLFTJ, int threadId) {
         this.query = query;
         this.joinResult = new ArrayList<>();
-        this.parallelLFTJ = new ParallelLFTJ(this.joinResult);
+        this.parallelLFTJ = new ParallelLFTJ(this.joinResult, query, context);
         this.root = uctNodeLFTJ;
         this.threadId = threadId;
     }
@@ -41,12 +42,9 @@ public class AsyncParallelJoinTask implements Callable<ParallelJoinResult> {
         int[] attributeOrder = new int[query.nrAttribute];
         // Get default action selection policy
         SelectionPolicy policy = JoinConfig.DEFAULT_SELECTION;
-//        long totalExecMillis = 0;
-//        long startMillis = System.currentTimeMillis();
         int nextForget = 1;
         while (!this.parallelLFTJ.isFinish) {
             // sample attribute order
-            long beforeSampleMillis = System.nanoTime();
             if (threadId == 0) {
                 int roundCtrInt = roundCtr.incrementAndGet();
                 root.sample(roundCtrInt, attributeOrder, policy, parallelLFTJ, threadId);
@@ -68,13 +66,13 @@ public class AsyncParallelJoinTask implements Callable<ParallelJoinResult> {
                     root.sample(roundCtrInt, attributeOrder, policy, parallelLFTJ, threadId);
                 }
             }
+
             // Consider memory loss
             if (JoinConfig.FORGET && roundCtr.get() == nextForget) {
                 root = new ParallelUctNodeLFTJ(0, query, true, JoinConfig.NTHREAD);
                 nextForget *= 10;
             }
 
-            long afterSampleMillis = System.nanoTime();
             if (HypercubeManager.nrCube.get() == 0 && HypercubeManager.isFinished()) {
                 // notify other thread to terminate
                 for (int i = 0; i < JoinConfig.NTHREAD; i++) {
@@ -82,27 +80,13 @@ public class AsyncParallelJoinTask implements Callable<ParallelJoinResult> {
                 }
                 break;
             }
-//            totalExecMillis += (afterSampleMillis - beforeSampleMillis);
         }
-//        long endMillis = System.currentTimeMillis();
-        int[] optimalOrder = new int[query.nrAttribute];
-        int[] bestFreqOrder = new int[query.nrAttribute];
-        root.getOptimalOrder(optimalOrder);
-        root.getMostFreqOrder(bestFreqOrder);
-//        System.out.println("thread:" + Thread.currentThread().getId() + "lftj exec time in ms:" + totalExecMillis * 1e-6);
-//        System.out.println("thread:" + Thread.currentThread().getId() + ", total duration in ms:" + (endMillis - startMillis));
-//        System.out.println("thread:" + Thread.currentThread().getId() + ", init time in ms:" + parallelLFTJ.initLFTJTime);
-//        System.out.println("thread:" + Thread.currentThread().getId() + ", execution time in ms:" + parallelLFTJ.executionTime);
-//        System.out.println("thread:" + Thread.currentThread().getId() + ", best join order:" + Arrays.toString(optimalOrder));
-//        System.out.println("thread:" + Thread.currentThread().getId() + ", most frequent join order:" + Arrays.toString(bestFreqOrder));
-//        System.out.println("thread:" + Thread.currentThread().getId() + ", wait time in ms:" + parallelLFTJ.waitTime);
-//        System.out.println("thread:" + Thread.currentThread().getId() + ", seek time in ms:" + parallelLFTJ.orderToLFTJ.values().stream().mapToLong(i -> {
-//            long ts = 0;
-//            for (LFTJoin join : i.joins) {
-//                ts += join.seekTime;
-//            }
-//            return ts;
-//        }).sum());
+
+//        int[] optimalOrder = new int[query.nrAttribute];
+//        int[] bestFreqOrder = new int[query.nrAttribute];
+//        root.getOptimalOrder(optimalOrder);
+//        root.getMostFreqOrder(bestFreqOrder);
+
         return new ParallelJoinResult(this.joinResult);
     }
 

@@ -1,14 +1,5 @@
 package console;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
-
 import benchmark.BenchUtil;
 import buffer.BufferManager;
 import catalog.CatalogManager;
@@ -36,14 +27,17 @@ import net.sf.jsqlparser.statement.select.Select;
 import print.RelationPrinter;
 import query.ColumnRef;
 import query.SQLexception;
-import statistics.JoinStats;
-import statistics.PostStats;
-import statistics.PreStats;
 import statistics.QueryStats;
 import tools.Configuration;
-import types.SQLtype;
 
-import javax.swing.plaf.synth.ColorType;
+import java.io.File;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Scanner;
+import java.util.regex.Pattern;
 
 /**
  * Runs Skinner command line console.
@@ -107,8 +101,9 @@ public class SkinnerCmd {
     //                    System.out.println(query.toString());
                         QueryStats.queryName = queryName;
                         long startMillis = System.currentTimeMillis();
-                        processSQL(query.toString(), false);
+                        processSQL(query.toString(), true);
                         long totalMillis = System.currentTimeMillis() - startMillis;
+                        System.out.println("total time:" + totalMillis);
                         BenchUtil.writeStats(queryName, totalMillis, benchOut);
 //                    } catch (Exception e) {
 //                        System.out.println("error!");
@@ -222,21 +217,9 @@ public class SkinnerCmd {
             PlainSelect plainSelect = (PlainSelect) createView.getSelectBody();
             Table view = createView.getView();
             try {
-//                if (StartupConfig.WARMUP_RUN) {
-//                    PreConfig.IN_CACHE = false;
-//                    GeneralConfig.TEST_CASE = 1;
-//                    Master.executeSelect(plainSelect,
-//                            false, -1, -1, null);
-//                    BufferManager.unloadTempData();
-//                    CatalogManager.removeTempTables();
-//                    sqlStatement = CCJSqlParserUtil.parse(input);
-//                    plainSelect = (PlainSelect) ((CreateView) sqlStatement).getSelectBody();
-//                }
-//                PreConfig.IN_CACHE = true;
-//                GeneralConfig.TEST_CASE = 5;
                 Master.executeSelect(plainSelect,
                         false, -1, -1, null);
-
+                long endTime = System.currentTimeMillis();
             } catch (SQLexception e) {
                 System.out.println(e.getMessage());
             } catch (Exception e) {
@@ -295,19 +278,6 @@ public class SkinnerCmd {
                 String name = QueryStats.queryName;
                 BufferManager.unloadCache(name.charAt(0) + "" + name.charAt(1));
                 try {
-//                    if (StartupConfig.WARMUP_RUN) {
-//                        PreConfig.IN_CACHE = false;
-//                        GeneralConfig.TEST_CASE = 1;
-//                        Master.executeSelect(plainSelect,
-//                                false, -1, -1, null);
-//                        BufferManager.unloadTempData();
-//                        CatalogManager.removeTempTables();
-//                        sqlStatement = CCJSqlParserUtil.parse(input);
-//                        select = (Select) sqlStatement;
-//                        plainSelect = (PlainSelect) select.getSelectBody();
-//                    }
-//                    PreConfig.IN_CACHE = true;
-//                    GeneralConfig.TEST_CASE = 5;
                     Master.executeSelect(plainSelect,
                             false, -1, -1, null);
                     // Display query result if no target tables specified
@@ -464,7 +434,7 @@ public class SkinnerCmd {
             // Nothing to do ...
         } else {
             try {
-                processSQL(input, false);
+                processSQL(input, true);
             } catch (SQLexception e) {
                 System.out.println(e.getMessage());
             }
@@ -480,76 +450,21 @@ public class SkinnerCmd {
      */
     public static void main(String[] args) throws Exception {
         // Verify number of command line arguments
-//        if (args.length < 1) {
-//            System.out.println("Error - specify the path"
-//                    + " to database directory!");
-//            return;
-//        }
-//        if (args.length == 2) {
-//            ParallelConfig.EXE_THREADS = Integer.parseInt(args[1]);
-//            System.out.println("Threads: " + ParallelConfig.EXE_THREADS + " " + ParallelConfig.PARALLEL_SPEC);
-//        }
-        // whether to use parallel strategy
-//        GeneralConfig.isParallel = false; // Integer.parseInt(Configuration.getProperty("ISPARALLEL", "0")) == 1;
-        //if (GeneralConfig.isParallel) {
-        //	ParallelConfig.PARALLEL_SPEC = Integer.parseInt(Configuration.getProperty("PARALLEL_SPEC", "0"));
-        //}
-        //else {
-//          ParallelConfig.EXE_THREADS = 1;
-//          ParallelConfig.PARALLEL_SPEC = 0;
-        //}
-        // Load database schema and initialize path mapping
         dbDir = args[0];
         PathUtil.initSchemaPaths(dbDir);
         CatalogManager.loadDB(PathUtil.schemaPath);
         PathUtil.initDataPaths(CatalogManager.currentDB);
         BufferManager.loadDB();
-        // Load data and/or dictionary
-//        if (GeneralConfig.inMemory) {
-            // In-memory data processing
-//            BufferManager.loadDB();
-//        } else {
-            // Disc data processing (not fully implemented!) -
-            // string dictionary is still loaded.
-//            BufferManager.loadDictionary();
-//        }
 
         Indexer.buildSortIndices();
         Indexer.indexAll(StartupConfig.INDEX_CRITERIA);
         String input = String.format("bench %s %s", args[1], args[2]);
 
+        JoinConfig.EXPLORATION_WEIGHT = Double.parseDouble(args[3]);
+        JoinConfig.BUDGET_PER_EPISODE = Integer.parseInt(args[4]);
+
         ThreadPool.initThreadsPool(ParallelConfig.EXE_THREADS, ParallelConfig.PRE_THREADS);
         processInput(input);
         ThreadPool.close();
-
-        // q18, q01
-//        if (args.length == 2) {
-        // initialize a thread pool
-//            ThreadPool.initThreadsPool(ParallelConfig.EXE_THREADS, ParallelConfig.PRE_THREADS);
-//            processInput("exec ./tpch/skinnerqueries/q03.sql");
-//            processInput("exec ./jcch/queries/q01.sql");
-//            processInput("exec ./jcch/queries/q17.sql");
-//            processInput("exec ../imdb/queries/19b.sql");
-//            processInput("exec /Users/tracy/Documents/Research/skinnerdb/imdb/queries/33c.sql");
-//            processInput("exp");
-//        } else {
-//        ThreadPool.initThreadsPool(ParallelConfig.EXE_THREADS, ParallelConfig.PRE_THREADS);
-        // Command line processing
-//            System.out.println("Enter 'help' for help and 'quit' to exit");
-//            Scanner scanner = new Scanner(System.in);
-//        boolean continueProcessing = true;
-//            while (continueProcessing) {
-//                System.out.print("> ");
-//                String input = scanner.nextLine();
-//        try {
-//            continueProcessing = processInput(input);
-//        } catch (Exception e) {
-//            System.err.println("Error processing command: ");
-//            e.printStackTrace();
-//        }
-//            }
-//            scanner.close();
-//        }
-//        ThreadPool.close();
     }
 }

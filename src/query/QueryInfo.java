@@ -1,8 +1,5 @@
 package query;
 
-import java.util.*;
-import java.util.Map.Entry;
-
 import buffer.BufferManager;
 import catalog.CatalogManager;
 import catalog.info.ColumnInfo;
@@ -19,15 +16,8 @@ import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
-import net.sf.jsqlparser.statement.select.AllColumns;
-import net.sf.jsqlparser.statement.select.AllTableColumns;
-import net.sf.jsqlparser.statement.select.FromItem;
-import net.sf.jsqlparser.statement.select.Limit;
-import net.sf.jsqlparser.statement.select.OrderByElement;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.SelectExpressionItem;
-import net.sf.jsqlparser.statement.select.SelectItem;
-import net.sf.jsqlparser.util.cnfexpression.CNFConverter;
+import net.sf.jsqlparser.statement.select.*;
+import org.apache.commons.lang3.StringUtils;
 import predicate.NonEquiCols;
 import predicate.NonEquiNode;
 import predicate.NonEquiNodesTest;
@@ -35,7 +25,8 @@ import preprocessing.Context;
 import query.from.FromUtil;
 import query.select.SelectUtil;
 
-import org.apache.commons.lang3.StringUtils;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * Contains information on the query to execute.
@@ -451,7 +442,7 @@ public class QueryInfo {
                         if (curEquiJoinCols != null) {
                             equiJoinCols.addAll(curEquiJoinCols);
 							equiJoinPairs.add(curEquiJoinCols);
-                            indexCols.addAll(curEquiJoinCols);
+//                            indexCols.addAll(curEquiJoinCols);
                             equiJoinPreds.add(curInfo);
                         } else {
                             nonEquiPred = nonEquiPred == null ? conjunct :

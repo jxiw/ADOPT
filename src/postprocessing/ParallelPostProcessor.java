@@ -254,7 +254,7 @@ public class ParallelPostProcessor {
                 case SUM:
                     if (context.groupsToIndex != null && nrGroups < ParallelConfig.PRE_BATCH_SIZE)
                         ParallelSumAggregate.execute(sourceRef, nrGroups, context.groupsToIndex,
-                            groupRef, targetRef);
+                                groupRef, targetRef);
                     else
                         SumAggregate.execute(sourceRef, nrGroups, groupRef, targetRef);
                     break;
@@ -270,7 +270,7 @@ public class ParallelPostProcessor {
                 case AVG:
                     if (context.groupsToIndex != null && nrGroups < ParallelConfig.PRE_BATCH_SIZE)
                         ParallelAvgAggregate.execute(sourceRef, nrGroups, context.groupsToIndex,
-                            groupRef, targetRef);
+                                groupRef, targetRef);
                     else
                         AvgAggregate.execute(sourceRef, nrGroups, groupRef, targetRef);
                     break;
@@ -454,7 +454,7 @@ public class ParallelPostProcessor {
             String srcRel = NamingConfig.JOINED_NAME;
             if (context.groupsToIndex != null && nrGroups < ParallelConfig.PRE_BATCH_SIZE)
                 ParallelMapRows.execute(srcRel, expr, context.columnMapping,
-                    context.aggToData, context.groupsToIndex, groupRef, nrGroups, resultRef);
+                        context.aggToData, context.groupsToIndex, groupRef, nrGroups, resultRef);
             else
                 MapRows.execute(srcRel, expr, context.columnMapping,
                         context.aggToData, groupRef, nrGroups, resultRef);
@@ -465,7 +465,7 @@ public class ParallelPostProcessor {
             String srcRel = NamingConfig.AGG_TBL_NAME;
             if (context.groupsToIndex != null && nrGroups < ParallelConfig.PRE_BATCH_SIZE)
                 ParallelMapRows.execute(srcRel, expr, context.columnMapping,
-                    context.aggToData, context.groupsToIndex,null, -1, resultRef);
+                        context.aggToData, context.groupsToIndex,null, -1, resultRef);
             else
                 MapRows.execute(srcRel, expr, context.columnMapping,
                         context.aggToData, null, -1, resultRef);
@@ -713,6 +713,5 @@ public class ParallelPostProcessor {
         CatalogManager.updateStats(resultRel);
         // Measure time and store as statistics
         PostStats.postMillis = System.currentTimeMillis() - startMillis;
-        PostStats.subPostMillis.add(PostStats.postMillis);
     }
 }

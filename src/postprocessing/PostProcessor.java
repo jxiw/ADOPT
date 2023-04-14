@@ -1,8 +1,5 @@
 package postprocessing;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import buffer.BufferManager;
 import catalog.CatalogManager;
 import catalog.info.ColumnInfo;
@@ -20,6 +17,9 @@ import print.RelationPrinter;
 import query.ColumnRef;
 import query.QueryInfo;
 import statistics.PostStats;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Uses the result of the join phase as input and
@@ -563,7 +563,9 @@ public class PostProcessor {
 		// Update result table statistics
 		CatalogManager.updateStats(resultRel);
 		// Measure time and store as statistics
-		PostStats.postMillis = System.currentTimeMillis() - startMillis;
-		PostStats.subPostMillis.add(PostStats.postMillis);
+		long postTime = System.currentTimeMillis() - startMillis;
+		PostStats.postMillis += postTime;
+		PostStats.subPostMillis.add(postTime);
+		System.out.println("postprocessing time:" + postTime);
 	}
 }

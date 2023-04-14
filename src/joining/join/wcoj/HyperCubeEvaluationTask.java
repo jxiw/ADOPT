@@ -47,8 +47,6 @@ public class HyperCubeEvaluationTask {
      */
     boolean backtracked = false;
 
-    private final List<int[]> joinResult;
-
     /**
      * Advance to next variable in join order.
      */
@@ -64,7 +62,7 @@ public class HyperCubeEvaluationTask {
         backtracked = true;
     }
 
-    public HyperCubeEvaluationTask(LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar, List<int[]> joinResult, List<Pair<Integer, Integer>> attributeValueBound) {
+    public HyperCubeEvaluationTask(LFTJiter[] idToIter, List<List<Integer>> iterNumberByVar, List<Pair<Integer, Integer>> attributeValueBound) {
         // for every table in from clause
         this.nrJoined = idToIter.length;
         this.joins = new LFTJoin[nrJoined];
@@ -87,7 +85,6 @@ public class HyperCubeEvaluationTask {
             joinsByVar.add(joinByVar);
         }
         this.attributeValueBound = attributeValueBound;
-        this.joinResult = joinResult;
     }
 
     double rewardFirstValueScale(List<Integer> attributesValueStart, List<Integer> attributesValueEnd, List<Integer> hypercubeValueEnd) {
@@ -111,7 +108,7 @@ public class HyperCubeEvaluationTask {
      * Add join result tuple based on current
      * iterator positions.
      */
-    void addResultTuple() {
+    void addResultTuple(List<int[]> joinResult) {
         // Update reward-related statistics
         // Generate result tuple
         int[] resultTuple = new int[nrJoined];
@@ -124,7 +121,7 @@ public class HyperCubeEvaluationTask {
         joinResult.add(resultTuple);
     }
 
-    void addResultTuples() {
+    void addResultTuples(List<int[]> joinResult) {
         // Update reward-related statistics
         // Generate result tuple
         // Iterate over all joined tables
@@ -149,14 +146,14 @@ public class HyperCubeEvaluationTask {
         joinResult.addAll(results);
     }
 
-    public double execute(int budget, int[] attributeOrder, Hypercube selectCube) {
+    public Pair<Double, List<int[]>> execute(int budget, int[] attributeOrder, Hypercube selectCube) {
 
         List<Pair<Integer, Integer>> exploreDomain = selectCube.unfoldCube(attributeOrder);
 
         List<Integer> cubeStartValues = exploreDomain.stream().map(Pair::getFirst).collect(Collectors.toList());
         List<Integer> cubeEndValues = exploreDomain.stream().map(Pair::getSecond).collect(Collectors.toList());
-        int estimateBudget = budget;
 
+        List<int[]> joinResult = new ArrayList<>();
         List<Integer>[] startTuplePosition = new ArrayList[nrVars];
 
         // step one: reset the iterator
@@ -208,7 +205,7 @@ public class HyperCubeEvaluationTask {
                 // go to next level
                 // Have we completed a result tuple?
                 if (curVariableID >= nrVars) {
-                    addResultTuples();
+                    addResultTuples(joinResult);
                     backtrack();
                     continue;
                 }
@@ -313,7 +310,7 @@ public class HyperCubeEvaluationTask {
                     HypercubeManager.updateInterval(selectCube, endValues, attributeOrder);
 
                     double reward = Math.max(rewardFirstValueScale(cubeStartValues, endValues, cubeEndValues), 0);
-                    return reward;
+                    return new Pair<>(reward, joinResult);
                 }
 
                 // Get current key
@@ -328,7 +325,6 @@ public class HyperCubeEvaluationTask {
                     break;
                 } else {
                     // min key not equal max key
-//                    minIter.seek(joinFrame.maxKey);
                     budget -= minIter.seek(joinFrame.maxKey);
                     if (minIter.atEnd() || minIter.key() > endKey) {
                         // Go one level up in each trie
@@ -348,27 +344,8 @@ public class HyperCubeEvaluationTask {
 
         //  finish query
         HypercubeManager.finishHyperCube();
-//        double budgetScale = (estimateBudget) / (double) (estimateBudget - budget);
-
-        // final position of tuple
-//        List<Integer>[] endTuplePosition = new ArrayList[nrVars];
-//        List<Integer>[] cardInfo = new ArrayList[nrVars];
-//        Map<LFTJoin, Integer> tableTrieLevel = new HashMap<>();
-//        for (int i = 0; i < nrVars; i++) {
-//            List<LFTJoin> curJoins = joinsByVar.get(i);
-//            ArrayList<Integer> tuplePosition = new ArrayList<>();
-//            ArrayList<Integer> tupleCardEach = new ArrayList<>();
-//            for (LFTJoin curJoin : curJoins) {
-//                int trieLevel = tableTrieLevel.getOrDefault(curJoin, 0);
-//                tuplePosition.add(curJoin.curTuples[trieLevel]);
-//                tupleCardEach.add(curJoin.curUBs[trieLevel]);
-//                tableTrieLevel.put(curJoin, trieLevel + 1);
-//            }
-//            endTuplePosition[i] = tuplePosition;
-//            cardInfo[i] = tupleCardEach;
-//        }
 
         double reward = Math.max(rewardFirstValueScale(cubeStartValues, cubeEndValues, cubeEndValues), 0);
-        return reward;
+        return new Pair<>(reward, joinResult);
     }
 }

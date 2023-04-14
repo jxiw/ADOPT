@@ -1,38 +1,31 @@
 package preprocessing;
 
-import java.io.PrintWriter;
+import buffer.BufferManager;
+import catalog.CatalogManager;
+import catalog.info.ColumnInfo;
+import config.GeneralConfig;
+import config.LoggingConfig;
+import config.NamingConfig;
+import config.PreConfig;
+import expressions.ExpressionInfo;
+import indexing.Index;
+import indexing.Indexer;
+import joining.parallel.indexing.PartitionIndex;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
+import operators.Filter;
+import operators.IndexFilter;
+import operators.IndexTest;
+import operators.Materialize;
+import query.ColumnRef;
+import query.QueryInfo;
+import statistics.PreStats;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-
-import buffer.BufferManager;
-import catalog.CatalogManager;
-import catalog.info.ColumnInfo;
-import config.*;
-import expressions.ExpressionInfo;
-import indexing.Index;
-import indexing.Indexer;
-import indexing.IntIndex;
-import joining.parallel.indexing.IndexPolicy;
-import joining.parallel.indexing.IntPartitionIndex;
-import joining.parallel.indexing.PartitionIndex;
-import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.LongValue;
-import net.sf.jsqlparser.expression.StringValue;
-import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
-import net.sf.jsqlparser.schema.Column;
-import operators.Filter;
-import operators.IndexFilter;
-import operators.IndexTest;
-import operators.Materialize;
-import print.RelationPrinter;
-import query.ColumnRef;
-import query.QueryInfo;
-import statistics.PreStats;
 
 /**
  * Filters query tables via unary predicates and stores
@@ -208,11 +201,9 @@ public class Preprocessor {
 			return preSummary;
 		}
 
-		// Measure processing time
-		if (performance) {
-			PreStats.preMillis = System.currentTimeMillis() - startMillis;
-			PreStats.subPreMillis.add(PreStats.preMillis);
-		}
+
+		PreStats.filterTime = System.currentTimeMillis() - startMillis;
+		long startIndexMillis = System.currentTimeMillis();
 
 		if (query.nonEquiJoinPreds.size() > 0) {
 			createJoinIndices(query, preSummary);
@@ -222,6 +213,16 @@ public class Preprocessor {
 				expressionInfo.setColumnType();
 			});
 		}
+
+		PreStats.indexTime = System.currentTimeMillis() - startIndexMillis;
+
+		// Measure processing time
+//		if (performance) {
+			PreStats.preMillis += System.currentTimeMillis() - startMillis;
+			PreStats.subPreMillis.add(PreStats.preMillis);
+//		}
+		System.out.println("preprocessing time:" + (System.currentTimeMillis() - startMillis));
+
 		return preSummary;
 	}
 	/**
@@ -400,14 +401,14 @@ public class Preprocessor {
 			preSummary.columnMapping.put(srcRef, resRef);
 		}
 		preSummary.aliasToFiltered.put(alias, filteredName);
-		if (LoggingConfig.PERFORMANCE_VERBOSE) {
-			long totalMillis = System.currentTimeMillis() - startMillis;
-			log("Filtering using " + unaryPred + " took " + totalMillis + " milliseconds");
-		}
+//		if (LoggingConfig.PERFORMANCE_VERBOSE) {
+//			long totalMillis = System.currentTimeMillis() - startMillis;
+//			log("Filtering using " + unaryPred + " took " + totalMillis + " milliseconds");
+//		}
 		// Print out intermediate result table if logging is enabled
-		if (LoggingConfig.PRINT_INTERMEDIATES) {
-			RelationPrinter.print(filteredName);
-		}
+//		if (LoggingConfig.PRINT_INTERMEDIATES) {
+//			RelationPrinter.print(filteredName);
+//		}
 		return satisfyingRows;
 	}
 	/**
