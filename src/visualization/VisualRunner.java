@@ -21,6 +21,7 @@ public class VisualRunner {
 	public void analysisFile(String logFilePath) {
 		try {
 			System.out.println(logFilePath);
+			totalSample = 0;
 			try (BufferedReader br = new BufferedReader(new FileReader(logFilePath))) {
 				String line;
 				while ((line = br.readLine()) != null) {

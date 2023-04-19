@@ -50,6 +50,7 @@ public class AttributeDataParser {
 		}
 
 		totalSample = 0;
+		attributes = new ArrayList<>();
 		try (BufferedReader br = new BufferedReader(new FileReader(filepath))) {
 			String line;
 			while ((line = br.readLine()) != null) {
