@@ -2,9 +2,13 @@
 
 ADOPT is a query engine that combines adaptive query processing with worst-case optimal join algorithms. See technical report is [here](https://github.com/jxiw/ADOPT/blob/main/report/ADOPT.pdf)
 
+**If you want to run our demo, please check this code https://github.com/jxiw/ADOPT/releases/tag/ADOPT**
+
 # Running the Graph Benchmark
 
 Our graph dataset is from [Stanford Large Network Dataset Collection](https://snap.stanford.edu/data/)
+
+Download the [jar libs](https://drive.google.com/file/d/1EKkJyVHj-JZeTHpNb8amCyfrqg7MBc99/view?usp=sharing), and put it in the ADOPT folder.
 
 1. Compile source code
 ```commandline
