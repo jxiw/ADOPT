@@ -8,6 +8,8 @@ ADOPT is a query engine that combines adaptive query processing with worst-case 
 
 Our graph dataset is from [Stanford Large Network Dataset Collection](https://snap.stanford.edu/data/)
 
+Download the [jar libs](https://drive.google.com/file/d/1EKkJyVHj-JZeTHpNb8amCyfrqg7MBc99/view?usp=sharing), and put it in the ADOPT folder.
+
 1. Compile source code
 ```commandline
 bash compile.sh
