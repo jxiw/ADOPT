@@ -49,7 +49,8 @@ public class BenchAndVerify {
 		GeneralConfig.inMemory = true;
 		BufferManager.loadDB();
 		System.out.println("Data loaded.");
-		Indexer.indexAll(StartupConfig.INDEX_CRITERIA);
+		Indexer.buildSortIndices();
+//		Indexer.indexAll(StartupConfig.INDEX_CRITERIA);
 		// Read all queries from files
 		Map<String, PlainSelect> nameToQuery = BenchUtil.readAllQueries(queryDir);
 		// Measure pre-processing time for each query

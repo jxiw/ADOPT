@@ -10,12 +10,14 @@ import java.util.stream.IntStream;
 
 import buffer.BufferManager;
 import catalog.CatalogManager;
-import config.JoinConfig;
+//import config.JoinConfig;
 import data.ColumnData;
 import data.IntData;
 import preprocessing.Context;
 import query.ColumnRef;
 import query.QueryInfo;
+
+import static config.NamingConfig.FILTERED_PRE;
 
 public class LFTJiter {
     /**
@@ -48,13 +50,13 @@ public class LFTJiter {
      * can be reused across different join orders
      * for the same query.
      */
-    static Map<List<ColumnRef>, int[]> queryOrderCache =
+    public static Map<List<ColumnRef>, int[]> queryOrderCache =
             new HashMap<>();
     /**
      * Caches tuple orderings for base tables that can
      * be reused across different queries.
      */
-    static Map<List<ColumnRef>, int[]> baseOrderCache =
+    public static Map<List<ColumnRef>, int[]> baseOrderCache =
             new HashMap<>();
 
     public static long sortTime = 0;
@@ -82,9 +84,9 @@ public class LFTJiter {
         long stime1 = System.currentTimeMillis();
         String alias = query.aliases[aliasID];
         String table = context.aliasToFiltered.get(alias);
-        if (JoinConfig.DISTINCT_START) {
-            table = context.aliasToDistinct.get(alias);
-        }
+//        if (JoinConfig.DISTINCT_START) {
+//            table = context.aliasToDistinct.get(alias);
+//        }
         card = CatalogManager.getCardinality(table);
         long stime2 = System.currentTimeMillis();
         // Extract columns used for sorting
@@ -144,55 +146,29 @@ public class LFTJiter {
         // No unary predicates for current alias?
 //        long initMillis = System.currentTimeMillis();
         String alias = query.aliases[aliasID];
-        boolean notFiltered = executionContext.
-                aliasToFiltered.get(alias).equals(alias);
-        if (JoinConfig.DISTINCT_START) {
-            notFiltered = executionContext.aliasToFiltered.get(alias).equals(alias);
-        }
+        boolean notFiltered = !executionContext.
+                aliasToFiltered.get(alias).contains(FILTERED_PRE);
+
 //        long startMillis = System.currentTimeMillis();
 //        lftTime5 += (startMillis - initMillis);
 //        System.out.println("lftTime5:" + lftTime5);
         // Did we cache tuple order for associated base tables?
         if (notFiltered && baseOrderCache.containsKey(localColumns)) {
             tupleOrder = baseOrderCache.get(localColumns);
-//            long endMillis = System.currentTimeMillis();
-//            lftTime4 += endMillis - startMillis;
-//            System.out.println("lftTime4:" + lftTime1);
-//            return cacheValue;
-        } else
+        } else {
             // Retrieve cached tuple order or sort
             if (queryOrderCache.containsKey(localColumns)) {
                 tupleOrder = queryOrderCache.get(localColumns);
-//                long endMillis = System.currentTimeMillis();
-//                lftTime4 += endMillis - startMillis;
-//                System.out.println("lftTime4:" + lftTime1);
-//                return cacheValue;
             } else {
                 // Initialize tuple order
-//                long part2Millis = System.currentTimeMillis();
-//                Integer[] tupleOrder = new Integer[card];
-//                for (int i = 0; i < card; ++i) {
-//                    tupleOrder[i] = i;
-//                }
-
                 long part3Millis = System.currentTimeMillis();
-//                lftTime6 += part3Millis - part2Millis;
-//                System.out.println("lftTime6:" + lftTime6);
 
                 tupleOrder = IntStream.range(0, card).boxed().parallel().sorted(new Comparator<Integer>() {
                     @Override
                     public int compare(Integer row1, Integer row2) {
-                        for (ColumnData colData : trieCols) {
-                            int cmp = colData.compareRows(row1, row2);
-                            if (cmp == 2) {
-                                boolean row1null = colData.isNull.get(row1);
-                                boolean row2null = colData.isNull.get(row2);
-                                if (row1null && !row2null) {
-                                    return -1;
-                                } else if (!row1null && row2null) {
-                                    return 1;
-                                }
-                            } else if (cmp != 0) {
+                        for (IntData colData : trieCols) {
+                            int cmp = Integer.compare(colData.data[row1], colData.data[row2]);
+                            if (cmp != 0) {
                                 return cmp;
                             }
                         }
@@ -201,7 +177,10 @@ public class LFTJiter {
                 }).mapToInt(i -> i).toArray();
 
                 long endCreateTime = System.currentTimeMillis();
-                sortTime += (endCreateTime - part3Millis);
+                long sortTime = (endCreateTime - part3Millis);
+//
+                System.out.println("tableName:" + executionContext.aliasToFiltered.get(alias) + ", colNames:" + localColumns);
+                System.out.println("sort time:" + sortTime);
 
                 // Distinguish by cache
                 if (notFiltered) {
@@ -210,11 +189,21 @@ public class LFTJiter {
                     queryOrderCache.put(localColumns, tupleOrder);
                 }
             }
+        }
     }
 
-    public static void clearCache() {
+    public static void clearCache () {
         LFTJiter.queryOrderCache = new HashMap<>();
-        LFTJiter.baseOrderCache = new HashMap<>();
     }
+
+//    public Integer compareTuples(int row1, int row2) {
+//        for (IntData colData : trieCols) {
+//            int cmp = Integer.compare(colData.data[row1], colData.data[row2]);
+//            if (cmp != 0) {
+//                return cmp;
+//            }
+//        }
+//        return 0;
+//    }
 
 }
