@@ -134,8 +134,8 @@ public class Preprocessor {
 			throw new Exception("Error in pre-processor.");
 		}
 		// Create missing indices for columns involved in equi-joins.
-		log("Creating indices ...");			
-		createJoinIndices(query, preSummary);
+		//log("Creating indices ...");			
+		//createJoinIndices(query, preSummary);
 
 		// Measure processing time
 		PreStats.preMillis = System.currentTimeMillis() - startMillis;
