@@ -35,3 +35,37 @@ export thread=70
 java -Xmx320G -Xms320G -classpath .:../lib/* benchmark.BenchAndVerify PATH_TO_GRAPH_FOLDER PATH_TO_GRAPH_SQL ${budget} ${thread} ${lr} > result.txt
 ```
 
+# Citation
+
+If you use our repository or you are inspired by our work, please cite the following papers.
+
+```
+@article{wang2023adopt,
+  title={ADOPT: Adaptively Optimizing Attribute Orders for Worst-Case Optimal Join Algorithms via Reinforcement Learning},
+  author={Wang, Junxiong and Trummer, Immanuel and Kara, Ahmet and Olteanu, Dan},
+  journal={Proceedings of the VLDB Endowment},
+  volume={16},
+  number={11},
+  pages={2805--2817},
+  year={2023},
+  publisher={VLDB Endowment}
+}
+
+@article{10.14778/3611540.3611629,
+author = {Wang, Junxiong and Gray, Mitchell and Trummer, Immanuel and Kara, Ahmet and Olteanu, Dan},
+title = {Demonstrating ADOPT: Adaptively Optimizing Attribute Orders for Worst-Case Optimal Joins via Reinforcement Learning},
+year = {2023},
+issue_date = {August 2023},
+publisher = {VLDB Endowment},
+volume = {16},
+number = {12},
+issn = {2150-8097},
+url = {https://doi.org/10.14778/3611540.3611629},
+doi = {10.14778/3611540.3611629},
+abstract = {Performance of worst-case optimal join algorithms depends on the order in which the join attributes are processed. It is challenging to identify suitable orders prior to query execution due to the huge search space of possible orders and unreliable execution cost estimates in case of data skew or data correlation.We demonstrate ADOPT, a novel query engine that integrates adaptive query processing with a worst-case optimal join algorithm. ADOPT divides query execution into episodes, during which different attribute orders are invoked. With runtime feedback on performance of different attribute orders, ADOPT rapidly approaches near-optimal orders. Moreover, ADOPT uses a unique data structure which keeps track of the processed input data to prevent redundant work across different episodes. It selects attribute orders to try via reinforcement learning, balancing the need for exploring new orders with the desire to exploit promising orders. In experiments, ADOPT outperforms baselines, including commercial and open-source systems utilizing worst-case optimal join algorithms, particularly for complex queries that are difficult to optimize.},
+journal = {Proc. VLDB Endow.},
+month = {aug},
+pages = {4094–4097},
+numpages = {4}
+}
+```
