@@ -4,7 +4,7 @@ ADOPT is a query engine that combines adaptive query processing with worst-case 
 
 **If you want to run our demo, please check this code https://github.com/jxiw/ADOPT/releases/tag/ADOPT**
 
-**If you want to run TPC-H, please checkout tpch branch**
+**If you want to run TPC-H or JCC-H, please checkout tpch branch**
 
 **If you want to run imdb, please checkout imdb branch**
 
